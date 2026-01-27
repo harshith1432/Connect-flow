@@ -99,7 +99,7 @@ python app.py
 
 ## 🔐 Administrative Access
 The system automatically initializes a default platform admin:
-- **Email**: `harshithkd032@gmail.com`
+- **Email**: `admin@gmail.com`
 - **Password**: `123456`
 
 > [!IMPORTANT]
