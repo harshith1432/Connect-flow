@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Customer Care: Multi-tenant SaaS Communication & Data Platform
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
@@ -113,3 +114,7 @@ The system automatically initializes a default platform admin:
 ---
 
 For a deeper dive into the software's architecture and design, please refer to the [Full Software Report](Report.md).
+=======
+# Connect-flow
+Customer Care is a production-ready multi-tenant SaaS platform for dynamic data management and automated customer communication. It enables organizations to create no-code modules, manage users, and run scalable WhatsApp and voice campaigns with secure tenant isolation, analytics, and subscription-based access control.
+>>>>>>> 4d286a80b27184ab940dbbffd68bf3bfb126d120
