@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% block title %}Edit Script - {{ module.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-5">
+    <div class="text-center-mobile w-100">
+        <div class="mb-1">
+            <a href="{{ url_for('worker.scripts', gid=group.id) }}"
+                class="text-muted text-decoration-none small text-uppercase fw-bold">
+                <i class="bi bi-chevron-left me-1"></i>Back to Scripts
+            </a>
+        </div>
+        <h1>Edit Script</h1>
+        <p class="text-muted">Update message template for <strong>{{ group.name }}</strong></p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card h-100 p-4 border-0 shadow-sm">
+            <form method="post" class="needs-validation" novalidate>
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+                <div class="mb-3">
+                    <label class="form-label">Communication Type</label>
+                    <select name="type" id="scriptType" class="form-select" required>
+                        <option value="whatsapp_text" {% if script.type=='whatsapp_text' %}selected{% endif %}>WhatsApp
+                            (Text & Voice)</option>
+                        <option value="call" {% if script.type=='call' %}selected{% endif %}>Voice Call</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Language</label>
+                    <select name="language" id="scriptLanguage" class="form-select" required>
+                        {% for lang in ['English', 'Hindi', 'Kannada', 'Tamil', 'Telugu', 'Malayalam', 'Marathi'] %}
+                        <option value="{{ lang }}" {% if script.language==lang %}selected{% endif %}>{{ lang }}</option>
+                        {% endfor %}
+                    </select>
+                    <div id="langHelp" class="form-text mt-1 text-muted"></div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" id="contentLabel">Script Content</label>
+                    <textarea name="content" id="scriptContent" class="form-control" rows="8"
+                        placeholder="Type your message here..." required
+                        style="min-height: 150px; resize: vertical;">{{ script.content }}</textarea>
+                    <div class="invalid-feedback">Content is required.</div>
+
+                    <!-- Voice Script Field -->
+                    <div id="voiceScriptContainer" class="mt-3" style="display: none;">
+                        <label class="form-label text-primary">Voice Script Content (Native Language)</label>
+                        <textarea name="voice_content" id="voiceContent" class="form-control" rows="6"
+                            placeholder="Type the script for voice generation here..."
+                            style="min-height: 120px; resize: vertical;">{{ script.voice_content if script.voice_content else '' }}</textarea>
+                        <div class="form-text">If left empty, the main script content above will be used.</div>
+                    </div>
+
+                    <!-- Insert Placeholder Buttons -->
+                    <div class="mt-3">
+                        <label class="form-label text-muted small fw-bold">Insert Placeholder:</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for field in fields %}
+                            <button type="button" class="btn btn-sm btn-outline-primary placeholder-btn"
+                                data-field="{{ field.name }}">
+                                {{ field.name }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                        <div class="form-text mt-2">Click a button to insert a placeholder at cursor position.</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('worker.scripts', gid=group.id) }}"
+                            class="btn btn-outline-secondary px-4">Cancel</a>
+                        <button class="btn btn-primary px-4">
+                            <i class="bi bi-save me-2"></i>Update Script
+                        </button>
+                    </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateScriptRules() {
+        const type = document.getElementById('scriptType')?.value;
+        const lang = document.getElementById('scriptLanguage')?.value;
+        const langHelp = document.getElementById('langHelp');
+
+        const contentLabel = document.getElementById('contentLabel');
+        const voiceContainer = document.getElementById('voiceScriptContainer');
+
+        let helpText = "";
+        let colorClass = "text-muted";
+
+        // Reset visibility
+        if (voiceContainer) voiceContainer.style.display = 'none';
+        if (contentLabel) contentLabel.textContent = "Script Content";
+
+        if (type === 'whatsapp_text') {
+            helpText = "⚠️ <strong>Rule:</strong> WhatsApp Text scripts should be written in <strong>ENGLISH</strong> only.";
+            colorClass = "text-warning";
+
+            // Show Voice Script field
+            if (voiceContainer) {
+                voiceContainer.style.display = 'block';
+                contentLabel.textContent = "Text Message Content (English)";
+            }
+
+        } else if (type === 'call') {
+            if (lang === 'Hindi') {
+                helpText = "✅ Write the script in <strong>Hindi</strong>.";
+                colorClass = "text-success";
+            } else if (lang === 'English') {
+                helpText = "✅ Write the script in <strong>English</strong>.";
+                colorClass = "text-success";
+            } else {
+                helpText = `⚠️ <strong>Rule:</strong> For ${lang}, the system defaults to English logic. Please write the script in <strong>ENGLISH</strong>.`;
+                colorClass = "text-danger";
+            }
+        }
+
+        if (langHelp) {
+            langHelp.innerHTML = helpText;
+            langHelp.className = "form-text mt-1 " + colorClass;
+        }
+    }
+
+    // Placeholder Logic (Robust Mousedown)
+    document.addEventListener('DOMContentLoaded', function () {
+        // Init rules
+        const typeSelect = document.getElementById('scriptType');
+        const langSelect = document.getElementById('scriptLanguage');
+
+        if (typeSelect) typeSelect.addEventListener('change', updateScriptRules);
+        if (langSelect) langSelect.addEventListener('change', updateScriptRules);
+
+        updateScriptRules(); // Initial call
+
+        // Track active textarea
+        let activeTextarea = document.getElementById('scriptContent');
+        const voiceTextarea = document.getElementById('voiceContent');
+
+        [activeTextarea, voiceTextarea].forEach(ta => {
+            if (ta) {
+                ta.addEventListener('focus', function () {
+                    activeTextarea = this;
+                });
+                ta.addEventListener('mouseup', function () {
+                    activeTextarea = this;
+                });
+            }
+        });
+
+        // Button Click
+        const buttons = document.querySelectorAll('.placeholder-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+
+                if (!activeTextarea) return;
+
+                const fieldName = this.getAttribute('data-field');
+                const text = '{' + '{' + fieldName + '}}';
+
+                activeTextarea.focus();
+
+                if (typeof activeTextarea.setRangeText === 'function') {
+                    activeTextarea.setRangeText(text, activeTextarea.selectionStart, activeTextarea.selectionEnd, 'end');
+                } else {
+                    const start = activeTextarea.selectionStart;
+                    const end = activeTextarea.selectionEnd;
+                    const before = activeTextarea.value.substring(0, start);
+                    const after = activeTextarea.value.substring(end, activeTextarea.value.length);
+                    activeTextarea.value = before + text + after;
+                    activeTextarea.selectionStart = activeTextarea.selectionEnd = start + text.length;
+                }
+
+                activeTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+        });
+    });
+</script>
+{% endblock %}

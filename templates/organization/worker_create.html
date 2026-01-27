@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}Create Worker{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ul class="breadcrumb-premium d-flex align-items-center mb-0 p-0">
+            <li class="breadcrumb-item-premium">
+                <a href="{{ url_for('org.dashboard') }}">
+                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                </a>
+            </li>
+            <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50">
+                <i class="bi bi-chevron-right small"></i>
+            </li>
+            <li class="breadcrumb-item-premium">
+                <a href="{{ url_for('org.manage_workers') }}">
+                    Your Team
+                </a>
+            </li>
+            <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50">
+                <i class="bi bi-chevron-right small"></i>
+            </li>
+            <li class="breadcrumb-item-premium active fw-bold text-dark">
+                Create Worker
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<div class="d-flex justify-content-center align-items-center mt-5" style="min-height: 40vh;">
+    <div class="card p-5 w-100" style="max-width: 500px;">
+        <h2 class="mb-4 text-center">Create New Worker</h2>
+        <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <div class="mb-3">
+                <label class="form-label">Email Address</label>
+                <input type="email" name="email" class="form-control" placeholder="worker@yourorg.com" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" name="password" class="form-control" required>
+            </div>
+            <div class="d-grid gap-2 mt-4">
+                {% if subscription and subscription.status == 'inactive' %}
+                <div class="alert alert-danger small py-2 mb-3">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    Subscription inactive. Cannot create workers.
+                </div>
+                <button class="btn btn-secondary py-2" disabled>Create Worker</button>
+                {% else %}
+                <button class="btn btn-primary py-2">Create Worker</button>
+                {% endif %}
+                <a href="{{ url_for('org.manage_workers') }}" class="btn btn-light py-2">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

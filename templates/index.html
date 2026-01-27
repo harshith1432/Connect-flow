@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}Connect & Grow{% endblock %}
+{% block content %}
+<!-- Hero Section -->
+<div class="text-center py-5 my-5">
+  <h1 class="display-3 fw-bold mb-3"
+    style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+    Transform Your Customer Communication
+  </h1>
+  <p class="lead text-muted mb-4" style="max-width: 700px; margin: 0 auto;">
+    The all-in-one platform for Universities and Enterprises to manage data, automate WhatsApp campaigns, and track
+    engagement effortlessly.
+  </p>
+  <div class="d-flex justify-content-center gap-3">
+    {% if current_user.is_authenticated %}
+    {% if current_user.role == 'platform_owner' %}
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-primary btn-lg px-5">Go to Dashboard</a>
+    {% elif current_user.organization_id %}
+    {% if current_user.role == 'worker' %}
+    <a href="{{ url_for('worker.dashboard') }}" class="btn btn-primary btn-lg px-5">Worker Workspace</a>
+    {% else %}
+    <a href="{{ url_for('org.dashboard') }}" class="btn btn-primary btn-lg px-5">Manager Dashboard</a>
+    {% endif %}
+    {% endif %}
+    {% else %}
+    <a href="{{ url_for('org.login') }}" class="btn btn-primary btn-lg px-5 shadow-sm">Login as Organization</a>
+    <a href="{{ url_for('worker.login') }}" class="btn btn-outline-primary btn-lg px-5">Worker Login</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Features Grid -->
+<div class="row g-4 py-5 font-inter">
+  <div class="col-md-4">
+    <div class="card h-100 hover-card border-0 shadow-sm" style="transition: transform 0.2s;">
+      <div class="card-body p-4 text-center">
+        <div class="mb-3">
+          <i class="bi bi-diagram-3 text-primary" style="font-size: 2.5rem;"></i>
+        </div>
+        <h4 class="card-title">Dynamic Data Modules</h4>
+        <p class="text-muted">
+          Create custom data structures for Leads, Attendance, or Surveys without writing code.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100 hover-card border-0 shadow-sm" style="transition: transform 0.2s;">
+      <div class="card-body p-4 text-center">
+        <div class="mb-3">
+          <i class="bi bi-whatsapp text-success" style="font-size: 2.5rem;"></i>
+        </div>
+        <h4 class="card-title">Automated Campaigns</h4>
+        <p class="text-muted">
+          Run bulk WhatsApp and Voice Call campaigns with personalized scripts and language targeting.
+        </p>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card h-100 hover-card border-0 shadow-sm" style="transition: transform 0.2s;">
+      <div class="card-body p-4 text-center">
+        <div class="mb-3">
+          <i class="bi bi-shield-lock text-warning" style="font-size: 2.5rem;"></i>
+        </div>
+        <h4 class="card-title">Secure Role Management</h4>
+        <p class="text-muted">
+          Distinct roles for Managers (Oversight) and Workers (Operations) ensure data security.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}

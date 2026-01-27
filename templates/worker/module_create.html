@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Create Module{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card p-5">
+            <h2 class="mb-4">Create New Module</h2>
+            <p class="text-muted mb-4">Define a new data module for your organization (e.g. Leads, Attendance, Survey).
+            </p>
+
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="mb-3">
+                    <label class="form-label">Module Name</label>
+                    <input name="name" class="form-control" placeholder="e.g. Sales Leads 2024" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" class="form-control" rows="3"
+                        placeholder="Briefly describe the purpose of this module..."></textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 d-flex-mobile-stack mt-4">
+                    <a href="{{ url_for('worker.dashboard') }}" class="btn btn-light">Cancel</a>
+                    <button class="btn btn-primary">Create & Configure Fields &rarr;</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

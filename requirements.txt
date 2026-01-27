@@ -1,0 +1,16 @@
+Flask
+Flask-SQLAlchemy
+Flask-Migrate
+Flask-Login
+Flask-WTF
+psycopg2-binary
+python-dotenv
+twilio
+requests
+gunicorn
+openpyxl
+pandas
+gtts
+googletrans==4.0.0rc1
+edge-tts
+asyncio

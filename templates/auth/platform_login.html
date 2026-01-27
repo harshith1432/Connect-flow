@@ -1,0 +1,46 @@
+{% extends 'base_auth.html' %}
+{% block title %}Platform Admin Login{% endblock %}
+{% block content %}
+<div class="auth-container">
+  <div class="auth-visual">
+    <h2>Platform Control</h2>
+    <p>Manage organizations and oversee the entire SaaS ecosystem.</p>
+  </div>
+  <div class="auth-form-container">
+    <div class="auth-form-box">
+      <div class="text-center mb-4">
+        <h3>Admin Login</h3>
+        <p class="text-muted">Secure platform access</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, msg in messages %}
+      <div
+        class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }}">
+        {{msg}}
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+        <div class="mb-3">
+          <label class="form-label">Email Address</label>
+          <input name="email" type="email" class="form-control" placeholder="admin@platform.com" required />
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Password</label>
+          <input name="password" type="password" class="form-control" placeholder="••••••••" required />
+        </div>
+        <button class="btn btn-primary w-full py-3">Sign In to Platform</button>
+
+        <div class="text-center mt-4">
+          <a href="{{ url_for('main.index') }}" class="text-muted small text-decoration-none">Back to Home</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

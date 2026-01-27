@@ -1,0 +1,279 @@
+{% extends 'base_auth.html' %}
+{% block title %}Sign In - ConnectFlow{% endblock %}
+{% block content %}
+<div class="auth-page-wrapper">
+  <div class="auth-card-premium shadow-2xl animate-in">
+    <div class="auth-card-sidebar">
+      <div class="sidebar-top">
+        <div class="brand-logo mb-4">
+          <i class="bi bi-hexagon-fill text-accent fs-1"></i>
+        </div>
+        <h2>Connect<span class="text-accent">Flow</span></h2>
+        <p>Empowering your workforce with intelligent communication tools.</p>
+      </div>
+      <div class="sidebar-bottom">
+        <p class="small opacity-75">Designed & Developed by Harshith D</p>
+      </div>
+    </div>
+
+    <div class="auth-card-content">
+      <div class="auth-header mb-5">
+        <h1 class="h3 fw-bold text-dark">Welcome Back</h1>
+        <p class="text-muted">Sign in to manage your organization.</p>
+      </div>
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+      {% for category, msg in messages %}
+      <div
+        class="alert-premium alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }} mb-4 animate-in">
+        <i
+          class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-circle' if category == 'error' else 'info-circle' }}-fill me-2"></i>
+        {{msg}}
+      </div>
+      {% endfor %}
+      {% endif %}
+      {% endwith %}
+
+      <form method="post" action="{{ url_for('org.login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <div class="form-group mb-4">
+          <label class="form-label-premium">Email Address</label>
+          <div class="input-group-premium">
+            <i class="bi bi-envelope"></i>
+            <input name="email" type="email" class="form-control-premium" placeholder="name@company.com" required
+              autocomplete="email" />
+          </div>
+        </div>
+
+        <div class="form-group mb-5">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label-premium mb-0">Password</label>
+            <a href="{{ url_for('org.forgot_password') }}"
+              class="text-primary small fw-semibold text-decoration-none">Forgot Password?</a>
+          </div>
+          <div class="input-group-premium">
+            <i class="bi bi-lock"></i>
+            <input type="password" name="password" class="form-control-premium" placeholder="••••••••" required
+              autocomplete="current-password" />
+          </div>
+        </div>
+
+        <button class="btn-premium btn-primary-premium w-100 mb-4 py-3">
+          Sign In <i class="bi bi-arrow-right ms-2"></i>
+        </button>
+
+        <div class="auth-footer text-center">
+          <p class="text-muted small mb-0">
+            New organization? <a href="{{ url_for('org.register') }}"
+              class="fw-bold text-primary text-decoration-none">Create an account</a>
+          </p>
+          <a href="{{ url_for('main.index') }}"
+            class="d-inline-block mt-4 text-muted small text-decoration-none hover-primary">
+            <i class="bi bi-house-door me-1"></i> Back to Home
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  :root {
+    --accent-color: #00C4CC;
+    --primary-gradient: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+    --primary-vibrant: #6c5ce7;
+  }
+
+  body {
+    background: #f0f2f5;
+    font-family: 'Poppins', sans-serif;
+    overflow-x: hidden;
+  }
+
+  .auth-page-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  .auth-card-premium {
+    width: 100%;
+    max-width: 900px;
+    background: white;
+    border-radius: 30px;
+    display: flex;
+    overflow: hidden;
+    min-height: 600px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .auth-card-sidebar {
+    width: 350px;
+    background: var(--primary-gradient);
+    color: white;
+    padding: 60px 40px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+  }
+
+  .auth-card-sidebar::after {
+    content: '';
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    bottom: -30px;
+    right: -30px;
+  }
+
+  .sidebar-top h2 {
+    font-weight: 800;
+    font-size: 2.2rem;
+    letter-spacing: -0.03em;
+    margin-bottom: 15px;
+    color: white !important;
+  }
+
+  .sidebar-top p {
+    font-size: 1rem;
+    opacity: 0.8;
+    line-height: 1.6;
+  }
+
+  .auth-card-content {
+    flex: 1;
+    padding: 60px 80px;
+    background: white;
+  }
+
+  .form-label-premium {
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #64748b;
+    margin-bottom: 10px;
+  }
+
+  .input-group-premium {
+    display: flex;
+    align-items: center;
+    background: #f8fafc;
+    border: 2px solid #f1f5f9;
+    border-radius: 16px;
+    padding: 0 18px;
+    transition: all 0.3s ease;
+  }
+
+  .input-group-premium:focus-within {
+    border-color: var(--primary-vibrant);
+    background: white;
+    box-shadow: 0 8px 20px rgba(108, 92, 231, 0.08);
+  }
+
+  .input-group-premium i {
+    color: #94a3b8;
+    font-size: 1.1rem;
+    margin-right: 12px;
+  }
+
+  .form-control-premium {
+    background: transparent !important;
+    border: none !important;
+    padding: 14px 0 !important;
+    width: 100%;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #1e293b;
+    box-shadow: none !important;
+  }
+
+  .btn-premium {
+    padding: 14px 30px;
+    border-radius: 16px;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+  }
+
+  .btn-primary-premium {
+    background: var(--primary-vibrant);
+    color: white;
+    box-shadow: 0 8px 25px rgba(108, 92, 231, 0.3);
+  }
+
+  .btn-primary-premium:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(108, 92, 231, 0.4);
+    background: #5b4cc4;
+  }
+
+  .animate-in {
+    animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .alert-premium {
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .alert-danger {
+    background: #fef2f2;
+    border: 1px solid #fee2e2;
+    color: #991b1b;
+  }
+
+  .alert-success {
+    background: #f0fdf4;
+    border: 1px solid #dcfce7;
+    color: #166534;
+  }
+
+  .hover-primary:hover {
+    color: var(--primary-vibrant) !important;
+  }
+
+  @media (max-width: 768px) {
+    .auth-card-premium {
+      flex-direction: column;
+      max-width: 450px;
+      border-radius: 20px;
+    }
+
+    .auth-card-sidebar {
+      width: 100%;
+      padding: 40px;
+      min-height: auto;
+    }
+
+    .auth-card-content {
+      padding: 40px 30px;
+    }
+  }
+</style>
+{% endblock %}

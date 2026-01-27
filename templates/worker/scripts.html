@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% block title %}{{ module.name }} - Scripts{% endblock %}
+{% block content %}
+<div class="row align-items-center mb-3">
+    <div class="col text-start">
+        <div class="mb-1">
+            <a href="{{ url_for('worker.manage_groups', mid=module.id) }}"
+                class="text-muted text-decoration-none small text-uppercase fw-bold">
+                <i class="bi bi-chevron-left me-1"></i>Back to Groups
+            </a>
+        </div>
+        <h1 class="mb-0">Manage Scripts</h1>
+        <p class="text-muted mb-0">Create and manage message templates for <strong>{{ group.name }}</strong> ({{
+            module.name }})
+        </p>
+    </div>
+</div>
+
+<div class="row g-3 align-items-start">
+    <div class="col-lg-4">
+        <div class="card p-3 border-0 shadow-sm">
+            <h4 class="mb-4 text-primary">Create New Script</h4>
+            <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+                <div class="mb-3">
+                    <label class="form-label">Communication Type</label>
+                    <select name="type" class="form-select">
+                        <option value="whatsapp_text">WhatsApp (Text & Voice)</option>
+                        <option value="call">Voice Call </option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Language</label>
+                    <select name="language" class="form-select">
+                        <option value="English">English</option>
+                        <option value="Hindi">Hindi</option>
+                        <option value="Kannada">Kannada</option>
+                        <option value="Tamil">Tamil</option>
+                        <option value="Telugu">Telugu</option>
+                        <option value="Malayalam">Malayalam</option>
+                        <option value="Marathi">Marathi</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" id="contentLabel">Script Content</label>
+                    <textarea name="content" id="scriptContent" class="form-control" rows="8"
+                        placeholder="Type your message here..." required
+                        style="min-height: 150px; resize: vertical;"></textarea>
+
+                    <!-- Voice Script Field (Hidden by default) -->
+                    <div id="voiceScriptContainer" class="mt-3" style="display: none;">
+                        <label class="form-label text-primary">Voice Script Content (Native Language)</label>
+                        <textarea name="voice_content" id="voiceContent" class="form-control" rows="6"
+                            placeholder="Type the script for voice generation here..."
+                            style="min-height: 120px; resize: vertical;"></textarea>
+                        <div class="form-text">If left empty, the main script content above will be used.</div>
+                    </div>
+
+                    <!-- Insert Placeholder Buttons -->
+                    <div class="mt-3">
+                        <label class="form-label text-muted small fw-bold">Insert Placeholder:</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for field in fields %}
+                            <button type="button" class="btn btn-sm btn-outline-primary placeholder-btn"
+                                data-field="{{ field.name }}">
+                                {{ field.name }}
+                            </button>
+                            {% endfor %}
+                        </div>
+                        <div class="form-text mt-2">Click a button to insert a placeholder at cursor position.</div>
+                    </div>
+
+
+                    <div class="mt-4">
+                        <button class="btn btn-primary w-100 py-2">
+                            <i class="bi bi-save me-2"></i>Save Script
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card p-3 border-0 shadow-sm">
+            <h4 class="mb-3">Existing Scripts</h4>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width: 20%;">Type</th>
+                            <th style="width: 15%;">Language</th>
+                            <th>Content Preview</th>
+                            <th style="width: 10%;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in scripts %}
+                        <tr>
+                            <td>
+                                {% if s.type == 'whatsapp_text' %}
+                                <span class="badge bg-success text-white"><i class="bi bi-whatsapp me-1"></i>
+                                    Text</span>
+                                {% elif s.type == 'whatsapp_voice' %}
+                                <span class="badge bg-success text-white"><i class="bi bi-mic me-1"></i> Voice</span>
+                                {% else %}
+                                <span class="badge bg-primary text-white"><i class="bi bi-telephone me-1"></i>
+                                    Call</span>
+                                {% endif %}
+                            </td>
+                            <td><span class="text-muted fw-bold small">{{ s.language }}</span></td>
+                            <td>
+                                <div class="text-muted small text-truncate" style="max-width: 350px;">
+                                    {{ s.content }}
+                                </div>
+                                {% if s.meta and s.meta.get('preview_url') %}
+                                <div class="mt-1">
+                                    <audio controls class="w-100" style="height: 30px;">
+                                        <source src="{{ url_for('static', filename=s.meta.get('preview_url')) }}"
+                                            type="audio/mpeg">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                </div>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{{ url_for('worker.edit_script', sid=s.id) }}"
+                                    class="btn btn-sm btn-light text-primary border-0 me-1">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form method="post" action="{{ url_for('worker.delete_script', sid=s.id) }}"
+                                    class="d-inline" onsubmit="return confirm('Delete this script?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <button class="btn btn-sm btn-light text-danger border-0">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <i class="bi bi-file-text display-4 text-muted opacity-25 mb-3 d-block"></i>
+                                <div class="text-muted">No scripts created yet.</div>
+                                <div class="small text-muted">Use the form on the left to add one.</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+
+    function updateScriptRules() {
+        const type = document.getElementById('scriptType')?.value || document.querySelector('select[name="type"]').value; // Handle ID missing?
+        const lang = document.getElementById('scriptLanguage')?.value || document.querySelector('select[name="language"]').value;
+        const langHelp = document.getElementById('langHelp');
+
+        const contentLabel = document.getElementById('contentLabel');
+        const voiceContainer = document.getElementById('voiceScriptContainer');
+
+        let helpText = "";
+        let colorClass = "text-muted";
+
+        // Reset visibility
+        if (voiceContainer) voiceContainer.style.display = 'none';
+        if (contentLabel) contentLabel.textContent = "Script Content";
+
+        if (type === 'whatsapp_text') {
+            helpText = "⚠️ <strong>Rule:</strong> WhatsApp Text scripts should be written in <strong>ENGLISH</strong> only.";
+            colorClass = "text-warning";
+
+            // Show Voice Script field
+            if (voiceContainer) {
+                voiceContainer.style.display = 'block';
+                contentLabel.textContent = "Text Message Content (English)";
+            }
+
+        } else if (type === 'call') {
+            if (lang === 'Hindi') {
+                helpText = "✅ Write the script in <strong>Hindi</strong>.";
+                colorClass = "text-success";
+            } else if (lang === 'English') {
+                helpText = "✅ Write the script in <strong>English</strong>.";
+                colorClass = "text-success";
+            } else {
+                helpText = `⚠️ <strong>Rule:</strong> For ${lang}, the system defaults to English logic. Please write the script in <strong>ENGLISH</strong>.`;
+                colorClass = "text-danger";
+            }
+        }
+
+        if (langHelp) {
+            langHelp.innerHTML = helpText;
+            langHelp.className = "form-text mt-1 " + colorClass;
+        }
+    }
+
+    // Placeholder Logic Updated for Multiple Textareas
+    document.addEventListener('DOMContentLoaded', function () {
+        // Init rules
+        const typeSelect = document.querySelector('select[name="type"]');
+        const langSelect = document.querySelector('select[name="language"]');
+
+        if (typeSelect) typeSelect.addEventListener('change', updateScriptRules);
+        if (langSelect) langSelect.addEventListener('change', updateScriptRules);
+
+        updateScriptRules(); // Initial call
+
+        // Track active textarea
+        let activeTextarea = document.getElementById('scriptContent');
+        const voiceTextarea = document.getElementById('voiceContent');
+
+        [activeTextarea, voiceTextarea].forEach(ta => {
+            if (ta) {
+                ta.addEventListener('focus', function () {
+                    console.log("Focused:", this.id);
+                    activeTextarea = this;
+                });
+                // Also update on mouseup to catch clicks if focus was already there
+                ta.addEventListener('mouseup', function () {
+                    console.log("MouseUp:", this.id);
+                    activeTextarea = this;
+                });
+            } else {
+                console.warn("Textarea element not found");
+            }
+        });
+
+        // Button Click (Use mousedown to prevent focus loss)
+        const buttons = document.querySelectorAll('.placeholder-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('mousedown', function (e) {
+                e.preventDefault(); // Prevent button from stealing focus
+
+                console.log("Insert requested. Active:", activeTextarea ? activeTextarea.id : "None");
+
+                if (!activeTextarea) return;
+
+                const fieldName = this.getAttribute('data-field');
+                // Split braces to prevent Jinja from interpreting this as a template tag
+                const text = '{' + '{' + fieldName + '}}';
+
+                activeTextarea.focus();
+
+                if (typeof activeTextarea.setRangeText === 'function') {
+                    activeTextarea.setRangeText(text, activeTextarea.selectionStart, activeTextarea.selectionEnd, 'end');
+                } else {
+                    const start = activeTextarea.selectionStart;
+                    const end = activeTextarea.selectionEnd;
+                    const before = activeTextarea.value.substring(0, start);
+                    const after = activeTextarea.value.substring(end, activeTextarea.value.length);
+                    activeTextarea.value = before + text + after;
+                    activeTextarea.selectionStart = activeTextarea.selectionEnd = start + text.length;
+                }
+
+                activeTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+            // Remove click listener if any to avoid double handling
+            btn.removeEventListener('click', function () { });
+        });
+    });
+
+    // Init
+    document.addEventListener('DOMContentLoaded', updateScriptRules);
+</script>
+{% endblock %}
