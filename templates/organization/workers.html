@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}Organization Workers{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ul class="breadcrumb-premium d-flex align-items-center mb-0 p-0">
+            <li class="breadcrumb-item-premium">
+                <a href="{{ url_for('org.dashboard') }}">
+                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                </a>
+            </li>
+            <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50">
+                <i class="bi bi-chevron-right small"></i>
+            </li>
+            <li class="breadcrumb-item-premium active fw-bold text-dark">
+                Your Team
+            </li>
+        </ul>
+    </nav>
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <h1 class="mb-0">Your Team</h1>
+        {% if subscription and subscription.status == 'inactive' %}
+        <button class="btn btn-secondary btn-auto-mobile" disabled title="Subscription Inactive">
+            + Add Worker (Inactive)
+        </button>
+        {% else %}
+        <a href="{{ url_for('org.create_worker') }}" class="btn btn-primary btn-auto-mobile">
+            + Add Worker
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for w in workers %}
+            <tr>
+                <td>{{ w.email }}</td>
+                <td><span class="badge bg-secondary">Worker</span></td>
+                <td><span class="badge bg-success">Active</span></td>
+                <td>
+                    <!-- Future: Toggle/Edit -->
+                    <form method="post" action="{{ url_for('org.toggle_worker', wid=w.id) }}" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <button class="btn btn-sm btn-outline-warning" disabled
+                            title="Feature coming soon">Disable</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="4" class="text-center text-muted">No workers found. Create one to get started.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Subscription Plans{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <nav aria-label="breadcrumb">
+        <ul class="breadcrumb-premium d-flex align-items-center mb-0 p-0">
+            <li class="breadcrumb-item-premium">
+                <a href="{{ url_for('org.dashboard') }}">
+                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                </a>
+            </li>
+            <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50">
+                <i class="bi bi-chevron-right small"></i>
+            </li>
+            <li class="breadcrumb-item-premium active fw-bold text-dark">
+                Subscription Plans
+            </li>
+        </ul>
+    </nav>
+</div>
+
+<div class="text-center mb-5">
+    <h2 class="fw-bold">Choose Your Plan</h2>
+    <p class="text-muted">Scale your customer care with the right features.</p>
+</div>
+
+<div class="row g-4 justify-content-center">
+    {% for plan in plans %}
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm plan-card {% if plan.name|lower == 'pro' %}plan-card-pro border-primary{% endif %}"
+            style="border-radius: 20px; transition: transform 0.3s ease;">
+            {% if plan.name|lower == 'pro' %}
+            <div class="position-absolute top-0 start-50 translate-middle">
+                <span class="badge bg-primary px-3 py-2" style="border-radius: 20px;">MOST POPULAR</span>
+            </div>
+            {% endif %}
+
+            <div class="card-body p-5 text-center">
+                <h4 class="fw-bold mb-3">{{ plan.name }}</h4>
+                <div class="mb-4">
+                    <span class="display-5 fw-bold">₹{{ plan.price|int }}</span>
+                    <span class="text-muted">/{{ plan.billing_interval }}</span>
+                </div>
+                <p class="text-muted small mb-4">{{ plan.description }}</p>
+
+                <ul class="list-unstyled text-start mb-5">
+                    {% for feature in plan.features %}
+                    <li class="mb-3 d-flex align-items-center">
+                        <i class="bi bi-check-circle-fill text-success me-3"></i>
+                        <span>{{ feature }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+
+                <div class="d-grid mt-auto">
+                    <a href="{{ url_for('org.checkout', plan_id=plan.id) }}"
+                        class="btn {% if plan.name|lower == 'pro' %}btn-primary{% else %}btn-outline-primary{% endif %} py-3 fw-bold"
+                        style="border-radius: 15px;">
+                        Select Plan
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="text-center mt-5">
+    <p class="text-muted">Need a custom plan? <a href="#" class="text-primary fw-bold text-decoration-none">Contact
+            Sales</a></p>
+</div>
+
+<style>
+    .plan-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .plan-card-pro {
+        border: 2px solid var(--primary-color) !important;
+    }
+
+    .display-5 {
+        font-size: 2.5rem;
+    }
+</style>
+{% endblock %}

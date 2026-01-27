@@ -1,0 +1,277 @@
+{% extends 'base.html' %}
+{% block title %}Campaign Report - {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-md-6">
+        <div class="mb-1">
+            <a href="{{ url_for('worker.campaigns', gid=campaign.group_id) }}"
+                class="text-muted text-decoration-none small text-uppercase fw-bold">
+                <i class="bi bi-chevron-left me-1"></i>Back to Campaigns
+            </a>
+        </div>
+        <h2 class="fw-bold mb-0">{{ campaign.name }}</h2>
+        <div class="d-flex align-items-center mt-2">
+            <span class="badge bg-light text-dark border me-2">{{ campaign.type|replace('_', ' ')|title }}</span>
+            <span class="text-muted small">Created: {{ campaign.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+        </div>
+    </div>
+    <div class="col-md-6 text-md-end mt-3 mt-md-0">
+        <a href="{{ url_for('worker.download_report', cid=campaign.id) }}" class="btn btn-outline-primary me-2">
+            <i class="bi bi-download me-1"></i> Download CSV
+        </a>
+        <form action="{{ url_for('worker.delete_campaign', cid=campaign.id) }}" method="post" style="display:inline;"
+            onsubmit="return confirm('Are you sure you want to delete this campaign permanently?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash me-1"></i> Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-4 mb-4">
+    <!-- Total -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Total Contacts</div>
+                <div class="display-6 fw-bold">{{ stats.total }}</div>
+            </div>
+        </div>
+    </div>
+    <!-- Reached -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 border-start border-4 border-info">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Reached (Delivered)</div>
+                <div class="display-6 fw-bold text-info">
+                    {{ stats.counts.get('delivered', 0) + stats.counts.get('answered', 0) +
+                    stats.counts.get('completed', 0) }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Read -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 border-start border-4 border-primary">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Read / Seen</div>
+                <div class="display-6 fw-bold text-primary">
+                    {{ stats.counts.get('read', 0) }}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Failed -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 border-start border-4 border-danger">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Failed</div>
+                <div class="display-6 fw-bold text-danger">{{ stats.counts.get('failed', 0) +
+                    stats.counts.get('undelivered', 0) }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Sending Status -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 border-start border-4 border-warning">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1">In Pipeline / Sent</div>
+                <div class="display-6 fw-bold text-warning">
+                    {{ stats.counts.get('queued', 0) + stats.counts.get('sent', 0) + stats.counts.get('initiated', 0) +
+                    stats.counts.get('ringing', 0) }}
+                </div>
+                <div class="small text-muted mt-1">Waiting for Twilio updates</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-5">
+    <!-- Chart -->
+    <div class="col-md-6 mb-4 mb-md-0">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">Analytics Overview</h5>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center" style="min-height: 300px;">
+                <canvas id="campaignChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <!-- Info -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold">Campaign Details</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted" style="width: 140px;">Script ID</td>
+                            <td class="fw-bold">{{ campaign.script_id or '-' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Status</td>
+                            <td><span class="badge bg-primary">{{ campaign.status|upper }}</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Target Group</td>
+                            <td class="fw-bold">{{ campaign.group.name if campaign.group else 'Unknown' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Created</td>
+                            <td>{{ campaign.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Duration</td>
+                            <td class="fw-bold">
+                                {% if stats.start and stats.end %}
+                                {% set diff = stats.end - stats.start %}
+                                {{ diff }}
+                                {% else %}
+                                -
+                                {% endif %}
+                                <div class="small text-muted fw-normal mt-1">
+                                    Start: {{ stats.start.strftime('%H:%M:%S') if stats.start else '-' }}<br>
+                                    End: {{ stats.end.strftime('%H:%M:%S') if stats.end else '-' }}
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Log Table -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold">Detailed Delivery Logs</h5>
+        <span class="badge bg-light text-dark">Total: {{ stats.total }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0 table-hover">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Time</th>
+                    <th>Contact ID</th>
+                    <th>Channel</th>
+                    <th>Status</th>
+                    <th>Error Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td class="ps-4 text-nowrap text-muted small">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                    </td>
+                    <td class="fw-bold text-primary">#{{ log.contact_id }}</td>
+                    <td>
+                        {% if 'whatsapp' in log.channel %}
+                        <i class="bi bi-whatsapp text-success me-1"></i> WhatsApp
+                        {% else %}
+                        <i class="bi bi-telephone text-primary me-1"></i> Call
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.status in ['sent', 'delivered', 'read', 'completed'] %}
+                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">{{
+                            log.status|upper }}</span>
+                        {% elif log.status in ['failed', 'undelivered'] %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">{{
+                            log.status|upper }}</span>
+                        {% elif log.status in ['queued', 'initiated', 'ringing'] %}
+                        <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">{{
+                            log.status|upper }}</span>
+                        {% else %}
+                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">{{ log.status|upper
+                            }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="small text-danger" style="max-width: 300px; word-wrap: break-word;">
+                        {% if log.error %}
+                        <i class="bi bi-exclamation-circle me-1"></i>{{ log.error }}
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 text-muted">No delivery logs found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const ctx = document.getElementById('campaignChart').getContext('2d');
+        const labels = [];
+        const data = [];
+        const colors = [];
+
+        // Prepare data from backend stats
+        // Note: Jinja variable to JS object
+        const counts = {{ stats.counts | tojson
+    }};
+
+    const colorMap = {
+        'read': '#007bff',       // Vibrant Blue
+        'delivered': '#28a745',  // Solid Green
+        'answered': '#28a745',   // Solid Green (for calls)
+        'completed': '#198754',  // Darker Green
+        'sent': '#ffc107',       // Yellow
+        'queued': '#fd7e14',     // Orange
+        'initiated': '#fd7e14',  // Orange
+        'ringing': '#17a2b8',    // Cyan
+        'in-progress': '#17a2b8',
+        'failed': '#dc3545',     // Red
+        'undelivered': '#dc3545' // Red
+    };
+
+    for (const [status, count] of Object.entries(counts)) {
+        labels.push(status.toUpperCase());
+        data.push(count);
+        colors.push(colorMap[status] || '#6c757d'); // Default gray
+    }
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: colors,
+                borderWidth: 0,
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+    });
+</script>
+{% endblock %}

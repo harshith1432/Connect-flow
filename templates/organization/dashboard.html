@@ -1,0 +1,210 @@
+{% extends 'base.html' %}
+{% block title %}Organization Dashboard{% endblock %}
+{% block content %}
+<div class="mb-4 text-center text-md-start">
+  <h1 class="h2 mb-1">Organization Overview</h1>
+  <p style="color: var(--text-muted);">Monitor your team and communication channels</p>
+</div>
+
+<!-- Subscription State Banners -->
+<div class="row g-3 mb-4">
+  {% if not subscription %}
+  <div class="col-12">
+    <div class="alert alert-primary border-0 shadow-sm d-flex align-items-center p-4 mb-0" style="border-radius: 15px;">
+      <i class="bi bi-shield-check fs-2 me-4"></i>
+      <div class="flex-grow-1">
+        <h5 class="fw-bold mb-1">Subscription Required</h5>
+        <p class="mb-0 small">Welcome! Your account is approved. Please purchase a subscription plan to start adding
+          workers and using our services.</p>
+      </div>
+      <a href="{{ url_for('org.browse_plans') }}" class="btn btn-primary fw-bold px-4 py-2"
+        style="border-radius: 10px;">Buy Subscription Plan</a>
+    </div>
+  </div>
+  {% elif grace_days_left %}
+  <div class="col-12">
+    <div class="alert alert-danger border-0 shadow-sm d-flex align-items-center p-4 mb-0" style="border-radius: 15px;">
+      <i class="bi bi-clock-history fs-2 me-4"></i>
+      <div class="flex-grow-1">
+        <h5 class="fw-bold mb-1">Grace Period Active</h5>
+        <p class="mb-0 small">Your subscription has expired! You have <strong>{{ grace_days_left }} day(s)</strong>
+          remaining to renew before services are fully suspended.</p>
+      </div>
+      <a href="{{ url_for('org.browse_plans') }}" class="btn btn-danger fw-bold px-4 py-2"
+        style="border-radius: 10px;">Renew Now</a>
+    </div>
+  </div>
+  {% elif days_until_expiry %}
+  <div class="col-12">
+    <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4 mb-0" style="border-radius: 15px;">
+      <i class="bi bi-exclamation-triangle-fill fs-2 me-4"></i>
+      <div class="flex-grow-1">
+        <h5 class="fw-bold mb-1">Subscription Ending Soon</h5>
+        <p class="mb-0 small">Your subscription is ending within <strong>{{ days_until_expiry }} day(s)</strong>. Please
+          subscribe to continue our services.</p>
+      </div>
+      <a href="{{ url_for('org.browse_plans') }}" class="btn btn-dark fw-bold px-4 py-2"
+        style="border-radius: 10px;">Subscribe Now</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Stats Grid -->
+<!-- Stats Grid -->
+<!-- Stats Grid -->
+<!-- Stats Grid -->
+<div class="row g-4 mb-5">
+  <!-- Active Workers -->
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm py-3 h-100" style="border-radius: 20px;">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <i class="bi bi-people-fill fs-2 text-primary"></i>
+        </div>
+        <h3 class="fw-bold text-dark mb-1">{{ worker_count }}</h3>
+        <div class="text-uppercase fw-bold text-muted small" style="letter-spacing: 0.5px;">Active Workers</div>
+      </div>
+    </div>
+  </div>
+  <!-- Messages Sent -->
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm py-3 h-100" style="border-radius: 20px;">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <i class="bi bi-chat-left-text-fill fs-2 text-dark"></i>
+        </div>
+        <h3 class="fw-bold text-dark mb-1">{{ total_messages }}</h3>
+        <div class="text-uppercase fw-bold text-muted small" style="letter-spacing: 0.5px;">Messages Sent</div>
+      </div>
+    </div>
+  </div>
+  <!-- Calls Made -->
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm py-3 h-100" style="border-radius: 20px;">
+      <div class="card-body text-center">
+        <div class="mb-3">
+          <i class="bi bi-telephone-fill fs-2 text-success"></i>
+        </div>
+        <h3 class="fw-bold text-dark mb-1">{{ total_calls }}</h3>
+        <div class="text-uppercase fw-bold text-muted small" style="letter-spacing: 0.5px;">Calls Made</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if subscription and subscription.status == 'inactive' %}
+<!-- Subscription Completed Popup -->
+<div class="modal fade" id="subscriptionInactivePopup" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
+  aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+      <div class="modal-body p-5 text-center">
+        <div class="mb-4">
+          <div class="bg-warning-subtle d-inline-flex p-4 rounded-circle">
+            <i class="bi bi-exclamation-octagon text-warning fs-1"></i>
+          </div>
+        </div>
+        <h2 class="fw-bold mb-3">Subscription Plan Completed</h2>
+        <p class="text-muted fs-5 mb-5">
+          Your subscription plan has been Completed. Please Subscribe to continue our premium services.
+        </p>
+
+        <div class="row g-4 mb-5">
+          <div class="col-md-6 mx-auto">
+            <div class="card border-primary p-4 bg-light shadow-sm">
+              <h5 class="fw-bold">Renew Access</h5>
+              <p class="small text-muted">Restore worker login and all management features.</p>
+              <a href="{{ url_for('org.browse_plans') }}" class="btn btn-primary w-100 fw-bold py-3"
+                style="border-radius: 12px;">Browse Plans</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-muted small">
+          Need help? <a href="#" class="text-primary text-decoration-none">Contact Support</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var myModal = new bootstrap.Modal(document.getElementById('subscriptionInactivePopup'));
+    myModal.show();
+  });
+</script>
+{% endif %}
+
+<div class="row g-4">
+  <!-- Management Actions -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <h3>Team Management</h3>
+      <p class="text-muted mb-4">Create accounts for your staff to manage modules and campaigns.</p>
+      <a href="{{ url_for('org.manage_workers') }}" class="btn btn-primary w-full">Manage Workers</a>
+    </div>
+  </div>
+
+  <!-- Configuration -->
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h3>Communication Settings</h3>
+        <a href="{{ url_for('org.communication_settings') }}" class="btn btn-outline-primary btn-sm">Configure</a>
+      </div>
+      <p class="text-muted mb-4">Review your number configuration and request access.</p>
+      {% if numbers %}
+      <ul class="list-unstyled mb-0">
+        {% for n in numbers %}
+        <li class="d-flex justify-content-between border-bottom py-2">
+          <span class="fw-bold">{{ n.number }}</span>
+          {% if n.is_platform_owned %}
+          <span class="badge bg-info text-white">Platform Default</span>
+          {% else %}
+          <span class="badge bg-success text-white">Custom ({{ 'Approved' if n.approved else 'Pending' }})</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-muted">No numbers assigned.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Read-Only Module View -->
+<div class="card mt-4">
+  <h3>Module Oversight</h3>
+  <div class="table-responsive">
+    <table class="table mt-3 align-middle">
+      <thead>
+        <tr>
+          <th>Module Name</th>
+          <th>Status</th>
+          <th>Records</th>
+          <th>Created At</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in modules %}
+        <tr>
+          <td class="fw-bold">
+            <a href="{{ url_for('org.module_detail', mid=m.id) }}" class="text-decoration-none">{{ m.name }}</a>
+          </td>
+          <td><span class="badge bg-light text-dark">{{ m.status }}</span></td>
+          <td>{{ m.records|length }}</td>
+          <td>{{ m.created_at.strftime('%Y-%m-%d') }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="4" class="text-center text-muted py-4">No modules created yet.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
