@@ -7,11 +7,11 @@ Supports both online (googletrans) and offline translation
 import re
 
 try:
-    from googletrans import Translator
+    from deep_translator import GoogleTranslator
     TRANSLATOR_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
     TRANSLATOR_AVAILABLE = False
-    print("[WARNING] googletrans not available. Install with: pip install googletrans==4.0.0rc1")
+    print("[WARNING] deep-translator not available. Install with: pip install deep-translator")
     print("[INFO] Using built-in translations for common messages...")
 
 # Pre-built translations for common placement messages
@@ -92,20 +92,7 @@ LANGUAGE_MAP = {
     'or': {'code': 'or', 'name': 'Odia', 'native': 'ଓଡ଼ିଆ'},
 }
 
-# Translator instance (lazily initialized)
-_translator = None
-
-
-def get_translator():
-    """Get or initialize the translator instance"""
-    global _translator
-    if TRANSLATOR_AVAILABLE and _translator is None:
-        try:
-            _translator = Translator()
-        except Exception as e:
-            print(f"[WARNING] Failed to initialize translator: {e}")
-            return None
-    return _translator
+# Note: deep-translator doesn't require a global translator instance
 
 
 def get_language_code(mother_tongue):
@@ -163,20 +150,19 @@ def translate_message(text, mother_tongue):
         # Try online translation first
         if TRANSLATOR_AVAILABLE:
             try:
-                translator = get_translator()
-                if translator:
-                    print(f"[INFO] Translating message to {LANGUAGE_MAP.get(lang_code, {}).get('name', lang_code)} using Google Translate...")
-                    
-                    translation = translator.translate(text, src_language='en', dest_language=lang_code)
-                    translated_text = translation['text']
-                    
-                    lang_name = LANGUAGE_MAP.get(lang_code, {}).get('name', lang_code)
-                    
-                    print(f"[SUCCESS] Message translated successfully to {lang_name}")
-                    print(f"[ORIGINAL] {text}")
-                    print(f"[TRANSLATED] {translated_text}")
-                    
-                    return translated_text, lang_code, lang_name
+                print(f"[INFO] Translating message to {LANGUAGE_MAP.get(lang_code, {}).get('name', lang_code)} using Google Translate...")
+                
+                # deep-translator uses a different API
+                translator = GoogleTranslator(source='en', target=lang_code)
+                translated_text = translator.translate(text)
+                
+                lang_name = LANGUAGE_MAP.get(lang_code, {}).get('name', lang_code)
+                
+                print(f"[SUCCESS] Message translated successfully to {lang_name}")
+                print(f"[ORIGINAL] {text}")
+                print(f"[TRANSLATED] {translated_text}")
+                
+                return translated_text, lang_code, lang_name
             except Exception as e:
                 print(f"[WARNING] Online translation failed: {str(e)}")
                 print(f"[INFO] Falling back to pre-built translations...")

@@ -112,6 +112,24 @@ class Subscription(db.Model):
     payment_method = db.Column(db.String(100)) # Card, UPI, etc.
     meta = db.Column(db.JSON)
 
+    @property
+    def is_expired(self):
+        from datetime import datetime
+        if self.status == 'inactive':
+            return True
+        if self.expires_at and datetime.utcnow() > self.expires_at:
+            return True
+        return False
+
+    @property
+    def display_status(self):
+        if self.status == 'inactive':
+            return 'INACTIVE'
+        from datetime import datetime
+        if self.expires_at and datetime.utcnow() > self.expires_at:
+            return 'EXPIRED'
+        return self.status.upper()
+
 
 class Payment(db.Model):
     __tablename__ = 'payments'

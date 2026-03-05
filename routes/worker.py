@@ -211,8 +211,19 @@ def add_field(mid):
     name = request.form['name']
     field_type = request.form['field_type']
     is_unique = request.form.get('is_unique') == 'true'
+    is_comm = request.form.get('is_communication') == 'true'
     
     meta = {}
+    if is_comm:
+        # Unset others in this module (module-level)
+        existing_fields = ModuleField.query.filter_by(module_id=m.id, group_id=None).all()
+        for ef in existing_fields:
+            if ef.meta and ef.meta.get('is_communication'):
+                new_meta = dict(ef.meta)
+                new_meta['is_communication'] = False
+                ef.meta = new_meta
+        meta['is_communication'] = True
+
     if field_type == 'calculated':
         meta['formula'] = request.form.get('formula')
     elif field_type == 'boolean':
@@ -265,7 +276,21 @@ def update_field(mid, fid):
     f.name = request.form['name']
     f.field_type = request.form['field_type']
     f.is_unique = request.form.get('is_unique') == 'true'
+    is_comm = request.form.get('is_communication') == 'true'
     
+    f.meta = f.meta or {}
+    if is_comm:
+        # Unset others in this module (module-level)
+        existing_fields = ModuleField.query.filter_by(module_id=m.id, group_id=None).all()
+        for ef in existing_fields:
+            if ef.id != f.id and ef.meta and ef.meta.get('is_communication'):
+                new_meta = dict(ef.meta)
+                new_meta['is_communication'] = False
+                ef.meta = new_meta
+        f.meta['is_communication'] = True
+    else:
+        f.meta['is_communication'] = False
+
     if f.field_type == 'calculated':
         f.meta = f.meta or {}
         f.meta['formula'] = request.form.get('formula')
@@ -293,8 +318,18 @@ def add_group_field(gid):
     name = request.form['name']
     field_type = request.form['field_type']
     is_unique = request.form.get('is_unique') == 'true'
+    is_comm = request.form.get('is_communication') == 'true'
     
     meta = {}
+    if is_comm:
+        # Unset others in this group
+        existing_fields = ModuleField.query.filter_by(module_id=m.id, group_id=g.id).all()
+        for ef in existing_fields:
+            if ef.meta and ef.meta.get('is_communication'):
+                new_meta = dict(ef.meta)
+                new_meta['is_communication'] = False
+                ef.meta = new_meta
+        meta['is_communication'] = True
     if field_type == 'calculated':
         meta['formula'] = request.form.get('formula')
     elif field_type == 'boolean':
@@ -348,6 +383,20 @@ def update_group_field(gid, fid):
     f.name = request.form['name']
     f.field_type = request.form['field_type']
     f.is_unique = request.form.get('is_unique') == 'true'
+    is_comm = request.form.get('is_communication') == 'true'
+
+    f.meta = f.meta or {}
+    if is_comm:
+        # Unset others in this group
+        existing_fields = ModuleField.query.filter_by(module_id=m.id, group_id=g.id).all()
+        for ef in existing_fields:
+            if ef.id != f.id and ef.meta and ef.meta.get('is_communication'):
+                new_meta = dict(ef.meta)
+                new_meta['is_communication'] = False
+                ef.meta = new_meta
+        f.meta['is_communication'] = True
+    else:
+        f.meta['is_communication'] = False
 
     if f.field_type == 'calculated':
         f.meta = f.meta or {}
@@ -617,29 +666,27 @@ def start_campaign(cid):
     is_whatsapp = 'whatsapp' in c.type
     service_name = "WhatsApp" if is_whatsapp else "Voice Call"
     
-    # 2. Check for ACTIVE custom number for this channel
-    active_query = CommunicationNumber.query.filter_by(
-        organization_id=c.organization_id, 
-        is_platform_owned=False,
-        active=True,
-        approved=True
-    )
+    # 2. Check for ANY ACTIVE number for this channel (Custom or Platform Default)
+    possible_channels = ['whatsapp', 'myoperator_whatsapp'] if is_whatsapp else ['voice', 'indian_voice', 'myoperator_voice', 'call']
     
-    has_active_custom = False
-    if is_whatsapp:
-        has_active_custom = active_query.filter(CommunicationNumber.channel_type == 'whatsapp').count() > 0
-    else:
-        has_active_custom = active_query.filter(CommunicationNumber.channel_type.in_(['voice', 'indian_voice'])).count() > 0
-        
-    # 3. If no active custom number, check if Default Access is Allowed
-    if not has_active_custom:
+    active_count = CommunicationNumber.query.filter(
+        CommunicationNumber.organization_id == c.organization_id,
+        CommunicationNumber.active == True,
+        CommunicationNumber.channel_type.in_(possible_channels)
+    ).count()
+    
+    has_active = active_count > 0
+    # Also check if Default Fallback is explicitly allowed in Org settings if no direct active number found
+    if not has_active:
         org = Organization.query.get(c.organization_id)
         default_allowed = org.allow_default_whatsapp if is_whatsapp else org.allow_default_voice
-        
-        if not default_allowed:
-             # Both Custom and Default are unavailable
-             flash(f'Organization Admin has disabled {service_name} services. Campaign paused.', 'danger')
-             return redirect(url_for('worker.campaigns', gid=c.group_id))
+        if default_allowed:
+            has_active = True
+
+    if not has_active:
+         # Both Custom and Default are unavailable
+         flash(f'Organization Admin has disabled {service_name} services. Campaign paused.', 'danger')
+         return redirect(url_for('worker.campaigns', gid=c.group_id))
 
     c.status = 'running'
     db.session.commit()
@@ -704,6 +751,8 @@ def start_campaign(cid):
             # 1. Prepare record data map for placeholders
             record_data = {}
             contact_phone = None
+            comm_field_phone = None
+            first_phone = None
             contact_id = None # We might need to map record to Contact or create one
 
             # Find or Create Contact for this record
@@ -716,15 +765,12 @@ def start_campaign(cid):
                 
                 # RELIABLE DETECTION: Use data type, not label
                 if field.field_type == 'phone':
-                    contact_phone = v.value
+                    if not first_phone:
+                        first_phone = v.value
+                    if field.meta and field.meta.get('is_communication'):
+                        comm_field_phone = v.value
 
-            # Fallback for older modules where field_type might not be 'phone' 
-            # (though validation now enforces it, better safe)
-            if not contact_phone:
-                for v in r.values:
-                    field = field_info.get(v.field_id)
-                    if field and ('phone' in field.name.lower() or 'contact' in field.name.lower()):
-                        contact_phone = v.value
+            contact_phone = comm_field_phone if comm_field_phone else first_phone
 
             if not contact_phone:
                 print(f"DEBUG: Record {r.id} missing phone field")
@@ -819,6 +865,16 @@ def start_campaign(cid):
                     if sender and sender.channel_type == 'indian_voice':
                         from services.exotel_service import make_exotel_call
                         make_exotel_call(
+                            c.organization_id,
+                            contact.id,
+                            tts_text=text_body,
+                            language=script.language,
+                            campaign_id=c.id,
+                            sender_number_id=c.sender_number_id
+                        )
+                    elif sender and sender.channel_type == 'myoperator_voice':
+                        from services.myoperator_service import make_myoperator_call
+                        make_myoperator_call(
                             c.organization_id,
                             contact.id,
                             tts_text=text_body,

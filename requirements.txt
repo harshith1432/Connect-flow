@@ -11,6 +11,6 @@ gunicorn
 openpyxl
 pandas
 gtts
-googletrans==4.0.0rc1
+deep-translator
 edge-tts
 asyncio

@@ -122,10 +122,10 @@
                     <div class="col-md-4">
                         <label class="detail-label">Status</label>
                         <div>
-                            {% if subscription and subscription.status == 'active' %}
+                            {% if subscription and subscription.display_status == 'ACTIVE' %}
                             <span class="badge bg-success">ACTIVE</span>
                             {% elif subscription %}
-                            <span class="badge bg-danger">{{ subscription.status|upper }}</span>
+                            <span class="badge bg-danger">{{ subscription.display_status }}</span>
                             {% else %}
                             <span class="badge bg-secondary">TRIAL</span>
                             {% endif %}
@@ -265,8 +265,8 @@
                     <div class="d-flex justify-content-between small">
                         <span class="text-muted">Status:</span>
                         <span
-                            class="fw-bold {% if subscription and subscription.status == 'active' %}text-success{% else %}text-danger{% endif %}">{{
-                            subscription.status|upper if subscription else 'INACTIVE' }}</span>
+                            class="fw-bold {% if subscription and subscription.display_status == 'ACTIVE' %}text-success{% else %}text-danger{% endif %}">{{
+                            subscription.display_status if subscription else 'INACTIVE' }}</span>
                     </div>
                     <div class="d-flex justify-content-between small">
                         <span class="text-muted">Billing Cycle:</span>
@@ -314,7 +314,7 @@
                     <h5 class="modal-title fw-bold">Configuration Communication Settings</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
-                <div class="modal-body p-4">
+                <div class="modal-body p-4" style="max-height: 70vh; overflow-y: auto;">
                     <p class="text-muted small mb-4">
                         Configure specific Twilio credentials for this organization.
                         If left blank, the system will use the platform's default environment variables.
@@ -406,6 +406,70 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- MyOperator Config -->
+                    <div class="mt-4 p-3 border rounded bg-light">
+                        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-telephone-fill me-2"
+                                style="color: #ff6b35;"></i>MyOperator Configuration (Indian Number)</h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Public API Token (Voice)</label>
+                                <input type="password" class="form-control form-control-sm bg-white"
+                                    name="myoperator_token"
+                                    value="{{ org.twilio_config.get('myoperator', {}).get('token', '') if org.twilio_config else '' }}"
+                                    placeholder="your_api_token">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Voice Number</label>
+                                <input type="text" class="form-control form-control-sm bg-white"
+                                    name="myoperator_number"
+                                    value="{{ org.twilio_config.get('myoperator', {}).get('number', '') if org.twilio_config else '' }}"
+                                    placeholder="+91...">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">WhatsApp Number</label>
+                                <input type="text" class="form-control form-control-sm bg-white"
+                                    name="myoperator_wa_number"
+                                    value="{{ org.twilio_config.get('myoperator', {}).get('wa_number', '') if org.twilio_config else '' }}"
+                                    placeholder="+91...">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">WhatsApp API Key</label>
+                                <input type="password" class="form-control form-control-sm bg-white"
+                                    name="myoperator_wa_key"
+                                    value="{{ org.twilio_config.get('myoperator', {}).get('wa_key', '') if org.twilio_config else '' }}"
+                                    placeholder="your_whatsapp_api_key">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">MyOperator Company ID</label>
+                                <input type="text" class="form-control form-control-sm bg-white"
+                                    name="myoperator_company_id"
+                                    value="{{ org.twilio_config.get('myoperator', {}).get('company_id', '') if org.twilio_config else '' }}"
+                                    placeholder="e.g. 697a372191ad199">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">OBD Secret Key</label>
+                                <input type="password" class="form-control form-control-sm bg-white"
+                                    name="myoperator_secret_key"
+                                    value="{{ org.twilio_config.get('myoperator', {}).get('secret_key', '') if org.twilio_config else '' }}"
+                                    placeholder="your_secret_key">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">OBD X-API-KEY</label>
+                                <input type="password" class="form-control form-control-sm bg-white"
+                                    name="myoperator_x_api_key"
+                                    value="{{ org.twilio_config.get('myoperator', {}).get('x_api_key', '') if org.twilio_config else '' }}"
+                                    placeholder="your_x_api_key">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Public IVR ID</label>
+                                <input type="text" class="form-control form-control-sm bg-white"
+                                    name="myoperator_ivr_id"
+                                    value="{{ org.twilio_config.get('myoperator', {}).get('ivr_id', '') if org.twilio_config else '' }}"
+                                    placeholder="e.g. 123456">
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="modal-footer border-0 p-4">
                     <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Cancel</button>
@@ -441,8 +505,8 @@
                         <div class="col-md-4">
                             <div class="text-muted small text-uppercase">Status</div>
                             <div
-                                class="fw-bold h5 mb-0 {% if subscription and subscription.status == 'active' %}text-success{% else %}text-danger{% endif %}">
-                                {{ subscription.status|upper if subscription else 'ACTIVE' }}
+                                class="fw-bold h5 mb-0 {% if subscription and subscription.display_status == 'ACTIVE' %}text-success{% else %}text-danger{% endif %}">
+                                {{ subscription.display_status if subscription else 'ACTIVE' }}
                             </div>
                         </div>
                     </div>

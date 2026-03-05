@@ -93,7 +93,7 @@
   </div>
 </div>
 
-{% if subscription and subscription.status == 'inactive' %}
+{% if subscription and subscription.is_expired %}
 <!-- Subscription Completed Popup -->
 <div class="modal fade" id="subscriptionInactivePopup" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
   aria-hidden="true">

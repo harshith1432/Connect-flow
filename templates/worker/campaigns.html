@@ -191,12 +191,13 @@
                     allSenderOptions.forEach(option => {
                         const channel = option.dataset.channel;
                         if (selectedType === 'call') {
-                            // Voice campaigns can use 'voice' or 'indian_voice'
-                            if (channel === 'voice' || channel === 'indian_voice') {
+                            // Voice campaigns can use 'voice', 'indian_voice', or 'myoperator_voice'
+                            if (['voice', 'indian_voice', 'myoperator_voice'].includes(channel)) {
                                 senderSelect.appendChild(option.cloneNode(true));
                             }
                         } else if (selectedType.startsWith('whatsapp')) {
-                            if (channel === 'whatsapp') {
+                            // WhatsApp campaigns can use 'whatsapp' or 'myoperator_whatsapp'
+                            if (['whatsapp', 'myoperator_whatsapp'].includes(channel)) {
                                 senderSelect.appendChild(option.cloneNode(true));
                             }
                         }
