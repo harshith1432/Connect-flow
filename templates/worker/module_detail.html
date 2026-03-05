@@ -239,6 +239,14 @@
                             </div>
                         </div>
 
+                        <div class="mb-3" id="communicationToggleSection" style="display: none;">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_communication" id="isCommunicationInput"
+                                    value="true">
+                                <label class="form-check-label" for="isCommunicationInput">Use for Communication (WhatsApp/Calls)</label>
+                            </div>
+                        </div>
+
                         <!-- Formula Builder (Calculated Field) -->
                         <div id="formulaBuilderSection" style="display: none;" class="mb-3 p-3 bg-light rounded border">
                             <label class="form-label fw-bold">Formula Builder</label>
@@ -288,10 +296,13 @@
                             <div>
                                 <span class="fw-bold">{{ f.name }}</span>
                                 <span class="badge bg-light text-muted border ms-2">{{ f.field_type|capitalize }}</span>
+                                {% if f.meta and f.meta.get('is_communication') %}
+                                <span class="badge bg-success ms-1 small"><i class="bi bi-chat-dots-fill me-1"></i>Comm</span>
+                                {% endif %}
                             </div>
                             <div class="d-flex gap-2">
                                 <button class="btn btn-sm btn-light text-primary border-0"
-                                    onclick="editField({{f.id}}, '{{f.name}}', '{{f.field_type}}', {{f.is_unique|lower}})">
+                                    onclick="editField({{f.id}}, '{{f.name}}', '{{f.field_type}}', {{f.is_unique|lower}}, {{ 'true' if f.meta and f.meta.get('is_communication') else 'false' }})">
                                     <i class="bi bi-pencil"></i>
                                 </button>
                                 <form
@@ -316,10 +327,12 @@
                     const fieldTypeInput = document.getElementById('fieldTypeInput');
                     const formulaSection = document.getElementById('formulaBuilderSection');
                     const logicSection = document.getElementById('logicBuilderSection');
+                    const commSection = document.getElementById('communicationToggleSection');
 
                     fieldTypeInput.addEventListener('change', function () {
                         formulaSection.style.display = this.value === 'calculated' ? 'block' : 'none';
                         logicSection.style.display = this.value === 'boolean' ? 'block' : 'none';
+                        commSection.style.display = this.value === 'phone' ? 'block' : 'none';
                     });
 
                     function insertPlaceholder(name, inputId) {
@@ -429,7 +442,7 @@
         })
     }
 
-    function editField(id, name, type, isUnique) {
+    function editField(id, name, type, isUnique, isCommunication) {
         // Change Title
         document.getElementById('fieldFormTitle').innerText = 'Edit Field';
         document.getElementById('fieldFormTitle').classList.add('text-primary');
@@ -442,6 +455,7 @@
         document.getElementById('fieldTypeInput').value = type;
         document.getElementById('fieldTypeInput').dispatchEvent(new Event('change'));
         document.getElementById('isUniqueInput').checked = isUnique;
+        document.getElementById('isCommunicationInput').checked = isCommunication || false;
 
         // Handle Formula/Logic Meta
         // We'll need to fetch the field metadata to populate the builder
@@ -473,7 +487,9 @@
         // Reset Inputs
         document.getElementById('fieldNameInput').value = '';
         document.getElementById('fieldTypeInput').value = 'text';
+        document.getElementById('fieldTypeInput').dispatchEvent(new Event('change'));
         document.getElementById('isUniqueInput').checked = false;
+        document.getElementById('isCommunicationInput').checked = false;
 
         // Reset Button Text
         document.getElementById('fieldSubmitBtn').innerText = 'Add Field';

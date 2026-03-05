@@ -27,12 +27,11 @@ from models.models import Organization, Contact, DeliveryLog
 from config import Config
 
 from services.twilio_service import send_whatsapp_text, send_whatsapp_voice
-
-logger = logging.getLogger(__name__)
+from services.myoperator_service import send_myoperator_whatsapp
 
 def dispatch_whatsapp(organization_id, contact_id, message=None, audio_url=None, campaign_id=None, content_sid=None, content_variables=None, local_path=None, sender_number_id=None):
     """
-    Dispatch a WhatsApp message for an organization using Twilio.
+    Dispatch a WhatsApp message for an organization using Twilio or MyOperator.
     """
     org = Organization.query.get(organization_id)
     if not org:
@@ -44,7 +43,22 @@ def dispatch_whatsapp(organization_id, contact_id, message=None, audio_url=None,
         logger.error('dispatch_whatsapp: contact not found %s', contact_id)
         raise ValueError('contact not found')
 
-    # All WhatsApp delivery is now via Twilio
+    # Channel selection based on sender_number_id
+    if sender_number_id:
+        from models.models import CommunicationNumber
+        num = CommunicationNumber.query.get(sender_number_id)
+        if num and num.channel_type == 'myoperator_whatsapp':
+            return send_myoperator_whatsapp(
+                organization_id, 
+                contact_id, 
+                body=message or '', 
+                campaign_id=campaign_id,
+                sender_number_id=sender_number_id,
+                content_sid=content_sid,
+                content_variables=content_variables
+            )
+
+    # Fallback to Twilio
     if audio_url:
         return send_whatsapp_voice(organization_id, contact_id, audio_url=audio_url, campaign_id=campaign_id, local_path=local_path, sender_number_id=sender_number_id)
     else:

@@ -48,11 +48,11 @@
                 <td><span class="badge bg-secondary">Worker</span></td>
                 <td><span class="badge bg-success">Active</span></td>
                 <td>
-                    <!-- Future: Toggle/Edit -->
-                    <form method="post" action="{{ url_for('org.toggle_worker', wid=w.id) }}" style="display:inline;">
+                    <!-- Delete Worker -->
+                    <form method="post" action="{{ url_for('org.delete_worker', wid=w.id) }}" style="display:inline;"
+                        onsubmit="return confirm('Are you sure you want to delete this worker?');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                        <button class="btn btn-sm btn-outline-warning" disabled
-                            title="Feature coming soon">Disable</button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
                     </form>
                 </td>
             </tr>

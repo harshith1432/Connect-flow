@@ -69,8 +69,8 @@
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-muted">Status:</span>
                         <span
-                            class="fw-bold {% if subscription and subscription.status == 'active' %}text-success{% else %}text-danger{% endif %}">
-                            {{ subscription.status|upper if subscription else 'TRIAL' }}
+                            class="fw-bold {% if subscription and subscription.display_status == 'ACTIVE' %}text-success{% else %}text-danger{% endif %}">
+                            {{ subscription.display_status if subscription else 'TRIAL' }}
                         </span>
                     </div>
 

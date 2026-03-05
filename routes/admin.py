@@ -365,6 +365,55 @@ def configure_twilio(org_id):
         if not exists:
             cn = CommunicationNumber(organization_id=org_id, number=exotel_number, channel_type='indian_voice', approved=True, active=True, is_platform_owned=False)
             db.session.add(cn)
+
+    # MyOperator Config
+    myoperator_token = request.form.get('myoperator_token')
+    myoperator_number = request.form.get('myoperator_number')
+    myoperator_wa_number = request.form.get('myoperator_wa_number')
+    myoperator_wa_key = request.form.get('myoperator_wa_key')
+    myoperator_company_id = request.form.get('myoperator_company_id')
+
+    myoperator_secret_key = request.form.get('myoperator_secret_key')
+    myoperator_x_api_key = request.form.get('myoperator_x_api_key')
+    myoperator_ivr_id = request.form.get('myoperator_ivr_id')
+
+    if myoperator_token or myoperator_wa_key or myoperator_x_api_key:
+        config['myoperator'] = {
+            'token': myoperator_token,
+            'number': myoperator_number,
+            'wa_number': myoperator_wa_number,
+            'wa_key': myoperator_wa_key,
+            'company_id': myoperator_company_id,
+            'secret_key': myoperator_secret_key,
+            'x_api_key': myoperator_x_api_key,
+            'ivr_id': myoperator_ivr_id
+        }
+        # Clear pending myoperator requests
+        pending_reqs = ChangeRequest.query.filter(
+            ChangeRequest.organization_id == org_id,
+            ChangeRequest.field_name == 'number_request',
+            ChangeRequest.status == 'pending',
+            ChangeRequest.new_value.in_(['myoperator_voice', 'myoperator_whatsapp'])
+        ).all()
+        for req in pending_reqs:
+            req.status = 'approved'
+            
+        # Add to CommunicationNumber
+        from models.models import CommunicationNumber
+        # Add Voice version
+        if myoperator_number:
+            cn_voice = CommunicationNumber.query.filter_by(organization_id=org_id, number=myoperator_number, channel_type='myoperator_voice').first()
+            if not cn_voice:
+                cn_v = CommunicationNumber(organization_id=org_id, number=myoperator_number, channel_type='myoperator_voice', approved=True, active=True, is_platform_owned=False)
+                db.session.add(cn_v)
+
+        # Add WhatsApp version (use wa_number if exists, else fallback to voice number)
+        wa_num = myoperator_wa_number or myoperator_number
+        if wa_num:
+            cn_wa = CommunicationNumber.query.filter_by(organization_id=org_id, number=wa_num, channel_type='myoperator_whatsapp').first()
+            if not cn_wa:
+                cn_w = CommunicationNumber(organization_id=org_id, number=wa_num, channel_type='myoperator_whatsapp', approved=True, active=True, is_platform_owned=False)
+                db.session.add(cn_w)
             
     # Force update JSON column
     org.twilio_config = config
