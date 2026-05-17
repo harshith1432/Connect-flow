@@ -1,6 +1,7 @@
 # ConnectFlow: Intelligent Workforce Communication Platform
 
-![Platform Dashboard](static/dashboard_mockup.png)
+![Landing Hero](static/landing_hero.png)
+![Landing Features](static/landing_features.png)
 
 **Version:** 2.0.0 (Updated Release)
 
