@@ -1,9 +1,13 @@
 # ConnectFlow: Intelligent Workforce Communication Platform
 
+![Platform Dashboard](static/dashboard_mockup.png)
+
+**Version:** 2.0.0 (Updated Release)
+
 ConnectFlow is a comprehensive enterprise SaaS (Software as a Service) platform designed to empower organizations to manage large-scale communication campaigns via automated WhatsApp messages and Voice calls.
 
 Built with Python and Flask, the platform features a robust multi-tenant architecture with granular role-based access control (Platform Admin, Organization Admin, and Worker), billing & subscription management, and detailed delivery analytics.
-=======
+
 A production-grade multi-tenant SaaS platform built for scale. It enables organizations to manage complex data structures through dynamic modules and engage customers via automated WhatsApp messaging and AI-driven voice calls.
 
 ## 🚀 Key Features
