@@ -11,6 +11,8 @@ Built with Python and Flask, the platform features a robust multi-tenant archite
 A production-grade multi-tenant SaaS platform built for scale. It enables organizations to manage complex data structures through dynamic modules and engage customers via automated WhatsApp messaging and AI-driven voice calls.
 
 ![Landing Hero](static/landing_hero.png)
+
+
 ![Landing Features](static/landing_features.png)
 
 ## 🚀 Key Features
