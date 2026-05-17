@@ -284,7 +284,14 @@
 
             <!-- Communication Settings -->
             <div class="card border-0 shadow-sm p-4">
-                <h3 class="h6 fw-bold mb-4 text-uppercase text-muted opacity-75">Communication Config</h3>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="h6 fw-bold mb-0 text-uppercase text-muted opacity-75">Communication Config</h3>
+                    {% if org.hooman_config and org.hooman_config.get('api_key') %}
+                    <span class="badge bg-success-subtle text-success small" style="font-size: 0.6rem;">
+                        <i class="bi bi-check-circle-fill me-1"></i>HOOMAN ACTIVE
+                    </span>
+                    {% endif %}
+                </div>
 
                 {% if pending_request %}
                 <div class="alert alert-warning small mb-3 border-0 bg-warning-subtle text-warning-emphasis">
@@ -294,11 +301,25 @@
                 </div>
                 {% endif %}
 
+                {% if org.hooman_config %}
+                <div class="mb-3 p-2 bg-light rounded-3 border">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <i class="bi bi-robot text-primary small"></i>
+                        <span class="small fw-bold">Hooman Labs</span>
+                    </div>
+                    <div class="small text-muted" style="font-size: 0.75rem;">
+                        <div>Number: <span class="fw-semibold text-dark">{{ org.hooman_config.get('number', 'Not Set') }}</span></div>
+                        <div>API Key: <span class="fw-semibold text-dark">••••••••{{ org.hooman_config.get('api_key', '')[-4:] if org.hooman_config.get('api_key') else 'Not Set' }}</span></div>
+                    </div>
+                </div>
+                {% endif %}
+
                 <button class="btn btn-primary w-100 fw-bold py-2 shadow-sm" data-bs-toggle="modal"
                     data-bs-target="#configTwilioModal">
                     <i class="bi bi-gear-fill me-1"></i> Configure Settings
                 </button>
             </div>
+
 
         </div>
     </div>
@@ -375,101 +396,39 @@
                         </div>
                     </div>
 
-                    <!-- Exotel (Indian Number) Config -->
-                    <div class="mt-4 p-3 border rounded bg-light">
-                        <h6 class="fw-bold text-info mb-3"><i class="bi bi-telephone-fill me-2"></i>Exotel Configuration
-                            (Indian Number)</h6>
-                        <div class="row">
-                            <div class="col-md-3">
-                                <label class="form-label small fw-bold">API Key (Username)</label>
-                                <input type="text" class="form-control form-control-sm bg-white" name="exotel_api_key"
-                                    value="{{ org.twilio_config.get('exotel', {}).get('api_key', '') if org.twilio_config else '' }}"
-                                    placeholder="API Key">
+                    <!-- Hooman Labs Config -->
+                    <div class="mt-4 p-3 border rounded" style="background: linear-gradient(135deg, #e8f4fd 0%, #f0e8ff 100%); border-color: #6c5ce7 !important;">
+                        <h6 class="fw-bold mb-3" style="color: #6c5ce7;">
+                            <i class="bi bi-robot me-2"></i>Hooman Labs Configuration
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">Number</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-white"><i class="bi bi-telephone text-muted"></i></span>
+                                    <input type="text" class="form-control bg-white" name="hooman_number"
+                                        value="{{ org.hooman_config.get('number', '') if org.hooman_config else (org.twilio_config.get('hooman_labs', {}).get('number', '') if org.twilio_config else '') }}"
+                                        placeholder="+91...">
+                                </div>
+                                <div class="form-text small text-muted" style="font-size: 0.65rem;">
+                                    <i class="bi bi-info-circle me-1"></i>Caller ID number for Hooman Labs.
+                                </div>
                             </div>
-                            <div class="col-md-3">
-                                <label class="form-label small fw-bold">API Token (Password)</label>
-                                <input type="password" class="form-control form-control-sm bg-white"
-                                    name="exotel_api_token"
-                                    value="{{ org.twilio_config.get('exotel', {}).get('api_token', '') if org.twilio_config else '' }}">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label small fw-bold">Subdomain (SID)</label>
-                                <input type="text" class="form-control form-control-sm bg-white" name="exotel_subdomain"
-                                    value="{{ org.twilio_config.get('exotel', {}).get('subdomain', '') if org.twilio_config else '' }}"
-                                    placeholder="API Key if blank">
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label small fw-bold">Indian Number</label>
-                                <input type="text" class="form-control form-control-sm bg-white" name="exotel_number"
-                                    value="{{ org.twilio_config.get('exotel', {}).get('number', '') if org.twilio_config else '' }}"
-                                    placeholder="0...">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold">API Key</label>
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text bg-white"><i class="bi bi-key text-muted"></i></span>
+                                    <input type="password" class="form-control bg-white" name="hooman_api_key"
+                                        value="{{ org.hooman_config.get('api_key', '') if org.hooman_config else (org.twilio_config.get('hooman_labs', {}).get('api_key', '') if org.twilio_config else '') }}"
+                                        placeholder="hl_api_key...">
+                                </div>
+                                <div class="form-text small text-muted" style="font-size: 0.65rem;">
+                                    <i class="bi bi-info-circle me-1"></i>Hooman Labs API key for authentication.
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- MyOperator Config -->
-                    <div class="mt-4 p-3 border rounded bg-light">
-                        <h6 class="fw-bold text-dark mb-3"><i class="bi bi-telephone-fill me-2"
-                                style="color: #ff6b35;"></i>MyOperator Configuration (Indian Number)</h6>
-                        <div class="row g-3">
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold">Public API Token (Voice)</label>
-                                <input type="password" class="form-control form-control-sm bg-white"
-                                    name="myoperator_token"
-                                    value="{{ org.twilio_config.get('myoperator', {}).get('token', '') if org.twilio_config else '' }}"
-                                    placeholder="your_api_token">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold">Voice Number</label>
-                                <input type="text" class="form-control form-control-sm bg-white"
-                                    name="myoperator_number"
-                                    value="{{ org.twilio_config.get('myoperator', {}).get('number', '') if org.twilio_config else '' }}"
-                                    placeholder="+91...">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold">WhatsApp Number</label>
-                                <input type="text" class="form-control form-control-sm bg-white"
-                                    name="myoperator_wa_number"
-                                    value="{{ org.twilio_config.get('myoperator', {}).get('wa_number', '') if org.twilio_config else '' }}"
-                                    placeholder="+91...">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">WhatsApp API Key</label>
-                                <input type="password" class="form-control form-control-sm bg-white"
-                                    name="myoperator_wa_key"
-                                    value="{{ org.twilio_config.get('myoperator', {}).get('wa_key', '') if org.twilio_config else '' }}"
-                                    placeholder="your_whatsapp_api_key">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">MyOperator Company ID</label>
-                                <input type="text" class="form-control form-control-sm bg-white"
-                                    name="myoperator_company_id"
-                                    value="{{ org.twilio_config.get('myoperator', {}).get('company_id', '') if org.twilio_config else '' }}"
-                                    placeholder="e.g. 697a372191ad199">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">OBD Secret Key</label>
-                                <input type="password" class="form-control form-control-sm bg-white"
-                                    name="myoperator_secret_key"
-                                    value="{{ org.twilio_config.get('myoperator', {}).get('secret_key', '') if org.twilio_config else '' }}"
-                                    placeholder="your_secret_key">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">OBD X-API-KEY</label>
-                                <input type="password" class="form-control form-control-sm bg-white"
-                                    name="myoperator_x_api_key"
-                                    value="{{ org.twilio_config.get('myoperator', {}).get('x_api_key', '') if org.twilio_config else '' }}"
-                                    placeholder="your_x_api_key">
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">Public IVR ID</label>
-                                <input type="text" class="form-control form-control-sm bg-white"
-                                    name="myoperator_ivr_id"
-                                    value="{{ org.twilio_config.get('myoperator', {}).get('ivr_id', '') if org.twilio_config else '' }}"
-                                    placeholder="e.g. 123456">
-                            </div>
-                        </div>
-                    </div>
                 </div>
                 <div class="modal-footer border-0 p-4">
                     <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Cancel</button>

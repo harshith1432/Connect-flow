@@ -1,67 +1,68 @@
-{% extends 'base_auth.html' %}
-{% block title %}Register Organization{% endblock %}
+{% extends "base_auth_premium.html" %}
+
+{% block title %}Register Organization | ConnectFlow{% endblock %}
+
+{% block hero_content %}
+<h2>Begin Your Journey.</h2>
+<p class="tagline">Start your 14-day premium trial today. Experience the most advanced operations platform designed for modern growth.</p>
+{% endblock %}
+
+{% block auth_header %}
+<h1>Create Account</h1>
+<p>Join the next generation of organization management.</p>
+{% endblock %}
+
 {% block content %}
-<div class="auth-container">
-  <div class="auth-visual">
-    <h2>Join SaaS Comm</h2>
-    <p>Start your 14-day free trial. No credit card required.</p>
-  </div>
-  <div class="auth-form-container">
-    <div class="auth-form-box">
-      <div class="text-center mb-4">
-        <h3>Create Account</h3>
-        <p class="text-muted">Get started with your organization</p>
-      </div>
-
-      {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-      {% for category, msg in messages %}
-      <div
-        class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }}">
-        {{msg}}
-      </div>
-      {% endfor %}
-      {% endif %}
-      {% endwith %}
-
-      <form method="post" action="{{ url_for('org.register') }}" class="needs-validation" novalidate>
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-        <div class="mb-3">
-          <label class="form-label">Organization Name</label>
-          <input name="org_name" class="form-control" placeholder="Acme Corp" required minlength="3"
-            data-validate="alphabetic" />
-          <div class="invalid-feedback">Name required (min 3 chars).</div>
+<form method="post" action="{{ url_for('org.register') }}" class="needs-validation" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    
+    <div class="form-group">
+        <label class="form-label">Organization Name</label>
+        <div class="input-container">
+            <i class="bi bi-building"></i>
+            <input name="org_name" class="premium-input" placeholder="Acme Corporation" required minlength="3" />
         </div>
-        <div class="mb-3">
-          <label class="form-label">Admin Email</label>
-          <input name="email" type="email" class="form-control" placeholder="admin@acme.com" required
-            data-validate="email" />
-          <div class="invalid-feedback">Please enter a valid email address.</div>
-        </div>
-        <div class="mb-3">
-          <label class="form-label">Password</label>
-          <input type="password" name="password" class="form-control" placeholder="Min. 8 characters" required
-            data-validate="password" />
-          <div class="invalid-feedback">Weak Password: Min 8 chars, 1 letter, 1 number required.</div>
-        </div>
-
-        <div class="mb-3">
-          <label class="d-flex items-center gap-2 text-muted small">
-            <input type="checkbox" required>
-            <span>I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></span>
-          </label>
-        </div>
-
-        <button class="btn btn-primary w-full py-3">Create Account</button>
-
-        <div class="text-center mt-4">
-          <p class="text-muted small">
-            Already have an account? <a href="{{ url_for('org.login') }}" class="fw-bold text-primary">Sign In</a>
-          </p>
-          <a href="{{ url_for('main.index') }}" class="text-muted small text-decoration-none">Back to Home</a>
-        </div>
-      </form>
     </div>
-  </div>
-</div>
+
+    <div class="form-group">
+        <label class="form-label">Admin Email</label>
+        <div class="input-container">
+            <i class="bi bi-envelope-at"></i>
+            <input name="email" type="email" class="premium-input" placeholder="admin@company.com" required autocomplete="email" />
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-container">
+            <i class="bi bi-key"></i>
+            <input type="password" name="password" class="premium-input" placeholder="Min. 8 characters" required autocomplete="new-password" />
+        </div>
+    </div>
+
+    <div style="margin-bottom: 2rem;">
+        <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+            <input type="checkbox" required style="width: 18px; height: 18px; margin-top: 3px; accent-color: var(--black);">
+            <span style="font-size: 0.875rem; color: var(--grey-500); line-height: 1.5;">
+                I agree to the <a href="#" style="color: var(--black); font-weight: 600; text-decoration: none;">Terms of Service</a> and <a href="#" style="color: var(--black); font-weight: 600; text-decoration: none;">Privacy Policy</a>.
+            </span>
+        </label>
+    </div>
+
+    <button type="submit" class="btn-premium-dark">
+        Create Account <i class="bi bi-plus-circle"></i>
+    </button>
+
+    <div class="auth-footer-links">
+        <p style="font-size: 0.935rem; color: var(--grey-500); width: 100%; text-align: center; margin-bottom: 2rem;">
+            Already have an account? <a href="{{ url_for('org.login') }}" style="color: var(--black); font-weight: 700;">Sign In</a>
+        </p>
+    </div>
+
+    <div class="auth-footer-links" style="margin-top: 0;">
+        <a href="{{ url_for('main.index') }}">
+            <i class="bi bi-house"></i> Home
+        </a>
+    </div>
+</form>
 {% endblock %}

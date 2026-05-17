@@ -26,8 +26,8 @@
                 <div class="mb-3">
                     <label class="form-label">Communication Type</label>
                     <select name="type" class="form-select">
-                        <option value="whatsapp_text">WhatsApp (Text & Voice)</option>
-                        <option value="call">Voice Call </option>
+                        <option value="whatsapp_text">WhatsApp Message</option>
+                        <option value="call">Call</option>
                     </select>
                 </div>
                 <div class="mb-3">
@@ -49,14 +49,12 @@
                         placeholder="Type your message here..." required
                         style="min-height: 150px; resize: vertical;"></textarea>
 
-                    <!-- Voice Script Field (Hidden by default) -->
-                    <div id="voiceScriptContainer" class="mt-3" style="display: none;">
-                        <label class="form-label text-primary">Voice Script Content (Native Language)</label>
-                        <textarea name="voice_content" id="voiceContent" class="form-control" rows="6"
-                            placeholder="Type the script for voice generation here..."
-                            style="min-height: 120px; resize: vertical;"></textarea>
-                        <div class="form-text">If left empty, the main script content above will be used.</div>
+                    <div class="mt-2 text-end">
+                        <button type="button" class="btn btn-outline-info btn-sm" id="btnPreviewVoice">
+                            <i class="bi bi-play-circle me-1"></i> Play Voice Preview
+                        </button>
                     </div>
+
 
                     <!-- Insert Placeholder Buttons -->
                     <div class="mt-3">
@@ -103,8 +101,6 @@
                                 {% if s.type == 'whatsapp_text' %}
                                 <span class="badge bg-success text-white"><i class="bi bi-whatsapp me-1"></i>
                                     Text</span>
-                                {% elif s.type == 'whatsapp_voice' %}
-                                <span class="badge bg-success text-white"><i class="bi bi-mic me-1"></i> Voice</span>
                                 {% else %}
                                 <span class="badge bg-primary text-white"><i class="bi bi-telephone me-1"></i>
                                     Call</span>
@@ -115,17 +111,12 @@
                                 <div class="text-muted small text-truncate" style="max-width: 350px;">
                                     {{ s.content }}
                                 </div>
-                                {% if s.meta and s.meta.get('preview_url') %}
-                                <div class="mt-1">
-                                    <audio controls class="w-100" style="height: 30px;">
-                                        <source src="{{ url_for('static', filename=s.meta.get('preview_url')) }}"
-                                            type="audio/mpeg">
-                                        Your browser does not support the audio element.
-                                    </audio>
-                                </div>
-                                {% endif %}
                             </td>
                             <td class="text-end">
+                                <button type="button" class="btn btn-sm btn-light text-info border-0 me-1 btn-preview-list"
+                                    data-text="{{ s.content }}" data-lang="{{ s.language }}">
+                                    <i class="bi bi-play-fill"></i>
+                                </button>
                                 <a href="{{ url_for('worker.edit_script', sid=s.id) }}"
                                     class="btn btn-sm btn-light text-primary border-0 me-1">
                                     <i class="bi bi-pencil"></i>
@@ -177,11 +168,7 @@
             helpText = "⚠️ <strong>Rule:</strong> WhatsApp Text scripts should be written in <strong>ENGLISH</strong> only.";
             colorClass = "text-warning";
 
-            // Show Voice Script field
-            if (voiceContainer) {
-                voiceContainer.style.display = 'block';
-                contentLabel.textContent = "Text Message Content (English)";
-            }
+            contentLabel.textContent = "Text Message Content (English)";
 
         } else if (type === 'call') {
             if (lang === 'Hindi') {
@@ -215,33 +202,38 @@
 
         // Track active textarea
         let activeTextarea = document.getElementById('scriptContent');
-        const voiceTextarea = document.getElementById('voiceContent');
+        
+        function setupTextarea(ta) {
+            if (!ta) return;
+            ta.addEventListener('focus', function () {
+                activeTextarea = this;
+            });
+            ta.addEventListener('mouseup', function () {
+                activeTextarea = this;
+            });
+            ta.addEventListener('input', function() {
+                activeTextarea = this;
+            });
+        }
 
-        [activeTextarea, voiceTextarea].forEach(ta => {
-            if (ta) {
-                ta.addEventListener('focus', function () {
-                    console.log("Focused:", this.id);
-                    activeTextarea = this;
-                });
-                // Also update on mouseup to catch clicks if focus was already there
-                ta.addEventListener('mouseup', function () {
-                    console.log("MouseUp:", this.id);
-                    activeTextarea = this;
-                });
-            } else {
-                console.warn("Textarea element not found");
-            }
-        });
+        setupTextarea(activeTextarea);
+        // Also watch for any other textareas that might be added or existing
+        document.querySelectorAll('textarea').forEach(setupTextarea);
 
-        // Button Click (Use mousedown to prevent focus loss)
+        // Button Click
         const buttons = document.querySelectorAll('.placeholder-btn');
         buttons.forEach(btn => {
-            btn.addEventListener('mousedown', function (e) {
-                e.preventDefault(); // Prevent button from stealing focus
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
 
-                console.log("Insert requested. Active:", activeTextarea ? activeTextarea.id : "None");
-
-                if (!activeTextarea) return;
+                if (!activeTextarea) {
+                    activeTextarea = document.getElementById('scriptContent');
+                }
+                
+                if (!activeTextarea) {
+                    console.error("No active textarea found for placeholder insertion");
+                    return;
+                }
 
                 const fieldName = this.getAttribute('data-field');
                 // Split braces to prevent Jinja from interpreting this as a template tag
@@ -262,8 +254,113 @@
 
                 activeTextarea.dispatchEvent(new Event('input', { bubbles: true }));
             });
-            // Remove click listener if any to avoid double handling
-            btn.removeEventListener('click', function () { });
+        });
+
+        // Voice Preview Logic
+        const previewButtons = document.querySelectorAll('.btn-preview-list');
+        const previewCreateBtn = document.getElementById('btnPreviewVoice');
+        const audioPlayer = new Audio();
+        let currentPlayingBtn = null;
+        let originalHtmlMap = new Map();
+
+        function resetBtnState() {
+            if (currentPlayingBtn) {
+                currentPlayingBtn.innerHTML = originalHtmlMap.get(currentPlayingBtn);
+                currentPlayingBtn.classList.remove('btn-outline-danger');
+                currentPlayingBtn.classList.add('btn-outline-info');
+                currentPlayingBtn = null;
+            }
+        }
+
+        audioPlayer.addEventListener('ended', resetBtnState);
+        audioPlayer.addEventListener('error', resetBtnState);
+
+        async function playPreview(text, lang, btn) {
+            if (currentPlayingBtn === btn && !audioPlayer.paused) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+                resetBtnState();
+                return;
+            }
+
+            if (currentPlayingBtn && currentPlayingBtn !== btn) {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+                resetBtnState();
+            }
+
+            if (!text) {
+                alert('Please enter some script content first.');
+                return;
+            }
+
+            if (btn && !originalHtmlMap.has(btn)) {
+                originalHtmlMap.set(btn, btn.innerHTML);
+            }
+
+            const isListBtn = btn && btn.classList.contains('btn-preview-list');
+
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+            }
+
+            try {
+                const response = await fetch('{{ url_for("worker.preview_voice") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ text: text, language: lang })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    audioPlayer.src = data.audio_url;
+                    audioPlayer.play();
+                    if (btn) {
+                        btn.disabled = false;
+                        currentPlayingBtn = btn;
+                        if (isListBtn) {
+                            btn.innerHTML = '<i class="bi bi-stop-fill text-danger"></i>';
+                        } else {
+                            btn.innerHTML = '<i class="bi bi-stop-circle text-danger me-1"></i> Stop Preview';
+                            btn.classList.remove('btn-outline-info');
+                            btn.classList.add('btn-outline-danger');
+                        }
+                    }
+                } else {
+                    alert('Error generating preview: ' + data.error);
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtmlMap.get(btn);
+                    }
+                }
+            } catch (error) {
+                console.error('Preview error:', error);
+                alert('Failed to play preview: ' + error.message);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtmlMap.get(btn);
+                }
+            }
+        }
+
+        if (previewCreateBtn) {
+            previewCreateBtn.addEventListener('click', function () {
+                const text = document.getElementById('scriptContent').value;
+                const lang = document.querySelector('select[name="language"]').value;
+                playPreview(text, lang, this);
+            });
+        }
+
+        previewButtons.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const text = this.getAttribute('data-text');
+                const lang = this.getAttribute('data-lang');
+                playPreview(text, lang, this);
+            });
         });
     });
 

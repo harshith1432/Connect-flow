@@ -22,7 +22,7 @@ graph TD
         WorkerBP --> CE[Communication Engines]
         AE --> LE[Logic Engine]
         CE --> TS[Twilio Service]
-        CE --> ES[Exotel Service]
+        CE --> HLS[Hooman Labs Service]
     end
     
     subgraph "Data Layer"
@@ -33,7 +33,7 @@ graph TD
     end
     
     TS -->|API| Twilio((Twilio API))
-    ES -->|API| Exotel((Exotel API))
+    HLS -->|API| HoomanLabs((Hooman Labs API))
 ```
 
 ### Key Components:
@@ -46,7 +46,7 @@ graph TD
 ### 🛡️ Platform Administration (Super Admin)
 - **Centralized Dashboard**: Oversight of all active and pending organizations.
 - **Org Lifecycle Management**: Approval, suspension, and deletion of tenants.
-- **Provider Configuration**: Management of platform-wide and organization-specific Twilio/Exotel credentials.
+- **Provider Configuration**: Management of platform-wide and organization-specific Twilio/Hooman Labs credentials.
 - **Commercial Management**: Configuration of subscription plans and payment methods.
 
 ### 🏢 Organization Management (Tenant Admin)
@@ -91,7 +91,7 @@ erDiagram
 | **Framework** | Flask (Python) |
 | **ORM** | SQLAlchemy |
 | **Database** | PostgreSQL / SQLite |
-| **Communication** | Twilio API (WhatsApp/Voice), Exotel |
+| **Communication** | Twilio API (WhatsApp/Voice), Hooman Labs |
 | **AI/Audio** | gTTS (Google Text-to-Speech), DeepL/Translator |
 | **Migrations** | Flask-Migrate (Alembic) |
 | **Security** | Flask-Login, CSRF Protection, Werkzeug Hashing |

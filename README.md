@@ -20,7 +20,7 @@ A production-grade multi-tenant SaaS platform built for scale. It enables organi
 
 ### 📢 Scalable Communication
 - **WhatsApp Integration**: Dispatch text and voice messages using Twilio.
-- **Voice Campaigns**: Automated calling features with multi-language support.
+- **Voice Campaigns**: Automated calling features with multi-language support (via Twilio and Hooman Labs).
 - **Campaign Analytics**: Detailed delivery logs and execution reports for every campaign.
 
 ### 💳 Subscription & Billing
@@ -34,7 +34,7 @@ CUSTOMER CARE
 +---communication           # Dispatchers for WhatsApp/Voice
 +---models                  # SQLAlchemy Database Models
 +---routes                  # Flask Blueprints (Admin, Org, Worker, API)
-+---services                # Business Logic (Automation, Twilio, Exotel)
++---services                # Business Logic (Automation, Twilio, Hooman Labs)
 +---static                  # CSS, JS, and Media Assets
 +---templates               # HTML Templates (Jinja2)
 |   +---admin               # Platform Admin Overlays
@@ -116,7 +116,7 @@ The system automatically initializes a default platform admin:
 
 ### 1. Multi-Tiered Access & Roles
 - **Platform Owner/Admin**: Global oversight. Can approve/suspend organizations, manage master subscription plans, configure platform-wide Twilio/communication settings, and view total system revenue.
-- **Organization Admin**: Manages their specific tenant. Can purchase subscriptions, configure custom communication numbers (Twilio, Exotel, MyOperator), add/remove workers, and view organization-wide campaign analytics.
+- **Organization Admin**: Manages their specific tenant. Can purchase subscriptions, configure custom communication numbers (Twilio, Hooman Labs), add/remove workers, and view organization-wide campaign analytics.
 - **Worker**: Executes the ground-level tasks. Can manage contact groups, build communication scripts (Text/Voice), and launch bulk campaigns.
 
 ### 2. Campaign Management & Automation
@@ -131,8 +131,7 @@ The system automatically initializes a default platform admin:
 ### 4. Custom Communication Integrations
 Organizations can rely on platform-default numbers OR configure their own integration credentials for:
 - Twilio (Voice & WhatsApp)
-- Exotel (Indian Voice tracking)
-- MyOperator (Indian OBD and WhatsApp)
+- Hooman Labs (Indian Voice integration)
 
 ---
 
@@ -151,7 +150,7 @@ Organizations can rely on platform-default numbers OR configure their own integr
 
 **External API Integrations**:
 - Twilio API (`twilio` python package)
-- HTTP REST Requests (`requests`) for Exotel and MyOperator dispatch.
+- HTTP REST Requests (`http.client`) for Hooman Labs dispatch.
 
 ---
 
@@ -177,8 +176,7 @@ ConnectFlow/
 │
 ├── services/                # Business Logic & External API Controllers
 │   ├── twilio_service.py    # Twilio dispatching logic
-│   ├── exotel_service.py    # Exotel dispatching logic 
-│   ├── myoperator_service.py# MyOperator dispatching logic
+│   ├── hooman_labs_service.py# Hooman Labs dispatching logic
 │   ├── notification_service.py # Internal platform alerts
 │   ├── logic_engine.py      # Campaign execution logic
 │   └── automation_engine.py # Background processing

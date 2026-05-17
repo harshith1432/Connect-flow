@@ -1,0 +1,269 @@
+{% extends 'base_org_premium.html' %}
+
+{% block title %}Campaign Operations - ConnectFlow{% endblock %}
+{% block page_title %}Campaign Operations{% endblock %}
+
+{% block content %}
+<div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Created</span>
+            <div class="kpi-icon"><i class="bi bi-megaphone"></i></div>
+        </div>
+        <div class="kpi-value">{{ stats.total }}</div>
+        <div class="kpi-trend trend-up"><i class="bi bi-arrow-up-short"></i> 12%</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Active Now</span>
+            <div class="kpi-icon" style="background: #dcfce7; color: #15803d;"><i class="bi bi-play-fill"></i></div>
+        </div>
+        <div class="kpi-value">{{ stats.active }}</div>
+        <div class="kpi-trend" style="color: var(--grey-400);">Running</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Completed</span>
+            <div class="kpi-icon"><i class="bi bi-check-all"></i></div>
+        </div>
+        <div class="kpi-value">{{ stats.completed }}</div>
+        <div class="kpi-trend trend-up">Finalized</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Scheduled</span>
+            <div class="kpi-icon"><i class="bi bi-calendar-event"></i></div>
+        </div>
+        <div class="kpi-value">{{ stats.scheduled }}</div>
+        <div class="kpi-trend" style="color: var(--grey-400);">Upcoming</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Failed</span>
+            <div class="kpi-icon" style="background: #fee2e2; color: #ef4444;"><i class="bi bi-exclamation-triangle"></i></div>
+        </div>
+        <div class="kpi-value">{{ stats.failed }}</div>
+        <div class="kpi-trend trend-down">Action needed</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Success Rate</span>
+            <div class="kpi-icon"><i class="bi bi-patch-check"></i></div>
+        </div>
+        <div class="kpi-value">{{ stats.success_rate }}%</div>
+        <div class="kpi-trend trend-up">High Quality</div>
+    </div>
+</div>
+
+<div class="chart-row">
+    <div class="premium-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h3>Campaign Performance Overview</h3>
+                <p>Creation, completion, and engagement trends over time.</p>
+            </div>
+            <div style="background: var(--grey-50); padding: 0.35rem; border-radius: 10px; border: 1px solid var(--grey-100); display: flex; gap: 0.5rem;">
+                <button class="btn-icon" style="width: auto; padding: 0 0.75rem; font-size: 0.75rem; height: 30px; font-weight: 700;">Daily</button>
+                <button class="btn-icon" style="width: auto; padding: 0 0.75rem; font-size: 0.75rem; height: 30px; background: var(--grey-100);">Weekly</button>
+                <button class="btn-icon" style="width: auto; padding: 0 0.75rem; font-size: 0.75rem; height: 30px; background: transparent; border: none;">Monthly</button>
+            </div>
+        </div>
+        <div id="campaignPerformanceChart" style="height: 350px;"></div>
+    </div>
+
+    <div class="premium-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h3>Channel Distribution</h3>
+                <p>Volume by communication type.</p>
+            </div>
+        </div>
+        <div id="channelDistributionChart" style="height: 300px;"></div>
+        
+        <div style="margin-top: 2rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                <span style="font-size: 0.815rem; font-weight: 700;">Automation Running</span>
+                <span style="font-size: 0.815rem; font-weight: 700;">74%</span>
+            </div>
+            <div style="height: 8px; background: var(--grey-100); border-radius: 10px; overflow: hidden;">
+                <div style="width: 74%; height: 100%; background: var(--black);"></div>
+            </div>
+            <div style="font-size: 0.75rem; color: var(--grey-400); margin-top: 0.5rem;">12 scripts active across all modules.</div>
+        </div>
+    </div>
+</div>
+
+<div class="premium-panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <h3>Recent Campaigns</h3>
+            <p>Live tracking of the most recent operational executions.</p>
+        </div>
+    </div>
+    
+    <div class="table-responsive">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>Campaign Name</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Delivery Rate</th>
+                    <th>Response Rate</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in campaigns %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 700; color: var(--black);">{{ c.name }}</div>
+                        <div style="font-size: 0.75rem; color: var(--grey-400);">ID: #{{ c.id }}</div>
+                    </td>
+                    <td>
+                        <span class="status-badge" style="background: var(--grey-50); color: var(--grey-700); border: 1px solid var(--grey-100);">
+                            {{ c.type|upper }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if c.status == 'running' %}
+                        <span class="status-badge" style="background: #dcfce7; color: #15803d;">
+                            <i class="bi bi-play-fill me-1"></i> Running
+                        </span>
+                        {% elif c.status == 'completed' %}
+                        <span class="status-badge status-completed">Completed</span>
+                        {% elif c.status == 'failed' %}
+                        <span class="status-badge status-failed">Failed</span>
+                        {% else %}
+                        <span class="status-badge status-pending">{{ c.status|title }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <div style="flex-grow: 1; height: 6px; background: var(--grey-50); border-radius: 10px; overflow: hidden; width: 60px;">
+                                <div style="width: {{ c.delivery_rate }}%; height: 100%; background: var(--black);"></div>
+                            </div>
+                            <span style="font-size: 0.815rem; font-weight: 700;">{{ c.delivery_rate }}%</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span style="font-weight: 700; color: var(--black);">{{ c.response_rate }}%</span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 4rem 0; color: var(--grey-400);">
+                        No campaigns found. Start by creating a module and launching a campaign.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const historyData = {{ perf_history|tojson }};
+        
+        // Performance Chart
+        var perfOptions = {
+            series: [{
+                name: 'Creation',
+                data: historyData.daily.map(d => d.created)
+            }, {
+                name: 'Completion',
+                data: historyData.daily.map(d => d.completed)
+            }],
+            chart: {
+                height: 350,
+                type: 'area',
+                toolbar: { show: false },
+                fontFamily: 'Inter',
+                animations: { enabled: true, easing: 'easeinout', speed: 800 }
+            },
+            colors: ['#000000', '#6b7280'],
+            fill: {
+                type: 'gradient',
+                gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05, stops: [20, 100] }
+            },
+            dataLabels: { enabled: false },
+            stroke: { curve: 'smooth', width: 2 },
+            xaxis: {
+                categories: historyData.daily.map(d => d.label),
+                axisBorder: { show: false },
+                axisTicks: { show: false }
+            },
+            yaxis: { labels: { style: { colors: '#9ca3af' } } },
+            grid: { borderColor: '#f3f4f6', strokeDashArray: 4 },
+            tooltip: { theme: 'dark' }
+        };
+
+        var perfChart = new ApexCharts(document.querySelector("#campaignPerformanceChart"), perfOptions);
+        perfChart.render();
+
+        // Handle Switching
+        document.querySelectorAll('.panel-header .btn-icon').forEach(btn => {
+            btn.addEventListener('click', function() {
+                // Reset styles
+                document.querySelectorAll('.panel-header .btn-icon').forEach(b => {
+                    b.style.background = 'transparent';
+                    b.style.fontWeight = '400';
+                });
+                
+                // Set active
+                this.style.background = 'var(--grey-100)';
+                this.style.fontWeight = '700';
+
+                const period = this.textContent.toLowerCase();
+                const data = historyData[period];
+
+                perfChart.updateSeries([{
+                    name: 'Creation',
+                    data: data.map(d => d.created)
+                }, {
+                    name: 'Completion',
+                    data: data.map(d => d.completed)
+                }]);
+
+                perfChart.updateOptions({
+                    xaxis: { categories: data.map(d => d.label) }
+                });
+            });
+        });
+
+        // Distribution Chart
+        var distOptions = {
+            series: {{ stats.channels|tojson }},
+            chart: {
+                type: 'donut',
+                height: 300,
+            },
+            labels: ['WhatsApp', 'Voice', 'SMS', 'Email'],
+            colors: ['#000000', '#374151', '#6b7280', '#9ca3af'],
+            legend: { position: 'bottom' },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '80%',
+                        labels: {
+                            show: true,
+                            total: { 
+                                show: true, 
+                                label: 'Total',
+                                formatter: function(w) {
+                                    return w.globals.seriesTotals.reduce((a, b) => a + b, 0);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        var distChart = new ApexCharts(document.querySelector("#channelDistributionChart"), distOptions);
+        distChart.render();
+    });
+</script>
+{% endblock %}

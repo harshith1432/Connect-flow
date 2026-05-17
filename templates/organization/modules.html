@@ -1,0 +1,68 @@
+{% extends 'base_org_premium.html' %}
+
+{% block title %}ConnectFlow | Manage Modules{% endblock %}
+{% block page_title %}Module Management{% endblock %}
+
+{% block content %}
+<div class="premium-panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <h3>System Modules</h3>
+            <p>Configure and oversee organizational operational units.</p>
+        </div>
+        <a href="#" class="btn-black"><i class="bi bi-plus-lg me-2"></i> Create New Module</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>Module Name</th>
+                    <th>Status</th>
+                    <th>Record Capacity</th>
+                    <th>Active Campaigns</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in modules %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 700; color: var(--black);">{{ m.name }}</div>
+                        <div style="font-size: 0.75rem; color: var(--grey-400);">ID: #CF-MOD-{{ m.id }}</div>
+                    </td>
+                    <td><span class="status-badge status-completed">{{ m.status }}</span></td>
+                    <td>{{ m.record_count }} Records</td>
+                    <td>{{ m.campaign_count }} Campaigns</td>
+                    <td>
+                        <div class="dropdown">
+                            <button class="btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 32px; height: 32px; border-radius: 10px;">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-premium border-0" style="min-width: 180px;">
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('org.module_detail', mid=m.id) }}">
+                                        <i class="bi bi-gear"></i> Configure
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#">
+                                        <i class="bi bi-bar-chart"></i> Analytics
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item text-danger" href="#">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

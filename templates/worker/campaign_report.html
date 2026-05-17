@@ -41,26 +41,40 @@
             </div>
         </div>
     </div>
-    <!-- Reached -->
+    <!-- Reached / Answered -->
     <div class="col-md-3">
-        <div class="card border-0 shadow-sm h-100 border-start border-4 border-info">
+        <div class="card border-0 shadow-sm h-100 border-start border-4 border-success">
             <div class="card-body">
+                {% if campaign.type == 'call' %}
+                <div class="text-muted small text-uppercase fw-bold mb-1">Answered</div>
+                <div class="display-6 fw-bold text-success">
+                    {{ stats.counts.get('completed', 0) + stats.counts.get('answered', 0) }}
+                </div>
+                {% else %}
                 <div class="text-muted small text-uppercase fw-bold mb-1">Reached (Delivered)</div>
-                <div class="display-6 fw-bold text-info">
+                <div class="display-6 fw-bold text-success">
                     {{ stats.counts.get('delivered', 0) + stats.counts.get('answered', 0) +
                     stats.counts.get('completed', 0) }}
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>
-    <!-- Read -->
+    <!-- Not Answered / Read -->
     <div class="col-md-3">
         <div class="card border-0 shadow-sm h-100 border-start border-4 border-primary">
             <div class="card-body">
+                {% if campaign.type == 'call' %}
+                <div class="text-muted small text-uppercase fw-bold mb-1">Not Answered</div>
+                <div class="display-6 fw-bold text-primary">
+                    {{ stats.counts.get('no-answer', 0) + stats.counts.get('busy', 0) }}
+                </div>
+                {% else %}
                 <div class="text-muted small text-uppercase fw-bold mb-1">Read / Seen</div>
                 <div class="display-6 fw-bold text-primary">
                     {{ stats.counts.get('read', 0) }}
                 </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -70,7 +84,7 @@
             <div class="card-body">
                 <div class="text-muted small text-uppercase fw-bold mb-1">Failed</div>
                 <div class="display-6 fw-bold text-danger">{{ stats.counts.get('failed', 0) +
-                    stats.counts.get('undelivered', 0) }}</div>
+                    stats.counts.get('undelivered', 0) + stats.counts.get('canceled', 0) }}</div>
             </div>
         </div>
     </div>
@@ -83,13 +97,37 @@
             <div class="card-body">
                 <div class="text-muted small text-uppercase fw-bold mb-1">In Pipeline / Sent</div>
                 <div class="display-6 fw-bold text-warning">
-                    {{ stats.counts.get('queued', 0) + stats.counts.get('sent', 0) + stats.counts.get('initiated', 0) +
+                    {{ stats.counts.get('pending', 0) + stats.counts.get('queued', 0) + stats.counts.get('sent', 0) + stats.counts.get('initiated', 0) +
                     stats.counts.get('ringing', 0) }}
                 </div>
-                <div class="small text-muted mt-1">Waiting for Twilio updates</div>
+                {% if campaign.type == 'call' %}
+                <div class="small text-muted mt-1">Waiting for {{ provider }} updates</div>
+                {% else %}
+                <div class="small text-muted mt-1">Waiting for delivery updates</div>
+                {% endif %}
             </div>
         </div>
     </div>
+
+    {% if campaign.type == 'call' %}
+    <!-- Total Call Duration (call campaigns only) -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100 border-start border-4 border-info">
+            <div class="card-body">
+                <div class="text-muted small text-uppercase fw-bold mb-1">Total Call Duration</div>
+                <div class="display-6 fw-bold text-info">
+                    {% set total_dur = [] %}
+                    {% for log in logs %}
+                        {% if log.meta and log.meta.get('duration_seconds') %}
+                            {% if total_dur.append(log.meta.get('duration_seconds', 0)) %}{% endif %}
+                        {% endif %}
+                    {% endfor %}
+                    {{ total_dur | sum }}s
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <div class="row mb-5">
@@ -162,10 +200,13 @@
             <thead class="bg-light">
                 <tr>
                     <th class="ps-4">Time</th>
-                    <th>Contact ID</th>
+                    <th>Recipient</th>
                     <th>Channel</th>
                     <th>Status</th>
-                    <th>Error Details</th>
+                    {% if campaign.type == 'call' %}
+                    <th>Duration</th>
+                    {% endif %}
+                    <th>Details</th>
                 </tr>
             </thead>
             <tbody>
@@ -173,29 +214,50 @@
                 <tr>
                     <td class="ps-4 text-nowrap text-muted small">{{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
                     </td>
-                    <td class="fw-bold text-primary">#{{ log.contact_id }}</td>
+                    <td class="fw-bold text-primary" style="max-width: 250px;">
+                        <div class="text-truncate">
+                            {% if log.recipient %}
+                            {{ log.recipient }}
+                            {% else %}
+                            #{{ log.contact_id }}
+                            {% endif %}
+                        </div>
+                    </td>
                     <td>
                         {% if 'whatsapp' in log.channel %}
                         <i class="bi bi-whatsapp text-success me-1"></i> WhatsApp
+                        {% elif log.channel == 'hooman_voice' %}
+                        <i class="bi bi-telephone text-info me-1"></i> Hooman Labs
                         {% else %}
                         <i class="bi bi-telephone text-primary me-1"></i> Call
                         {% endif %}
                     </td>
                     <td>
-                        {% if log.status in ['sent', 'delivered', 'read', 'completed'] %}
-                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">{{
-                            log.status|upper }}</span>
-                        {% elif log.status in ['failed', 'undelivered'] %}
-                        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">{{
-                            log.status|upper }}</span>
-                        {% elif log.status in ['queued', 'initiated', 'ringing'] %}
-                        <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">{{
-                            log.status|upper }}</span>
+                        {% if log.status in ['completed', 'delivered', 'read', 'answered', 'in-progress'] %}
+                        <span class="badge bg-success bg-opacity-10 text-success px-3 py-2 rounded-pill">
+                            {% if campaign.type == 'call' and log.status in ['completed', 'answered', 'in-progress'] %}ANSWERED{% else %}{{ log.status|upper }}{% endif %}
+                        </span>
+                        {% elif log.status in ['failed', 'undelivered', 'canceled'] %}
+                        <span class="badge bg-danger bg-opacity-10 text-danger px-3 py-2 rounded-pill">{{ log.status|upper }}</span>
+                        {% elif log.status == 'no-answer' %}
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill">NOT ANSWERED</span>
+                        {% elif log.status == 'busy' %}
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary px-3 py-2 rounded-pill">BUSY</span>
+                        {% elif log.status in ['queued', 'initiated', 'ringing', 'pending'] %}
+                        <span class="badge bg-warning bg-opacity-10 text-warning px-3 py-2 rounded-pill">{{ log.status|upper }}</span>
                         {% else %}
-                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">{{ log.status|upper
-                            }}</span>
+                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">{{ log.status|upper }}</span>
                         {% endif %}
                     </td>
+                    {% if campaign.type == 'call' %}
+                    <td class="fw-bold">
+                        {% if log.meta and log.meta.get('duration_seconds') %}
+                        {{ log.meta.get('duration_seconds') }}s
+                        {% else %}
+                        -
+                        {% endif %}
+                    </td>
+                    {% endif %}
                     <td class="small text-danger" style="max-width: 300px; word-wrap: break-word;">
                         {% if log.error %}
                         <i class="bi bi-exclamation-circle me-1"></i>{{ log.error }}
@@ -206,7 +268,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" class="text-center py-4 text-muted">No delivery logs found.</td>
+                    <td colspan="{{ 6 if campaign.type == 'call' else 5 }}" class="text-center py-4 text-muted">No delivery logs found.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -236,9 +298,11 @@
         'queued': '#fd7e14',     // Orange
         'initiated': '#fd7e14',  // Orange
         'ringing': '#17a2b8',    // Cyan
-        'in-progress': '#17a2b8',
+        'in-progress': '#17a2b8', // Cyan
+        'busy': '#6c757d',       // Gray
+        'no-answer': '#adb5bd',   // Light Gray
         'failed': '#dc3545',     // Red
-        'undelivered': '#dc3545' // Red
+        'undelivered': '#dc3545' // Red // Red
     };
 
     for (const [status, count] of Object.entries(counts)) {

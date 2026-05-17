@@ -1,1423 +1,1052 @@
-from datetime import datetime, timedelta
-import logging
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
-from flask_login import login_user, logout_user, login_required, current_user
-from models.models import OrganizationUser, Module, ModuleField, ModuleRecord, ModuleRecordValue, Contact, Script, Campaign, CampaignTarget, DeliveryLog, ModuleGroup, Organization
-from models import db
+from flask import (
+    request,
+    redirect,
+    url_for,
+    flash,
+    render_template,
+    jsonify,
+    current_app,
+    Blueprint,
+    session,
+)
+from flask_login import current_user, login_required, login_user, logout_user
+from models.models import (
+    db,
+    Module,
+    ModuleField,
+    ModuleRecord,
+    Campaign,
+    DeliveryLog,
+    OrganizationUser,
+    ChangeRequest,
+    PlatformNotification,
+    ModuleRecordValue,
+    ModuleGroup,
+    Subscription,
+)
 from utils.decorators import worker_required, active_subscription_required
+from werkzeug.security import generate_password_hash
+from werkzeug.utils import secure_filename
+import pandas as pd
+import json
+import re
+
+worker_bp = Blueprint("worker", __name__, url_prefix="/worker")
+from datetime import datetime, timedelta
 import os
-import threading
 import time
-from flask import current_app
-
-logger = logging.getLogger(__name__)
-
-worker_bp = Blueprint('worker', __name__, template_folder='../templates')
+import threading
 
 
-def delete_transient_file(file_path, delay=120):
-    """Delete a file after a specific delay in seconds."""
-    def _delete():
-        time.sleep(delay)
-        try:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                print(f"DEBUG: Transient voice note {file_path} deleted after {delay}s.")
-        except Exception as e:
-            print(f"DEBUG: Error auto-deleting transient file {file_path}: {e}")
-    threading.Thread(target=_delete, daemon=True).start()
-
-
-@worker_bp.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-        selected_org_id = request.form.get('organization_id')
-        
-        # Matching users with valid password
-        matching_users = OrganizationUser.query.filter_by(email=email).all()
-        valid_users = [u for u in matching_users if u.check_password(password)]
-        
-        if not valid_users:
-            flash('Invalid credentials', 'danger')
-            return render_template('auth/worker_login.html')
-            
-        if selected_org_id:
-            user = OrganizationUser.query.filter_by(email=email, organization_id=selected_org_id).first()
-            if user and user.check_password(password):
-                # Check subscription status
-                from models.models import Subscription
-                sub = Subscription.query.filter_by(organization_id=user.organization_id).first()
-                if not sub or sub.status == 'inactive' or (sub.expires_at and datetime.utcnow() > sub.expires_at + timedelta(days=3)):
-                    flash('Organization services are suspended or a subscription is required. Please contact your administrator.', 'danger')
-                    return render_template('auth/worker_login.html')
-                    
-                login_user(user)
-                return redirect(url_for('worker.dashboard'))
-                
-        if len(valid_users) == 1:
-            user = valid_users[0]
-            # Check subscription status
-            from models.models import Subscription
-            sub = Subscription.query.filter_by(organization_id=user.organization_id).first()
-            if not sub or sub.status == 'inactive' or (sub.expires_at and datetime.utcnow() > sub.expires_at + timedelta(days=3)):
-                flash('Organization services are suspended or a subscription is required. Please contact your administrator.', 'danger')
-                return render_template('auth/worker_login.html')
-                
-            login_user(user)
-            return redirect(url_for('worker.dashboard'))
-            
-        # If multiple valid accounts, show selection (reusing the auth/select_org template)
-        return render_template('auth/select_org.html', matching_users=valid_users, email=email, password=password)
-        
-    return render_template('auth/worker_login.html')
-
-
-@worker_bp.route('/dashboard')
+@worker_bp.route("/dashboard")
 @worker_required
 @active_subscription_required
 def dashboard():
-    # show worker-level views inside their organization
-    if not hasattr(current_user, 'organization_id') or getattr(current_user, 'role', '') != 'worker':
-        flash('Access denied: worker only', 'danger')
-        return redirect(url_for('worker.login'))
     org_id = current_user.organization_id
     modules = Module.query.filter_by(organization_id=org_id).all()
-    return render_template('worker/dashboard.html', modules=modules)
 
+    # Base stats
+    total_modules = len(modules)
+    m_ids = [m.id for m in modules]
 
-@worker_bp.route('/modules/create', methods=['GET', 'POST'])
-@worker_required
-@active_subscription_required
-def create_module():
-    if not hasattr(current_user, 'organization_id'):
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.login'))
-        
-    if request.method == 'POST':
-        name = request.form['name']
-        description = request.form.get('description')
-        
-        m = Module(
-            organization_id=current_user.organization_id,
-            name=name,
-            description=description,
-            status='active'
+    total_records = (
+        ModuleRecord.query.filter(ModuleRecord.module_id.in_(m_ids)).count()
+        if m_ids
+        else 0
+    )
+    active_campaigns = (
+        Campaign.query.filter(
+            Campaign.module_id.in_(m_ids), Campaign.status == "running"
+        ).count()
+        if m_ids
+        else 0
+    )
+
+    # Success Rate Calculation
+    campaign_ids = (
+        [c.id for c in Campaign.query.filter(Campaign.module_id.in_(m_ids)).all()]
+        if m_ids
+        else []
+    )
+    total_logs = (
+        DeliveryLog.query.filter(DeliveryLog.campaign_id.in_(campaign_ids)).count()
+        if campaign_ids
+        else 0
+    )
+    success_logs = (
+        DeliveryLog.query.filter(
+            DeliveryLog.campaign_id.in_(campaign_ids),
+            DeliveryLog.status.in_(["sent", "delivered", "read", "completed"]),
+        ).count()
+        if campaign_ids
+        else 0
+    )
+
+    success_rate = round((success_logs / total_logs * 100), 1) if total_logs > 0 else 0
+
+    # Module enrichment (Real Data)
+    for m in modules:
+        m.record_count = ModuleRecord.query.filter_by(module_id=m.id).count()
+        m.campaign_count = Campaign.query.filter_by(module_id=m.id).count()
+        last_record = (
+            ModuleRecord.query.filter_by(module_id=m.id)
+            .order_by(ModuleRecord.created_at.desc())
+            .first()
         )
-        db.session.add(m)
-        db.session.commit()
-        flash('Module created successfully', 'success')
-        return redirect(url_for('worker.dashboard'))
-        
-    return render_template('worker/module_create.html')
-
-
-@worker_bp.route('/modules/<int:mid>/groups')
-@worker_required
-@active_subscription_required
-def manage_groups(mid):
-    m = Module.query.get_or_404(mid)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-    return render_template('worker/groups.html', module=m)
-
-
-@worker_bp.route('/modules/<int:mid>/groups/add', methods=['POST'])
-@worker_required
-@active_subscription_required
-def add_group(mid):
-    m = Module.query.get_or_404(mid)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-    
-    name = request.form['name']
-    g = ModuleGroup(module_id=m.id, name=name)
-    db.session.add(g)
-    db.session.commit()
-    flash('Group created successfully', 'success')
-    return redirect(url_for('worker.manage_groups', mid=mid))
-
-
-@worker_bp.route('/groups/<int:gid>/edit', methods=['POST'])
-@worker_required
-@active_subscription_required
-def edit_group(gid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-    
-    g.name = request.form['name']
-    db.session.commit()
-    flash('Group updated', 'success')
-    return redirect(url_for('worker.manage_groups', mid=m.id))
-
-
-@worker_bp.route('/groups/<int:gid>/delete', methods=['POST'])
-@worker_required
-@active_subscription_required
-def delete_group(gid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-    
-    db.session.delete(g)
-    db.session.commit()
-    flash('Group deleted', 'success')
-    return redirect(url_for('worker.manage_groups', mid=m.id))
-
-
-
-@worker_bp.route('/groups/<int:gid>')
-@worker_required
-@active_subscription_required
-def group_dashboard(gid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-    
-    return render_template('worker/module_detail.html', module=m, group=g, fields=g.fields)
-
-
-@worker_bp.route('/modules/<int:mid>')
-@worker_required
-@active_subscription_required
-def module_detail(mid):
-    m = Module.query.get_or_404(mid)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    return render_template('worker/module_detail.html', module=m, group=None, fields=m.fields)
-
-
-@worker_bp.route('/modules/<int:mid>/fields', methods=['POST'])
-@worker_required
-@active_subscription_required
-def add_field(mid):
-    m = Module.query.get_or_404(mid)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    name = request.form['name']
-    field_type = request.form['field_type']
-    is_unique = request.form.get('is_unique') == 'true'
-    is_comm = request.form.get('is_communication') == 'true'
-    
-    meta = {}
-    if is_comm:
-        # Unset others in this module (module-level)
-        existing_fields = ModuleField.query.filter_by(module_id=m.id, group_id=None).all()
-        for ef in existing_fields:
-            if ef.meta and ef.meta.get('is_communication'):
-                new_meta = dict(ef.meta)
-                new_meta['is_communication'] = False
-                ef.meta = new_meta
-        meta['is_communication'] = True
-
-    if field_type == 'calculated':
-        meta['formula'] = request.form.get('formula')
-    elif field_type == 'boolean':
-        import json
-        meta['logic'] = json.loads(request.form.get('logic', '{}'))
-        meta['actions'] = json.loads(request.form.get('actions', '[]'))
-
-    f = ModuleField(module_id=m.id, name=name, field_type=field_type, is_unique=is_unique, meta=meta)
-    db.session.add(f)
-    db.session.commit()
-    flash('Field added', 'success')
-    return redirect(url_for('worker.module_detail', mid=mid))
-
-
-@worker_bp.route('/modules/<int:mid>/fields/<int:fid>/delete', methods=['POST'])
-@worker_required
-def delete_field(mid, fid):
-    m = Module.query.get_or_404(mid)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    f = ModuleField.query.get_or_404(fid)
-    if f.module_id != m.id:
-        flash('Field mismatch', 'danger')
-        return redirect(url_for('worker.module_detail', mid=mid))
-    
-    # Delete associated values first (cascade manually just in case)
-    ModuleRecordValue.query.filter_by(field_id=f.id).delete()
-    db.session.delete(f)
-    db.session.commit()
-    
-    flash('Field deleted', 'success')
-    return redirect(url_for('worker.module_detail', mid=mid))
-
-
-@worker_bp.route('/modules/<int:mid>/fields/<int:fid>/update', methods=['POST'])
-@worker_required
-def update_field(mid, fid):
-    m = Module.query.get_or_404(mid)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    f = ModuleField.query.get_or_404(fid)
-    if f.module_id != m.id:
-        flash('Field mismatch', 'danger')
-        return redirect(url_for('worker.module_detail', mid=mid))
-    
-    f.name = request.form['name']
-    f.field_type = request.form['field_type']
-    f.is_unique = request.form.get('is_unique') == 'true'
-    is_comm = request.form.get('is_communication') == 'true'
-    
-    f.meta = f.meta or {}
-    if is_comm:
-        # Unset others in this module (module-level)
-        existing_fields = ModuleField.query.filter_by(module_id=m.id, group_id=None).all()
-        for ef in existing_fields:
-            if ef.id != f.id and ef.meta and ef.meta.get('is_communication'):
-                new_meta = dict(ef.meta)
-                new_meta['is_communication'] = False
-                ef.meta = new_meta
-        f.meta['is_communication'] = True
-    else:
-        f.meta['is_communication'] = False
-
-    if f.field_type == 'calculated':
-        f.meta = f.meta or {}
-        f.meta['formula'] = request.form.get('formula')
-    elif f.field_type == 'boolean':
-        import json
-        f.meta = f.meta or {}
-        f.meta['logic'] = json.loads(request.form.get('logic', '{}'))
-        f.meta['actions'] = json.loads(request.form.get('actions', '[]'))
-        
-    db.session.commit()
-    
-    flash('Field updated', 'success')
-    return redirect(url_for('worker.module_detail', mid=mid))
-
-
-@worker_bp.route('/groups/<int:gid>/fields', methods=['POST'])
-@worker_required
-def add_group_field(gid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    name = request.form['name']
-    field_type = request.form['field_type']
-    is_unique = request.form.get('is_unique') == 'true'
-    is_comm = request.form.get('is_communication') == 'true'
-    
-    meta = {}
-    if is_comm:
-        # Unset others in this group
-        existing_fields = ModuleField.query.filter_by(module_id=m.id, group_id=g.id).all()
-        for ef in existing_fields:
-            if ef.meta and ef.meta.get('is_communication'):
-                new_meta = dict(ef.meta)
-                new_meta['is_communication'] = False
-                ef.meta = new_meta
-        meta['is_communication'] = True
-    if field_type == 'calculated':
-        meta['formula'] = request.form.get('formula')
-    elif field_type == 'boolean':
-        import json
-        meta['logic'] = json.loads(request.form.get('logic', '{}'))
-        meta['actions'] = json.loads(request.form.get('actions', '[]'))
-
-    f = ModuleField(module_id=m.id, group_id=g.id, name=name, field_type=field_type, is_unique=is_unique, meta=meta)
-    db.session.add(f)
-    db.session.commit()
-    flash('Field added to group', 'success')
-    return redirect(url_for('worker.group_dashboard', gid=gid))
-
-
-@worker_bp.route('/groups/<int:gid>/fields/<int:fid>/delete', methods=['POST'])
-@worker_required
-def delete_group_field(gid, fid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    f = ModuleField.query.get_or_404(fid)
-    if f.group_id != g.id:
-        flash('Field mismatch', 'danger')
-        return redirect(url_for('worker.group_dashboard', gid=gid))
-    
-    ModuleRecordValue.query.filter_by(field_id=f.id).delete()
-    db.session.delete(f)
-    db.session.commit()
-    
-    flash('Field deleted', 'success')
-    return redirect(url_for('worker.group_dashboard', gid=gid))
-
-
-@worker_bp.route('/groups/<int:gid>/fields/<int:fid>/update', methods=['POST'])
-@worker_required
-def update_group_field(gid, fid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    f = ModuleField.query.get_or_404(fid)
-    if f.group_id != g.id:
-        flash('Field mismatch', 'danger')
-        return redirect(url_for('worker.group_dashboard', gid=gid))
-    
-    f.name = request.form['name']
-    f.field_type = request.form['field_type']
-    f.is_unique = request.form.get('is_unique') == 'true'
-    is_comm = request.form.get('is_communication') == 'true'
-
-    f.meta = f.meta or {}
-    if is_comm:
-        # Unset others in this group
-        existing_fields = ModuleField.query.filter_by(module_id=m.id, group_id=g.id).all()
-        for ef in existing_fields:
-            if ef.id != f.id and ef.meta and ef.meta.get('is_communication'):
-                new_meta = dict(ef.meta)
-                new_meta['is_communication'] = False
-                ef.meta = new_meta
-        f.meta['is_communication'] = True
-    else:
-        f.meta['is_communication'] = False
-
-    if f.field_type == 'calculated':
-        f.meta = f.meta or {}
-        f.meta['formula'] = request.form.get('formula')
-    elif f.field_type == 'boolean':
-        import json
-        f.meta = f.meta or {}
-        f.meta['logic'] = json.loads(request.form.get('logic', '{}'))
-        f.meta['actions'] = json.loads(request.form.get('actions', '[]'))
-
-    db.session.commit()
-    
-    flash('Field updated', 'success')
-    return redirect(url_for('worker.group_dashboard', gid=gid))
-
-
-    # Get scripts for this group
-    scripts = Script.query.filter_by(group_id=gid).all()
-    return render_template('worker/scripts.html', module=m, group=g, scripts=scripts)
-
-
-def get_lang_code_for_generator(lang_name):
-    """Map full language name to code supported by gTTS/Translator"""
-    mapping = {
-        'English': 'en',
-        'Hindi': 'hi',
-        'Kannada': 'kn',
-        'Tamil': 'ta',
-        'Telugu': 'te',
-        'Malayalam': 'ml',
-        'Marathi': 'mr'
-    }
-    return mapping.get(lang_name, 'en')
-
-
-@worker_bp.route('/groups/<int:gid>/scripts', methods=['GET', 'POST'])
-@worker_required
-def scripts(gid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    if request.method == 'POST':
-        lang = request.form['language']
-        stype = request.form['type']
-        content = request.form['content']
-        voice_content = request.form.get('voice_content')  # Optional second field
-        
-        meta_data = {}
-        
-        # Generate Audio Preview if voice content exists (or for call types)
-        # Rule: Use voice_content if present, else use content (for calls/simple text)
-        tts_text = voice_content if voice_content else content
-        
-        if tts_text: 
-            import re
-            # Replace placeholders {{key}} with "key" for preview purposes
-            # e.g. "Hello {{name}}" -> "Hello name"
-            preview_text = re.sub(r'\{\{(.*?)\}\}', r'\1', tts_text)
-            
-            from voice_generator import get_voice_generator
-            voice_gen = get_voice_generator()
-            lang_code = get_lang_code_for_generator(lang)
-            
-            # For preview, we use generic generator directly
-            audio_res = voice_gen.generate_generic_voice_message(preview_text.strip(), language=lang_code)
-            
-            if audio_res['success']:
-                # Store URL relative to static
-                meta_data['preview_url'] = f"audio/{audio_res['filename']}"
-        
-        # Twilio Content API support
-        content_sid = request.form.get('content_sid')
-        if content_sid:
-            meta_data['content_sid'] = content_sid.strip()
-            
-        raw_map = request.form.get('content_variables_map')
-        if raw_map:
-            try:
-                import json
-                meta_data['content_variables_map'] = json.loads(raw_map)
-            except:
-                pass
-
-        s = Script(
-            module_id=m.id,
-            group_id=g.id,
-            language=lang,
-            type=stype,
-            content=content,
-            voice_content=voice_content,
-            meta=meta_data
+        m.last_activity = (
+            last_record.created_at.strftime("%d %b %Y")
+            if last_record
+            else "No activity"
         )
-        db.session.add(s)
-        db.session.commit()
-        flash('Script created successfully', 'success')
-        return redirect(url_for('worker.scripts', gid=gid))
-        
-    # Get scripts for this group
-    scripts_list = Script.query.filter_by(group_id=gid).all()
-    
-    # Get module fields for placeholder buttons (Filter only current group or global fields)
-    fields = ModuleField.query.filter(
-        (ModuleField.module_id == m.id) & 
-        ((ModuleField.group_id == None) | (ModuleField.group_id == gid))
-    ).all()
-    
-    return render_template('worker/scripts.html', module=m, group=g, scripts=scripts_list, fields=fields)
 
-
-@worker_bp.route('/scripts/<int:sid>/delete', methods=['POST'])
-@worker_required
-def delete_script(sid):
-    s = Script.query.get_or_404(sid)
-    g = ModuleGroup.query.get(s.group_id)
-    m = Module.query.get(g.module_id)
-    if not m or m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    # Delete associated voice note if exists
-    if s.meta and 'preview_url' in s.meta:
-        try:
-            audio_path = os.path.join(current_app.static_folder, s.meta['preview_url'])
-            if os.path.exists(audio_path):
-                os.remove(audio_path)
-                print(f"DEBUG: Deleted script voice note: {audio_path}")
-        except Exception as e:
-            print(f"DEBUG: Failed to delete script voice note: {e}")
-
-    db.session.delete(s)
-    db.session.commit()
-    flash('Script deleted', 'success')
-
-    return redirect(url_for('worker.scripts', gid=g.id))
-
-
-@worker_bp.route('/scripts/<int:sid>/edit', methods=['GET', 'POST'])
-@worker_required
-def edit_script(sid):
-    s = Script.query.get_or_404(sid)
-    g = ModuleGroup.query.get(s.group_id)
-    m = Module.query.get(g.module_id)
-    if not m or m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    if request.method == 'POST':
-        s.language = request.form['language']
-        s.type = request.form['type']
-        s.content = request.form['content']
-        s.voice_content = request.form.get('voice_content')
-        
-        # Regenerate Preview
-        tts_text = s.voice_content if s.voice_content else s.content
-        
-        # Preserve existing meta or init new
-        meta_data = s.meta if s.meta else {}
-        
-        if tts_text:
-            import re
-            preview_text = re.sub(r'\{\{(.*?)\}\}', r'\1', tts_text)
-            
-            from voice_generator import get_voice_generator
-            voice_gen = get_voice_generator()
-            lang_code = get_lang_code_for_generator(s.language)
-            
-            audio_res = voice_gen.generate_generic_voice_message(preview_text.strip(), language=lang_code)
-            if audio_res['success']:
-                meta_data['preview_url'] = f"audio/{audio_res['filename']}"
-            else:
-                # If generation failed, keep old or log error?
-                pass
-        else:
-            # If empty content, remove preview
-            if 'preview_url' in meta_data:
-                del meta_data['preview_url']
-            
-        s.meta = meta_data
-        
-        # Twilio Content API support
-        new_sid = request.form.get('content_sid')
-        if new_sid:
-            s.meta['content_sid'] = new_sid.strip()
-        elif 'content_sid' in s.meta:
-            del s.meta['content_sid']
-            
-        raw_map = request.form.get('content_variables_map')
-        if raw_map:
-            try:
-                import json
-                s.meta['content_variables_map'] = json.loads(raw_map)
-            except:
-                pass
-        elif 'content_variables_map' in s.meta:
-            del s.meta['content_variables_map']
-
-        db.session.commit()
-        flash('Script updated successfully', 'success')
-        return redirect(url_for('worker.scripts', gid=g.id))
-    
-    # Get module fields for placeholder buttons (Filter only current group or global fields)
-    fields = ModuleField.query.filter(
-        (ModuleField.module_id == m.id) & 
-        ((ModuleField.group_id == None) | (ModuleField.group_id == g.id))
-    ).all()
-    return render_template('worker/script_edit.html', module=m, group=g, script=s, fields=fields)
-
-
-@worker_bp.route('/groups/<int:gid>/campaigns', methods=['GET', 'POST'])
-@worker_required
-def campaigns(gid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    if request.method == 'POST':
-        name = request.form['name']
-        ctype = request.form['type']
-        sid = request.form['script_id']
-        sender_id = request.form.get('sender_number_id')
-        
-        c = Campaign(
-            organization_id=m.organization_id,
-            module_id=m.id,
-            group_id=g.id,
-            name=name,
-            type=ctype,
-            script_id=sid,
-            sender_number_id=sender_id if sender_id else None,
-            status='draft'
-        )
-        db.session.add(c)
-        db.session.commit()
-        flash('Campaign created', 'success')
-        return redirect(url_for('worker.campaigns', gid=gid))
-        
-    campaigns = Campaign.query.filter_by(group_id=gid).order_by(Campaign.id.desc()).all()
-    scripts = Script.query.filter_by(group_id=gid).all()
-    
-    # Fetch available numbers for this organization
-    from models.models import CommunicationNumber
-    numbers = CommunicationNumber.query.filter_by(organization_id=m.organization_id, active=True, approved=True).all()
-    
-    return render_template('worker/campaigns.html', module=m, group=g, campaigns=campaigns, scripts=scripts, numbers=numbers)
-
-
-@worker_bp.route('/campaigns/<int:cid>/start', methods=['POST'])
-@worker_required
-def start_campaign(cid):
-    c = Campaign.query.get_or_404(cid)
-    # Organization check
-    if c.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    # CRITICAL: Check for Disabled Communication Channels
-    # If the org has opted for custom numbers but turned them ALL off, AND disabled default fallback,
-    # we must BLOCK the campaign.
-    from models.models import CommunicationNumber, Organization
-    
-    # 1. Determine required channel
-    is_whatsapp = 'whatsapp' in c.type
-    service_name = "WhatsApp" if is_whatsapp else "Voice Call"
-    
-    # 2. Check for ANY ACTIVE number for this channel (Custom or Platform Default)
-    possible_channels = ['whatsapp', 'myoperator_whatsapp'] if is_whatsapp else ['voice', 'indian_voice', 'myoperator_voice', 'call']
-    
-    active_count = CommunicationNumber.query.filter(
-        CommunicationNumber.organization_id == c.organization_id,
-        CommunicationNumber.active == True,
-        CommunicationNumber.channel_type.in_(possible_channels)
-    ).count()
-    
-    has_active = active_count > 0
-    # Also check if Default Fallback is explicitly allowed in Org settings if no direct active number found
-    if not has_active:
-        org = Organization.query.get(c.organization_id)
-        default_allowed = org.allow_default_whatsapp if is_whatsapp else org.allow_default_voice
-        if default_allowed:
-            has_active = True
-
-    if not has_active:
-         # Both Custom and Default are unavailable
-         flash(f'Organization Admin has disabled {service_name} services. Campaign paused.', 'danger')
-         return redirect(url_for('worker.campaigns', gid=c.group_id))
-
-    c.status = 'running'
-    db.session.commit()
-    print(f"DEBUG: Starting campaign {cid}, type={c.type}")
-    
-    try:
-        from communication.whatsapp_dispatcher import dispatch_whatsapp
-        from voice_generator import get_voice_generator
-
-        # Get Group/Records
-        group = ModuleGroup.query.get(c.group_id)
-        if not group:
-            flash('Target group not found.', 'danger')
-            return redirect(url_for('worker.campaigns', gid=c.group_id))
-
-        records = ModuleRecord.query.filter_by(group_id=c.group_id).all()
-        if not records:
-            flash('No records found in this group.', 'warning')
-            return redirect(url_for('worker.campaigns', gid=c.group_id))
-
-        # Get Script
-        script = Script.query.get(c.script_id)
-        if not script:
-            flash('Campaign has no associated script.', 'danger')
-            return redirect(url_for('worker.campaigns', gid=c.group_id))
-
-        # Get All Fields (Module Level + Group Level)
-        all_fields = ModuleField.query.filter(
-            (ModuleField.module_id == group.module_id) & 
-            ((ModuleField.group_id == None) | (ModuleField.group_id == group.id))
-        ).all()
-        
-        field_info = {f.id: f for f in all_fields}
-        
-        # Use boolean fields with defined logic as filters
-        logic_fields = [f for f in all_fields if f.field_type == 'boolean' and (f.meta and f.meta.get('logic'))]
-
-        eligible_count = 0
-        count = 0
-        print(f"DEBUG: Starting Campaign {c.id}. Found {len(records)} records. Filters: {[f.name for f in logic_fields]}")
-
-        for r in records:
-            # Check logic filters
-            if logic_fields:
-                is_eligible = True
-                record_values = {v.field_id: v.value for v in r.values}
-                for lf in logic_fields:
-                    raw_val = record_values.get(lf.id)
-                    # If value is missing, default to TRUE as per user request
-                    val = str(raw_val).upper().strip() if raw_val is not None else "TRUE"
-                    
-                    if val == 'FALSE':
-                        print(f"DEBUG: Record {r.id} rejected by '{lf.name}' (Value: {val})")
-                        is_eligible = False
-                        break
-                if not is_eligible:
-                    continue 
-
-            eligible_count += 1
-            print(f"DEBUG: Record {r.id} is ELIGIBLE.")
-
-            # 1. Prepare record data map for placeholders
-            record_data = {}
-            contact_phone = None
-            comm_field_phone = None
-            first_phone = None
-            contact_id = None # We might need to map record to Contact or create one
-
-            # Find or Create Contact for this record
-            # Use field_type to identify the phone number reliably
-            for v in r.values:
-                field = field_info.get(v.field_id)
-                if not field: continue
-                
-                record_data[field.name] = v.value
-                
-                # RELIABLE DETECTION: Use data type, not label
-                if field.field_type == 'phone':
-                    if not first_phone:
-                        first_phone = v.value
-                    if field.meta and field.meta.get('is_communication'):
-                        comm_field_phone = v.value
-
-            contact_phone = comm_field_phone if comm_field_phone else first_phone
-
-            if not contact_phone:
-                print(f"DEBUG: Record {r.id} missing phone field")
-                continue
-            
-            print(f"DEBUG: Processing record {r.id}, phone {contact_phone}")
-
-            # Ensure Contact exists in DB
-            from models.models import Contact
-            contact = Contact.query.filter_by(organization_id=c.organization_id, phone=contact_phone).first()
-            if not contact:
-                contact = Contact(organization_id=c.organization_id, phone=contact_phone, name=record_data.get('name', record_data.get('Name', 'Customer')))
-                db.session.add(contact)
-                db.session.flush()
-
-            # 2. Process Content (Text + Audio)
-            text_body = script.content
-            voice_body = script.voice_content if script.voice_content else script.content
-            
-            # Replace placeholders {{field}} case-insensitively using regex
-            import re
-            for key, val in record_data.items():
-                if val:
-                    # Regex to match {{key}} case-insensitively
-                    pattern = re.compile(re.escape('{{' + key + '}}'), re.IGNORECASE)
-                    text_body = pattern.sub(str(val), text_body)
-                    voice_body = pattern.sub(str(val), voice_body)
-                    
-                    # Also handle lowercase version if requested manually
-                    pattern_lower = re.compile(re.escape('{{' + key.lower() + '}}'), re.IGNORECASE)
-                    text_body = pattern_lower.sub(str(val), text_body)
-                    voice_body = pattern_lower.sub(str(val), voice_body)
-
-            # 3. Handle Dispatch
-            try:
-                if c.type == 'whatsapp_text':
-                    # Check for Content API Sid in script meta
-                    content_sid = script.meta.get('content_sid') if script.meta else None
-                    content_variables = None
-                    
-                    if content_sid:
-                        # Map placeholders to numeric keys if needed for Twilio Content API
-                        # For now, let's use the user's example format if provided in meta or default
-                        # Example: {"1": "val1", "2": "val2"}
-                        import json
-                        vars_map = {}
-                        # Ensure we check both lowercase and original casing for the field name
-                        raw_vars = script.meta.get('content_variables_map', {'1': 'name'})
-                        for k, field_name in raw_vars.items():
-                            val = record_data.get(field_name) or record_data.get(field_name.lower()) or record_data.get(field_name.capitalize()) or ''
-                            vars_map[k] = str(val)
-                        content_variables = json.dumps(vars_map)
-
-                    print(f"DEBUG: Record {r.id} - Final Message: {text_body[:50]}...")
-
-                    # Send Text Message (or Content Template)
-                    dispatch_whatsapp(
-                        c.organization_id, 
-                        contact.id, 
-                        message=text_body, 
-                        campaign_id=c.id,
-                        content_sid=content_sid,
-                        content_variables=content_variables,
-                        sender_number_id=c.sender_number_id
-                    )
-                    
-                    # Also Send Voice Note if script has voice intent
-                    voice_gen = get_voice_generator()
-                    # FIX: Pass the script's language to the generator
-                    lang_code = get_lang_code_for_generator(script.language)
-                    audio_res = voice_gen.generate_generic_voice_message(voice_body, language=lang_code)
-                    if audio_res['success']:
-                        media_url = url_for('static', filename=f"audio/{audio_res['filename']}", _external=True)
-                        dispatch_whatsapp(
-                            c.organization_id, 
-                            contact.id, 
-                            audio_url=media_url, 
-                            campaign_id=c.id,
-                            local_path=audio_res.get('file_path'),
-                            sender_number_id=c.sender_number_id
-                        )
-                        # Schedule deletion of transient voice note after 2 minutes
-                        if audio_res.get('file_path'):
-                            delete_transient_file(audio_res['file_path'], delay=120)
-                
-                elif c.type == 'call':
-                    # Determine which service to use based on sender number
-                    from models.models import CommunicationNumber
-                    sender = CommunicationNumber.query.get(c.sender_number_id) if c.sender_number_id else None
-                    print(f"DEBUG: Campaign {c.id} using Sender Number ID: {c.sender_number_id}, Type: {sender.channel_type if sender else 'None'}")
-                    
-                    if sender and sender.channel_type == 'indian_voice':
-                        from services.exotel_service import make_exotel_call
-                        make_exotel_call(
-                            c.organization_id,
-                            contact.id,
-                            tts_text=text_body,
-                            language=script.language,
-                            campaign_id=c.id,
-                            sender_number_id=c.sender_number_id
-                        )
-                    elif sender and sender.channel_type == 'myoperator_voice':
-                        from services.myoperator_service import make_myoperator_call
-                        make_myoperator_call(
-                            c.organization_id,
-                            contact.id,
-                            tts_text=text_body,
-                            language=script.language,
-                            campaign_id=c.id,
-                            sender_number_id=c.sender_number_id
-                        )
-                    else:
-                        from services.twilio_service import make_call
-                        make_call(
-                            c.organization_id, 
-                            contact.id, 
-                            tts_text=text_body, 
-                            language=script.language, 
-                            campaign_id=c.id,
-                            sender_number_id=c.sender_number_id
-                        )
-
-                count += 1
-                print(f"DEBUG: Dispatched {c.type} for record {r.id}")
-            except Exception as e:
-                print(f"DEBUG: Error in loop for record {r.id}: {e}")
-                logger.error(f"Failed to dispatch campaign item for {contact_phone}: {e}")
-
-        if eligible_count == 0:
-            flash(f'Campaign finished, but 0 records were eligible based on your logic filters.', 'warning')
-        else:
-            flash(f'Campaign processed for {eligible_count} targets.', 'success')
-        db.session.commit()
-
-    except Exception as e:
-        logger.exception("Campaign execution failed")
-        flash(f'Error starting campaign: {str(e)}', 'danger')
-    return redirect(url_for('worker.campaigns', gid=c.group_id))
-
-
-@worker_bp.route('/groups/<int:gid>/records', methods=['POST'])
-@worker_required
-def add_record(gid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    # Get Fields Config (Merge module and group fields)
-    fields = ModuleField.query.filter(
-        (ModuleField.module_id == m.id) & 
-        ((ModuleField.group_id == None) | (ModuleField.group_id == gid))
-    ).all()
-    
-    # 1. Validation & Data Collection Loop
-    form_data = {}
-    files_to_save = {}
-
-    import re
-    
-    for f in fields:
-        input_name = f'field_{f.id}'
-        
-        # Handle File Uploads
-        if f.field_type == 'file':
-            if input_name in request.files:
-                file = request.files[input_name]
-                if file and file.filename:
-                    files_to_save[f.id] = file
-            continue
-
-        # Handle Text/Numeric
-        raw_val = request.form.get(input_name)
-        
-        # Type-Specific Validation
-        if raw_val:
-            if f.field_type == 'numeric':
-                if not re.match(r'^-?\d+(\.\d+)?$', raw_val):
-                    flash(f'Error: Field "{f.name}" requires a valid number.', 'danger')
-                    return redirect(url_for('worker.group_dashboard', gid=gid))
-            elif f.field_type == 'email':
-                if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', raw_val):
-                    flash(f'Error: Field "{f.name}" requires a valid email.', 'danger')
-                    return redirect(url_for('worker.group_dashboard', gid=gid))
-            elif f.field_type == 'phone':
-                if not re.match(r'^\d{10}$', raw_val):
-                    flash(f'Error: Field "{f.name}" must be exactly 10 digits.', 'danger')
-                    return redirect(url_for('worker.group_dashboard', gid=gid))
-        
-        # Uniqueness Check
-        if f.is_unique and raw_val:
-            # Check if this value already exists for this field in this module (case-insensitive)
-            from sqlalchemy import func
-            duplicate = db.session.query(ModuleRecordValue).join(ModuleRecord).filter(
-                ModuleRecordValue.field_id == f.id,
-                func.lower(ModuleRecordValue.value) == func.lower(str(raw_val)),
-                ModuleRecord.module_id == m.id
-            ).first()
-            if duplicate:
-                # Silent fail as real-time validation handles user feedback
-                return redirect(url_for('worker.group_dashboard', gid=gid))
-        
-        form_data[f.id] = raw_val
-
-    # 2. Create Record Only if Validation Passes
-    record = ModuleRecord(module_id=m.id, group_id=g.id)
-    db.session.add(record)
-    db.session.flush() # get ID for filenames
-    
-    # 3. Save Files
-    import os
-    from werkzeug.utils import secure_filename
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    upload_dir = os.path.join(base_dir, 'static', 'uploads')
-    os.makedirs(upload_dir, exist_ok=True)
-
-    for fid, file in files_to_save.items():
-        filename = secure_filename(file.filename)
-        unique_filename = f"{record.id}_{fid}_{filename}"
-        file.save(os.path.join(upload_dir, unique_filename))
-        
-        # Save as value
-        rv = ModuleRecordValue(record_id=record.id, field_id=fid, value=f'uploads/{unique_filename}')
-        db.session.add(rv)
-
-    # 4. Save Text/Number Values
-    for fid, val in form_data.items():
-        if val is not None:
-            rv = ModuleRecordValue(record_id=record.id, field_id=fid, value=str(val))
-            db.session.add(rv)
-            
-    db.session.commit()
-    flash('Record added successfully', 'success')
-    return redirect(url_for('worker.group_dashboard', gid=gid))
-
-            
-    db.session.commit()
-
-    # Trigger Automation Engine
-    try:
-        from services.automation_engine import get_automation_engine
-        ae = get_automation_engine()
-        ae.recalculate_record(record.id)
-    except Exception as e:
-        logger.error(f"Automation Error: {e}")
-
-    flash('Record added successfully', 'success')
-    return redirect(url_for('worker.group_dashboard', gid=gid))
-
-
-@worker_bp.route('/groups/<int:gid>/export/template')
-@worker_required
-def export_template(gid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-    
-    import pandas as pd
-    from io import BytesIO
-    from flask import send_file
-    
-    # Create columns from field names
-    fields = g.fields
-    columns = [f.name for f in fields]
-    df = pd.DataFrame(columns=columns)
-    
-    fmt = request.args.get('format', 'csv')
-    output = BytesIO()
-    
-    if fmt == 'excel':
-        df.to_excel(output, index=False)
-        mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        filename = f"{m.name}_template.xlsx"
-    else:
-        df.to_csv(output, index=False)
-        mimetype = 'text/csv'
-        filename = f"{m.name}_template.csv"
-        
-    output.seek(0)
-    return send_file(output, as_attachment=True, download_name=filename, mimetype=mimetype)
-
-
-@worker_bp.route('/groups/<int:gid>/export/data')
-@worker_required
-def export_data(gid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    import pandas as pd
-    from io import BytesIO
-    from flask import send_file
-    
-    # Prepare data
-    data = []
-    fields = g.fields
-    field_map = {f.id: f.name for f in fields}
-    columns = [f.name for f in fields]
-    columns.append('Created At')
-    
-    for r in g.records:
-        row = {}
-        row['Created At'] = r.created_at.strftime('%Y-%m-%d %H:%M')
-        for val in r.values:
-            fname = field_map.get(val.field_id)
-            if fname:
-                row[fname] = val.value
-        data.append(row)
-        
-    df = pd.DataFrame(data, columns=columns)
-    
-    fmt = request.args.get('format', 'csv')
-    output = BytesIO()
-    
-    if fmt == 'excel':
-        df.to_excel(output, index=False)
-        mimetype = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        filename = f"{g.name}_data.xlsx"
-    else:
-        df.to_csv(output, index=False)
-        mimetype = 'text/csv'
-        filename = f"{g.name}_data.csv"
-        
-    output.seek(0)
-    return send_file(output, as_attachment=True, download_name=filename, mimetype=mimetype)
-
-
-@worker_bp.route('/groups/<int:gid>/import', methods=['POST'])
-@worker_required
-def import_data(gid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    file = request.files.get('file')
-    if not file or not file.filename:
-        flash('No file selected', 'danger')
-        return redirect(url_for('worker.group_dashboard', gid=gid))
-        
-    import pandas as pd
-    
-    try:
-        if file.filename.endswith('.csv'):
-            df = pd.read_csv(file)
-        elif file.filename.endswith(('.xls', '.xlsx')):
-            df = pd.read_excel(file)
-        else:
-            flash('Invalid file format. Use CSV or Excel.', 'danger')
-            return redirect(url_for('worker.group_dashboard', gid=gid))
-            
-        # Map Name -> Field Object
-        fields = g.fields
-        name_to_field = {f.name: f for f in fields}
-        
-        count = 0
-        skipped = 0
-        imported_ids = []
-        for _, row in df.iterrows():
-            # Check Uniqueness
-            is_valid_row = True
-            for col_name, value in row.items():
-                if pd.isna(value): continue
-                field = name_to_field.get(col_name)
-                if field and field.is_unique:
-                    # Check duplicate in DB
-                    duplicate = db.session.query(ModuleRecordValue).join(ModuleRecord).filter(
-                        ModuleRecordValue.field_id == field.id,
-                        ModuleRecordValue.value == str(value),
-                        ModuleRecord.module_id == m.id
-                    ).first()
-                    if duplicate:
-                        is_valid_row = False
-                        break
-            
-            if not is_valid_row:
-                skipped += 1
-                continue
-
-            # Create Record
-            record = ModuleRecord(module_id=m.id, group_id=g.id)
-            db.session.add(record)
-            db.session.flush()
-            imported_ids.append(record.id)
-            
-            # Add Values
-            for col_name, value in row.items():
-                if pd.isna(value): continue
-                field = name_to_field.get(col_name)
-                if field:
-                    val_str = str(value)
-                    
-                    # Type Validation during Import
-                    import re
-                    if field.field_type == 'numeric':
-                        if not re.match(r'^-?\d+(\.\d+)?$', val_str):
-                            is_valid_row = False
-                            break
-                    elif field.field_type == 'email':
-                        if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', val_str):
-                            is_valid_row = False
-                            break
-                    elif field.field_type == 'phone':
-                        if not re.match(r'^\d{10}$', val_str):
-                            is_valid_row = False
-                            break
-                            
-                    rv = ModuleRecordValue(record_id=record.id, field_id=field.id, value=val_str)
-                    db.session.add(rv)
-            count += 1
-            
-        db.session.commit()
-
-        # Trigger Automation Engine for each record
-        from services.automation_engine import get_automation_engine
-        ae = get_automation_engine()
-        for r_id in imported_ids:
-             ae.recalculate_record(r_id)
-
-        msg = f'Successfully imported {count} records.'
-        if skipped > 0:
-            msg += f' {skipped} rows skipped due to duplicate unique fields.'
-        flash(msg, 'success' if count > 0 else 'warning')
-        return redirect(url_for('worker.group_dashboard', gid=gid))
-        
-    except Exception as e:
-        flash(f'Error importing file: {str(e)}', 'danger')
-        return redirect(url_for('worker.group_dashboard', gid=gid))
-        
-@worker_bp.route('/groups/<int:gid>/records/<int:rid>', methods=['GET'])
-@worker_required
-def get_record(gid, rid):
-    try:
-        g = ModuleGroup.query.get_or_404(gid)
-        m = Module.query.get(g.module_id)
-        if m.organization_id != current_user.organization_id:
-            return jsonify({'error': 'Access denied'}), 403
-        
-        r = ModuleRecord.query.get_or_404(rid)
-        if r.group_id != gid:
-            return jsonify({'error': 'Record mismatch'}), 400
-            
-        data = {'id': r.id, 'values': {}}
-        for v in r.values:
-            data['values'][v.field_id] = v.value
-            
-        return jsonify(data)
-    except Exception as e:
-        print(f"Error in get_record: {str(e)}")
-        return jsonify({'error': str(e)}), 500
-
-@worker_bp.route('/groups/<int:gid>/records/<int:rid>/update', methods=['POST'])
-@worker_required
-def update_record(gid, rid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-    
-    r = ModuleRecord.query.get_or_404(rid)
-    
-    import os
-    from werkzeug.utils import secure_filename
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    upload_dir = os.path.join(base_dir, 'static', 'uploads')
-    
-    for field in g.fields:
-        key = f'field_{field.id}'
-        rv = ModuleRecordValue.query.filter_by(record_id=r.id, field_id=field.id).first()
-        
-        if field.field_type == 'file':
-            if key in request.files:
-                file = request.files[key]
-                if file and file.filename:
-                    filename = secure_filename(file.filename)
-                    unique_filename = f"{r.id}_{field.id}_{filename}"
-                    file.save(os.path.join(upload_dir, unique_filename))
-                    
-                    if not rv:
-                        rv = ModuleRecordValue(record_id=r.id, field_id=field.id)
-                        db.session.add(rv)
-                    rv.value = f'uploads/{unique_filename}'
-        else:
-            val = request.form.get(key)
-            if val is not None:
-                # Validation
-                import re
-                if field.field_type == 'numeric' and val:
-                    if not re.match(r'^-?\d+(\.\d+)?$', val):
-                        flash(f'Error: Field "{field.name}" requires a valid number.', 'danger')
-                        return redirect(url_for('worker.group_dashboard', gid=gid))
-                        
-                # Uniqueness Check
-                if field.is_unique and val:
-                    from sqlalchemy import func
-                    duplicate = db.session.query(ModuleRecordValue).join(ModuleRecord).filter(
-                        ModuleRecordValue.field_id == field.id,
-                        func.lower(ModuleRecordValue.value) == func.lower(str(val)),
-                        ModuleRecord.module_id == m.id,
-                        ModuleRecord.id != r.id # Exclude current record
-                    ).first()
-                    if duplicate:
-                        # Silent fail as real-time validation handles user feedback
-                        return redirect(url_for('worker.group_dashboard', gid=gid))
-
-                if not rv:
-                    rv = ModuleRecordValue(record_id=r.id, field_id=field.id)
-                    db.session.add(rv)
-                rv.value = str(val)
-                
-    db.session.commit()
-
-    # Trigger Automation Engine
-    try:
-        from services.automation_engine import get_automation_engine
-        ae = get_automation_engine()
-        ae.recalculate_record(r.id)
-    except Exception as e:
-        logger.error(f"Automation Error: {e}")
-
-    flash('Record updated successfully', 'success')
-    return redirect(url_for('worker.group_dashboard', gid=gid))
-
-@worker_bp.route('/groups/<int:gid>/records/<int:rid>/delete', methods=['POST'])
-@worker_required
-def delete_record(gid, rid):
-    g = ModuleGroup.query.get_or_404(gid)
-    m = Module.query.get(g.module_id)
-    if m.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    r = ModuleRecord.query.get_or_404(rid)
-    db.session.delete(r)
-    db.session.commit()
-    flash('Record deleted', 'success')
-    return redirect(url_for('worker.group_dashboard', gid=gid))
-
-
-@worker_bp.route('/logout')
-def logout():
-    logout_user()
-    return redirect(url_for('main.index'))
-
-
-@worker_bp.route('/campaigns/<int:cid>/report')
-@worker_required
-def campaign_report(cid):
-    c = Campaign.query.get_or_404(cid)
-    if c.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    logs = DeliveryLog.query.filter_by(campaign_id=cid).order_by(DeliveryLog.created_at.desc()).all()
-    
-    # Analytics
-    total = len(logs)
-    status_counts = {}
-    start_time = None
-    end_time = None
-    
-    for l in logs:
-        status_counts[l.status] = status_counts.get(l.status, 0) + 1
-        if not start_time or l.created_at < start_time:
-            start_time = l.created_at
-        if not end_time or l.created_at > end_time:
-            end_time = l.created_at
-            
-    # If no logs but campaign exists, use campaign creation as start
-    if not start_time:
-        start_time = c.created_at
-        
     return render_template(
-        'worker/campaign_report.html', 
-        campaign=c, 
-        logs=logs, 
-        stats={
-            'total': total,
-            'counts': status_counts,
-            'start': start_time,
-            'end': end_time
+        "worker/dashboard.html",
+        modules=modules,
+        total_modules=total_modules,
+        active_campaigns=active_campaigns,
+        total_records=total_records,
+        success_rate=success_rate,
+        current_user=current_user,
+    )
+
+
+@worker_bp.route("/api/worker-analytics")
+@worker_required
+def worker_analytics():
+    org_id = current_user.organization_id
+    module_id = request.args.get("module_id")
+
+    if module_id:
+        m_ids = [int(module_id)]
+        m_obj = db.session.get(Module, module_id)
+        m_name = m_obj.name if m_obj else "Unknown"
+    else:
+        m_ids = [m.id for m in Module.query.filter_by(organization_id=org_id).all()]
+        m_name = "All Modules"
+
+    if not m_ids:
+        return jsonify(
+            {
+                "trend": {"labels": [], "data": []},
+                "distribution": {"labels": [], "data": []},
+            }
+        )
+
+    # Performance Trend (Last 7 Days)
+    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+
+    trend_query = (
+        db.session.query(
+            db.func.date(DeliveryLog.created_at), db.func.count(DeliveryLog.id)
+        )
+        .join(Campaign)
+        .filter(Campaign.module_id.in_(m_ids), DeliveryLog.created_at >= seven_days_ago)
+        .group_by(db.func.date(DeliveryLog.created_at))
+        .all()
+    )
+
+    # Distribution (Records per Module)
+    dist_query = (
+        db.session.query(Module.name, db.func.count(ModuleRecord.id))
+        .join(ModuleRecord)
+        .filter(Module.id.in_(m_ids))
+        .group_by(Module.name)
+        .all()
+    )
+
+    return jsonify(
+        {
+            "module_name": m_name,
+            "trend": {
+                "labels": [
+                    t[0].strftime("%d %b") if hasattr(t[0], "strftime") else str(t[0])
+                    for t in trend_query
+                ],
+                "data": [t[1] for t in trend_query],
+            },
+            "distribution": {
+                "labels": [d[0] for d in dist_query],
+                "data": [d[1] for d in dist_query],
+            },
         }
     )
 
 
-@worker_bp.route('/campaigns/<int:cid>/delete', methods=['POST'])
+@worker_bp.route("/modules")
 @worker_required
-def delete_campaign(cid):
-    c = Campaign.query.get_or_404(cid)
-    if c.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-    
-    gid = c.group_id
-    db.session.delete(c)
+def modules():
+    # Show only the modules present
+    modules = Module.query.filter_by(organization_id=current_user.organization_id).all()
+    return render_template("worker/modules_list.html", modules=modules)
+
+
+@worker_bp.route("/modules/create", methods=["GET", "POST"])
+@worker_required
+@active_subscription_required
+def create_module():
+    if request.method == "POST":
+        name = request.form.get("name")
+        description = request.form.get("description")
+
+        if not name:
+            flash("Module name is required", "danger")
+            return render_template("worker/module_create.html")
+
+        new_module = Module(
+            organization_id=current_user.organization_id,
+            name=name,
+            description=description,
+            status="active",
+            created_by_id=current_user.id,
+        )
+        db.session.add(new_module)
+        db.session.commit()
+
+        ChangeRequest.log(
+            new_module.organization_id,
+            current_user.id,
+            "Module Creation",
+            new_val=f"New module '{name}' created",
+        )
+
+        flash(f"Module '{name}' created successfully!", "success")
+        return redirect(url_for("worker.manage_module", mid=new_module.id))
+
+    return render_template("worker/module_create.html")
+
+
+@worker_bp.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+        selected_org_id = request.form.get("organization_id")
+        matching_users = OrganizationUser.query.filter_by(email=email).all()
+        valid_users = [u for u in matching_users if u.check_password(password)]
+        if not valid_users:
+            flash("Invalid credentials", "danger")
+            return render_template("auth/worker_login.html")
+        if selected_org_id:
+            user = OrganizationUser.query.filter_by(
+                email=email, organization_id=selected_org_id
+            ).first()
+            if user and user.check_password(password):
+                sub = Subscription.query.filter_by(
+                    organization_id=user.organization_id
+                ).first()
+                if (
+                    not sub
+                    or sub.status == "inactive"
+                    or (
+                        sub.expires_at
+                        and datetime.utcnow() > sub.expires_at + timedelta(days=3)
+                    )
+                ):
+                    flash(
+                        "Organization services are suspended or a subscription is required.",
+                        "danger",
+                    )
+                    return render_template("auth/worker_login.html")
+                user.login_count = (user.login_count or 0) + 1
+                user.last_login = datetime.utcnow()
+                db.session.commit()
+                ChangeRequest.log(
+                    user.organization_id,
+                    user.id,
+                    "Worker Login",
+                    new_val=f"Worker session started from {request.remote_addr}",
+                )
+                login_user(user)
+                return redirect(url_for("worker.dashboard"))
+        if len(valid_users) == 1:
+            user = valid_users[0]
+            sub = Subscription.query.filter_by(
+                organization_id=user.organization_id
+            ).first()
+            if (
+                not sub
+                or sub.status == "inactive"
+                or (
+                    sub.expires_at
+                    and datetime.utcnow() > sub.expires_at + timedelta(days=3)
+                )
+            ):
+                flash(
+                    "Organization services are suspended or a subscription is required.",
+                    "danger",
+                )
+                return render_template("auth/worker_login.html")
+            user.login_count = (user.login_count or 0) + 1
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+            ChangeRequest.log(
+                user.organization_id,
+                user.id,
+                "Worker Login",
+                new_val=f"Worker direct login from {request.remote_addr}",
+            )
+            login_user(user)
+            return redirect(url_for("worker.dashboard"))
+        return render_template(
+            "auth/select_org.html",
+            matching_users=valid_users,
+            email=email,
+            password=password,
+        )
+    return render_template("auth/worker_login.html")
+
+
+@worker_bp.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for("main.index"))
+
+
+@worker_bp.route("/modules/<int:mid>/manage")
+@worker_required
+def manage_module(mid):
+    m = db.get_or_404(Module, mid)
+    if m.organization_id != current_user.organization_id:
+        flash("Access denied", "danger")
+        return redirect(url_for("worker.dashboard"))
+
+    fields = ModuleField.query.filter_by(module_id=mid).order_by(ModuleField.id).all()
+    records = (
+        ModuleRecord.query.filter_by(module_id=mid)
+        .order_by(ModuleRecord.created_at.desc())
+        .all()
+    )
+
+    # Enrich records with calculated/boolean values
+    for r in records:
+        r.computed_values = {}
+        # Pre-fetch values to avoid multiple property calls
+        f_vals = r.field_values
+        for f in fields:
+            if f.field_type in ["calculated", "boolean"]:
+                r.computed_values[f.id] = evaluate_logic(r, f)
+            else:
+                r.computed_values[f.id] = f_vals.get(f.id, "-")
+
+    return render_template(
+        "worker/module_manage.html", module=m, fields=fields, records=records
+    )
+
+
+@worker_bp.route("/api/recent-activities")
+@worker_required
+def recent_activities():
+    activities = (
+        ChangeRequest.query.filter_by(organization_id=current_user.organization_id)
+        .order_by(ChangeRequest.created_at.desc())
+        .limit(10)
+        .all()
+    )
+    return jsonify(
+        [
+            {
+                "id": a.id,
+                "actor": a.user.full_name if a.user else "System",
+                "action": a.field_name,
+                "details": a.new_value,
+                "timestamp": a.created_at.strftime("%H:%M %p"),
+            }
+            for a in activities
+        ]
+    )
+
+
+@worker_bp.route("/api/modules/<int:mid>/update", methods=["POST"])
+@worker_required
+def update_module(mid):
+    m = db.get_or_404(Module, mid)
+    if m.organization_id != current_user.organization_id:
+        return jsonify({"success": False, "error": "Access denied"}), 403
+
+    data = request.get_json()
+    new_name = data.get("name")
+
+    if not new_name:
+        return jsonify({"success": False, "error": "Name is required"}), 400
+
+    old_name = m.name
+    m.name = new_name
     db.session.commit()
-    flash('Campaign deleted', 'success')
-    return redirect(url_for('worker.campaigns', gid=gid))
+
+    # Log activity
+    ChangeRequest.log(
+        m.organization_id,
+        current_user.id,
+        "Module Update",
+        new_val=f"Module '{old_name}' renamed to '{new_name}'",
+    )
+
+    return jsonify({"success": True})
 
 
-@worker_bp.route('/campaigns/<int:cid>/download')
+@worker_bp.route("/profile", methods=["GET", "POST"])
 @worker_required
-def download_report(cid):
-    c = Campaign.query.get_or_404(cid)
-    if c.organization_id != current_user.organization_id:
-        flash('Access denied', 'danger')
-        return redirect(url_for('worker.dashboard'))
-        
-    import csv
-    import io
-    from flask import Response
-    
-    logs = DeliveryLog.query.filter_by(campaign_id=cid).order_by(DeliveryLog.created_at.asc()).all()
-    
-    # Generate CSV
-    def generate():
-        data = io.StringIO()
-        w = csv.writer(data)
-        
-        # Header
-        w.writerow(('Date', 'Contact ID', 'Channel', 'Status', 'Error', 'Meta'))
-        yield data.getvalue()
-        data.seek(0)
-        data.truncate(0)
-        
-        for l in logs:
-            w.writerow((
-                l.created_at.strftime('%Y-%m-%d %H:%M:%S'),
-                l.contact_id,
-                l.channel,
-                l.status,
-                l.error,
-                str(l.meta)
-            ))
-            yield data.getvalue()
-            data.seek(0)
-            data.truncate(0)
-            
-    headers = {
-        'Content-Disposition': f'attachment; filename=campaign_{cid}_report.csv',
-        'Content-Type': 'text/csv'
+def profile():
+    if request.method == "POST":
+        full_name = request.form.get("full_name")
+        phone = request.form.get("phone")
+
+        current_user.full_name = full_name
+        current_user.phone = phone
+        db.session.commit()
+
+        flash("Profile updated successfully", "success")
+        return redirect(url_for("worker.profile"))
+
+    return render_template("worker/profile.html", user=current_user)
+
+
+@worker_bp.route("/preferences", methods=["GET", "POST"])
+@worker_required
+def preferences():
+    if request.method == "POST":
+        # Placeholder for preferences update logic
+        flash("Preferences updated successfully", "success")
+        return redirect(url_for("worker.preferences"))
+
+    return render_template("worker/preferences.html", user=current_user)
+
+
+@worker_bp.route("/reports")
+@worker_required
+def reports():
+    return render_template("worker/reports.html")
+
+
+@worker_bp.route("/modules/<int:mid>")
+@worker_required
+def module_detail(mid):
+    m = db.get_or_404(Module, mid)
+    if m.organization_id != current_user.organization_id:
+        flash("Access denied", "danger")
+        return redirect(url_for("worker.dashboard"))
+    return render_template("worker/module_detail.html", module=m, fields=m.fields)
+
+
+# Authentication & Recovery Routes
+@worker_bp.route("/google-auth")
+def google_auth():
+    import urllib.parse
+
+    client_id = current_app.config.get("GOOGLE_CLIENT_ID")
+    redirect_uri = url_for("main.google_callback", _external=True)
+    scope = "openid email profile"
+    params = {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": scope,
+        "access_type": "offline",
+        "prompt": "select_account",
     }
-    return Response(generate(), mimetype='text/csv', headers=headers)
+    google_url = (
+        f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
+    )
+    return redirect(google_url)
+
+
+@worker_bp.route("/oauth-select-org", methods=["GET", "POST"])
+def oauth_select_org():
+    email = session.get("oauth_email")
+    if not email:
+        return redirect(url_for("worker.login"))
+
+    matching_users = OrganizationUser.query.filter_by(email=email).all()
+
+    if request.method == "POST":
+        org_id = request.form.get("organization_id")
+        user = OrganizationUser.query.filter_by(
+            email=email, organization_id=org_id
+        ).first()
+        if user:
+            sub = Subscription.query.filter_by(
+                organization_id=user.organization_id
+            ).first()
+            if (
+                not sub
+                or sub.status == "inactive"
+                or (
+                    sub.expires_at
+                    and datetime.utcnow() > sub.expires_at + timedelta(days=3)
+                )
+            ):
+                flash(
+                    "Organization services are suspended or a subscription is required.",
+                    "danger",
+                )
+                return redirect(url_for("worker.login"))
+            login_user(user)
+            session.pop("oauth_email", None)
+            return redirect(url_for("worker.dashboard"))
+
+    return render_template(
+        "auth/oauth_select_org.html", matching_users=matching_users, email=email
+    )
+
+
+@worker_bp.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email")
+        new_password = request.form.get("new_password")
+
+        user = OrganizationUser.query.filter_by(email=email, role="worker").first()
+        if not user:
+            flash("No worker account found with this email address.", "danger")
+            return render_template(
+                "auth/forgot_password.html",
+                forgot_url=url_for("worker.forgot_password"),
+                login_url=url_for("worker.login"),
+                email_label="Registered Worker Email",
+                email_placeholder="worker@company.com",
+            )
+
+        pw_hash = generate_password_hash(new_password)
+
+        req = ChangeRequest(
+            organization_id=user.organization_id,
+            user_id=user.id,
+            field_name="password_reset",
+            old_value="[hidden]",
+            new_value=pw_hash,
+            status="pending",
+        )
+        db.session.add(req)
+
+        notif = PlatformNotification(
+            organization_id=user.organization_id,
+            type="info_change",
+            title="Worker Password Reset Request",
+            message=f"Worker ({email}) has requested a password reset. Please review and approve.",
+            link=url_for("admin.pending_changes"),
+        )
+        db.session.add(notif)
+        db.session.commit()
+        return redirect(url_for("worker.forgot_password_submitted"))
+
+    return render_template(
+        "auth/forgot_password.html",
+        forgot_url=url_for("worker.forgot_password"),
+        login_url=url_for("worker.login"),
+        email_label="Registered Worker Email",
+        email_placeholder="worker@company.com",
+    )
+
+
+@worker_bp.route("/forgot-password/submitted")
+def forgot_password_submitted():
+    return render_template("auth/password_reset_submitted.html", portal="worker")
+
+
+# Record Management Routes
+@worker_bp.route("/modules/<int:mid>/records/add", methods=["POST"])
+@worker_required
+def add_record(mid):
+    m = db.get_or_404(Module, mid)
+    if m.organization_id != current_user.organization_id:
+        flash("Access denied", "danger")
+        return redirect(url_for("worker.dashboard"))
+
+    # Create the record
+    record = ModuleRecord(module_id=mid, created_by_id=current_user.id)
+    db.session.add(record)
+    db.session.flush()  # Get the record ID
+
+    # Add values
+    fields = ModuleField.query.filter_by(module_id=mid).all()
+    for f in fields:
+        if f.field_type in ["calculated", "boolean"]:
+            continue
+
+        val_text = ""
+        if f.field_type == "file":
+            file = request.files.get(f"field_{f.id}")
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+                # Prefix with record ID to avoid collisions
+                filename = f"rec_{record.id}_{filename}"
+                file.save(os.path.join(current_app.config["UPLOAD_FOLDER"], filename))
+                val_text = filename
+        else:
+            val_text = request.form.get(f"field_{f.id}")
+
+        if val_text:
+            # Uniqueness check
+            if f.is_unique:
+                existing = (
+                    ModuleRecordValue.query.filter_by(field_id=f.id, value=val_text)
+                    .join(ModuleRecord)
+                    .filter(ModuleRecord.module_id == mid)
+                    .first()
+                )
+                if existing:
+                    db.session.rollback()
+                    flash(
+                        f"Duplicate entry detected: '{val_text}' is already registered for '{f.name}'.",
+                        "danger",
+                    )
+                    return redirect(url_for("worker.manage_module", mid=mid))
+
+            val = ModuleRecordValue(record_id=record.id, field_id=f.id, value=val_text)
+            db.session.add(val)
+
+    db.session.commit()
+    flash("Record added successfully", "success")
+    return redirect(url_for("worker.manage_module", mid=mid))
+
+
+@worker_bp.route("/api/records/<int:rid>")
+@worker_required
+def get_record_api(rid):
+    r = db.get_or_404(ModuleRecord, rid)
+    m = db.session.get(Module, r.module_id)
+    if m.organization_id != current_user.organization_id:
+        return jsonify({"success": False, "error": "Access denied"}), 403
+
+    fields = ModuleField.query.filter_by(module_id=m.id).all()
+    values = {v.field_id: v.value for v in r.values}
+
+    return jsonify(
+        {
+            "success": True,
+            "fields": [
+                {"id": f.id, "name": f.name, "type": f.field_type, "options": f.options}
+                for f in fields
+            ],
+            "values": values,
+        }
+    )
+
+
+@worker_bp.route("/api/records/<int:rid>/update", methods=["POST"])
+@worker_required
+def update_record_api(rid):
+    r = db.get_or_404(ModuleRecord, rid)
+    m = db.session.get(Module, r.module_id)
+    if m.organization_id != current_user.organization_id:
+        return jsonify({"success": False, "error": "Access denied"}), 403
+
+    # Update values
+    fields = ModuleField.query.filter_by(module_id=m.id).all()
+    for f in fields:
+        if f.field_type in ["calculated", "boolean"]:
+            continue
+
+        val_text = ""
+        if f.field_type == "file":
+            file = request.files.get(f"field_{f.id}")
+            if file and file.filename:
+                filename = secure_filename(file.filename)
+                filename = f"rec_{rid}_{filename}"
+                file.save(os.path.join(current_app.config["UPLOAD_FOLDER"], filename))
+                val_text = filename
+            else:
+                # Keep existing file if no new file uploaded
+                continue
+        else:
+            val_text = request.form.get(f"field_{f.id}")
+
+        # Find or create value
+        val_obj = ModuleRecordValue.query.filter_by(
+            record_id=rid, field_id=f.id
+        ).first()
+
+        # Uniqueness check
+        if f.is_unique and val_text:
+            existing = (
+                ModuleRecordValue.query.filter(
+                    ModuleRecordValue.field_id == f.id,
+                    ModuleRecordValue.value == val_text,
+                    ModuleRecordValue.record_id != rid,
+                )
+                .join(ModuleRecord)
+                .filter(ModuleRecord.module_id == m.id)
+                .first()
+            )
+            if existing:
+                flash(
+                    f"Update failed: '{val_text}' is already registered for '{f.name}'.",
+                    "danger",
+                )
+                return redirect(url_for("worker.manage_module", mid=m.id))
+
+        if val_obj:
+            val_obj.value = val_text
+        else:
+            val_obj = ModuleRecordValue(record_id=rid, field_id=f.id, value=val_text)
+            db.session.add(val_obj)
+
+    db.session.commit()
+    flash("Record updated successfully", "success")
+    return redirect(url_for("worker.manage_module", mid=m.id))
+
+
+@worker_bp.route("/api/records/<int:rid>/delete", methods=["POST"])
+@worker_required
+def delete_record_api(rid):
+    r = db.get_or_404(ModuleRecord, rid)
+    m = db.session.get(Module, r.module_id)
+    if m.organization_id != current_user.organization_id:
+        return jsonify({"success": False, "error": "Access denied"}), 403
+
+    db.session.delete(r)
+    db.session.commit()
+    return jsonify({"success": True})
+
+
+@worker_bp.route("/api/records/bulk-delete", methods=["POST"])
+@worker_required
+def bulk_delete_records():
+    data = request.get_json()
+    record_ids = data.get("record_ids", [])
+
+    if not record_ids:
+        return jsonify({"success": False, "error": "No records selected"}), 400
+
+    try:
+        # Delete only records belonging to the user's organization
+        records = (
+            ModuleRecord.query.filter(ModuleRecord.id.in_(record_ids))
+            .join(Module)
+            .filter(Module.organization_id == current_user.organization_id)
+            .all()
+        )
+
+        count = len(records)
+        for r in records:
+            db.session.delete(r)
+
+        db.session.commit()
+        return jsonify({"success": True, "count": count})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
+# Field Management Routes
+@worker_bp.route("/modules/<int:mid>/fields/add", methods=["POST"])
+@worker_required
+def add_field(mid):
+    m = db.get_or_404(Module, mid)
+    if m.organization_id != current_user.organization_id:
+        flash("Access denied", "danger")
+        return redirect(url_for("worker.dashboard"))
+
+    name = request.form.get("name")
+    field_type = request.form.get("field_type", "text")
+    is_unique = request.form.get("is_unique") == "true"
+
+    if not name:
+        flash("Field name is required", "danger")
+        return redirect(request.referrer)
+
+    f = ModuleField(
+        module_id=mid, name=name, field_type=field_type, is_unique=is_unique
+    )
+    db.session.add(f)
+    db.session.commit()
+    flash(f"Field '{name}' added successfully", "success")
+    return redirect(request.referrer)
+
+
+@worker_bp.route("/api/fields/<int:fid>/delete", methods=["POST"])
+@worker_required
+def delete_field(fid):
+    f = db.get_or_404(ModuleField, fid)
+    m = db.session.get(Module, f.module_id)
+    if m.organization_id != current_user.organization_id:
+        return jsonify({"success": False, "error": "Access denied"}), 403
+
+    db.session.delete(f)
+    db.session.commit()
+    return jsonify({"success": True})
+
+
+@worker_bp.route("/api/modules/<int:mid>/fields", methods=["GET", "POST"])
+@worker_required
+def module_fields_api(mid):
+    m = db.get_or_404(Module, mid)
+    if m.organization_id != current_user.organization_id:
+        return jsonify({"success": False, "error": "Access denied"}), 403
+
+    if request.method == "POST":
+        data = request.get_json()
+        action = data.get("action")  # add, update, delete
+
+        if action == "add":
+            name = data.get("name")
+            field_type = data.get("field_type")
+            is_unique = data.get("is_unique", False)
+            meta = data.get("meta", {})
+            f = ModuleField(
+                module_id=mid,
+                name=name,
+                field_type=field_type,
+                is_unique=is_unique,
+                meta=meta,
+            )
+            db.session.add(f)
+        elif action == "update":
+            fid = data.get("field_id")
+            f = db.session.get(ModuleField, fid)
+            if f and f.module_id == mid:
+                f.name = data.get("name", f.name)
+                f.field_type = data.get("field_type", f.field_type)
+                f.is_unique = data.get("is_unique", f.is_unique)
+                f.meta = data.get("meta", f.meta)
+        elif action == "delete":
+            fid = data.get("field_id")
+            f = db.session.get(ModuleField, fid)
+            if f and f.module_id == mid:
+                db.session.delete(f)
+
+        db.session.commit()
+        return jsonify({"success": True})
+
+    fields = ModuleField.query.filter_by(module_id=mid).all()
+    return jsonify(
+        {
+            "success": True,
+            "fields": [
+                {"id": f.id, "name": f.name, "type": f.field_type, "meta": f.meta}
+                for f in fields
+            ],
+        }
+    )
+
+
+@worker_bp.route("/modules/<int:mid>/import", methods=["POST"])
+@worker_required
+def import_records(mid):
+    m = db.get_or_404(Module, mid)
+    if m.organization_id != current_user.organization_id:
+        flash("Access denied", "danger")
+        return redirect(url_for("worker.dashboard"))
+
+    file = request.files.get("file")
+    if not file:
+        flash("No file uploaded", "danger")
+        return redirect(request.referrer)
+
+    filename = secure_filename(file.filename)
+    filepath = os.path.join(current_app.config["UPLOAD_FOLDER"], filename)
+    file.save(filepath)
+
+    try:
+        if filename.endswith(".csv"):
+            df = pd.read_csv(filepath)
+        else:
+            df = pd.read_excel(filepath)
+
+        # Get fields and identify unique ones
+        fields = ModuleField.query.filter_by(module_id=mid).all()
+        field_map = {f.name.lower(): f for f in fields}
+        unique_fields = [f for f in fields if f.is_unique]
+
+        import_count = 0
+        skipped_count = 0
+
+        for _, row in df.iterrows():
+            # Check for duplicates before creating record
+            is_duplicate = False
+            for f in unique_fields:
+                val = (
+                    str(row[f.name])
+                    if f.name in row and pd.notnull(row[f.name])
+                    else ""
+                )
+                if val:
+                    existing = (
+                        ModuleRecordValue.query.filter_by(field_id=f.id, value=val)
+                        .join(ModuleRecord)
+                        .filter(ModuleRecord.module_id == mid)
+                        .first()
+                    )
+                    if existing:
+                        is_duplicate = True
+                        break
+
+            if is_duplicate:
+                skipped_count += 1
+                continue
+
+            record = ModuleRecord(module_id=mid, created_by_id=current_user.id)
+            db.session.add(record)
+            db.session.flush()
+
+            for col in df.columns:
+                f_obj = field_map.get(col.lower())
+                if f_obj:
+                    val = str(row[col]) if pd.notnull(row[col]) else ""
+                    db.session.add(
+                        ModuleRecordValue(
+                            record_id=record.id, field_id=f_obj.id, value=val
+                        )
+                    )
+            import_count += 1
+
+        db.session.commit()
+        msg = f"Successfully imported {import_count} records"
+        if skipped_count > 0:
+            msg += f" ({skipped_count} duplicates skipped)"
+        flash(msg, "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Import failed: {str(e)}", "danger")
+    finally:
+        if os.path.exists(filepath):
+            os.remove(filepath)
+
+    return redirect(url_for("worker.manage_module", mid=mid))
+
+
+@worker_bp.route("/modules/<int:mid>/export/<string:format>")
+@worker_required
+def export_records(mid, format):
+    m = db.get_or_404(Module, mid)
+    if m.organization_id != current_user.organization_id:
+        flash("Access denied", "danger")
+        return redirect(url_for("worker.dashboard"))
+
+    fields = ModuleField.query.filter_by(module_id=mid).all()
+    records = ModuleRecord.query.filter_by(module_id=mid).all()
+
+    data = []
+    for r in records:
+        row = {"Date Created": r.created_at.strftime("%Y-%m-%d %H:%M")}
+        vals = r.field_values
+        for f in fields:
+            row[f.name] = vals.get(f.id, "")
+        data.append(row)
+
+    df = pd.DataFrame(data)
+
+    from flask import make_response
+    import io
+
+    if format == "csv":
+        output = io.StringIO()
+        df.to_csv(output, index=False)
+        response = make_response(output.getvalue())
+        response.headers[
+            "Content-Disposition"
+        ] = f"attachment; filename={m.name}_export.csv"
+        response.headers["Content-type"] = "text/csv"
+    else:  # excel
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+            df.to_excel(writer, index=False, sheet_name="Records")
+        response = make_response(output.getvalue())
+        response.headers[
+            "Content-Disposition"
+        ] = f"attachment; filename={m.name}_export.xlsx"
+        response.headers[
+            "Content-type"
+        ] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+    return response
+
+
+def evaluate_logic(record, field):
+    """Evaluates calculated or boolean logic for a record with safety checks."""
+    try:
+        meta = field.meta
+        if isinstance(meta, str):
+            try:
+                meta = json.loads(meta)
+            except:
+                meta = {}
+
+        if field.field_type == "calculated":
+            formula = meta.get("formula", "") if meta else ""
+            if not formula:
+                return "0"
+
+            # Replace {field_name} with actual value
+            vals = record.named_values
+            # Sort keys by length descending to avoid partial replacements (e.g., {name} vs {name_long})
+            for f_name in sorted(vals.keys(), key=len, reverse=True):
+                f_val = vals[f_name]
+                # Ensure f_val is a number-like string if possible, else 0
+                clean_val = str(f_val) if f_val is not None else "0"
+                if not clean_val.replace(".", "", 1).isdigit():
+                    clean_val = "0"
+                formula = formula.replace(f"{{{f_name}}}", clean_val)
+
+            # Basic math eval with restricted builtins
+            # We only allow basic arithmetic
+            allowed_chars = set("0123456789+-*/(). ")
+            if not all(c in allowed_chars for c in formula):
+                return "Invalid Formula"
+
+            try:
+                # Use a safe eval-like approach for basic math
+                return str(eval(formula, {"__builtins__": None}, {}))
+            except:
+                return "Eval Error"
+
+        elif field.field_type == "boolean":
+            conditions = meta.get("conditions", []) if meta else []
+            if not conditions:
+                return "False"
+
+            vals = record.named_values
+            overall_result = True
+
+            for i, cond in enumerate(conditions):
+                f_name = cond.get("field")
+                op = cond.get("operator")
+                target = str(cond.get("value", ""))
+                joiner = cond.get("joiner", "AND")
+
+                actual = str(vals.get(f_name, ""))
+                res = False
+
+                try:
+                    if op == "==":
+                        res = actual == target
+                    elif op == "!=":
+                        res = actual != target
+                    elif op == ">":
+                        res = (
+                            float(actual) > float(target)
+                            if (
+                                actual.replace(".", "", 1).isdigit()
+                                and target.replace(".", "", 1).isdigit()
+                            )
+                            else False
+                        )
+                    elif op == "<":
+                        res = (
+                            float(actual) < float(target)
+                            if (
+                                actual.replace(".", "", 1).isdigit()
+                                and target.replace(".", "", 1).isdigit()
+                            )
+                            else False
+                        )
+                    elif op == "contains":
+                        res = target in actual
+                except:
+                    res = False
+
+                if i == 0:
+                    overall_result = res
+                else:
+                    if joiner == "AND":
+                        overall_result = overall_result and res
+                    else:
+                        overall_result = overall_result or res
+
+            return "True" if overall_result else "False"
+    except Exception as e:
+        current_app.logger.error(f"Logic evaluation error: {str(e)}")
+        return "Error"
+
+    return ""

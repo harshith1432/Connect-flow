@@ -26,48 +26,47 @@ from models import db
 from models.models import Organization, Contact, DeliveryLog
 from config import Config
 
-from services.twilio_service import send_whatsapp_text, send_whatsapp_voice
-from services.myoperator_service import send_myoperator_whatsapp
+from services.twilio_service import send_whatsapp_text
 
-def dispatch_whatsapp(organization_id, contact_id, message=None, audio_url=None, campaign_id=None, content_sid=None, content_variables=None, local_path=None, sender_number_id=None):
+logger = logging.getLogger(__name__)
+
+
+def dispatch_whatsapp(
+    organization_id,
+    contact_id,
+    message=None,
+    audio_url=None,
+    campaign_id=None,
+    content_sid=None,
+    content_variables=None,
+    local_path=None,
+    sender_number_id=None,
+):
     """
-    Dispatch a WhatsApp message for an organization using Twilio or MyOperator.
+    Dispatch a WhatsApp message for an organization using Twilio.
     """
-    org = Organization.query.get(organization_id)
+    org = db.session.get(Organization, organization_id)
     if not org:
-        logger.error('dispatch_whatsapp: organization not found %s', organization_id)
-        raise ValueError('organization not found')
+        logger.error("dispatch_whatsapp: organization not found %s", organization_id)
+        raise ValueError("organization not found")
 
-    contact = Contact.query.get(contact_id)
+    contact = db.session.get(Contact, contact_id)
     if not contact:
-        logger.error('dispatch_whatsapp: contact not found %s', contact_id)
-        raise ValueError('contact not found')
-
-    # Channel selection based on sender_number_id
-    if sender_number_id:
-        from models.models import CommunicationNumber
-        num = CommunicationNumber.query.get(sender_number_id)
-        if num and num.channel_type == 'myoperator_whatsapp':
-            return send_myoperator_whatsapp(
-                organization_id, 
-                contact_id, 
-                body=message or '', 
-                campaign_id=campaign_id,
-                sender_number_id=sender_number_id,
-                content_sid=content_sid,
-                content_variables=content_variables
-            )
+        logger.error("dispatch_whatsapp: contact not found %s", contact_id)
+        raise ValueError("contact not found")
 
     # Fallback to Twilio
     if audio_url:
-        return send_whatsapp_voice(organization_id, contact_id, audio_url=audio_url, campaign_id=campaign_id, local_path=local_path, sender_number_id=sender_number_id)
-    else:
-        return send_whatsapp_text(
-            organization_id, 
-            contact_id, 
-            body=message or '', 
-            campaign_id=campaign_id,
-            content_sid=content_sid,
-            content_variables=content_variables,
-            sender_number_id=sender_number_id
+        logger.warning(
+            "Audio URL provided to WhatsApp dispatcher, but voice notes are disabled. Sending text only if provided."
         )
+
+    return send_whatsapp_text(
+        organization_id,
+        contact_id,
+        body=message or "",
+        campaign_id=campaign_id,
+        content_sid=content_sid,
+        content_variables=content_variables,
+        sender_number_id=sender_number_id,
+    )

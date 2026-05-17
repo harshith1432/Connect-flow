@@ -1,81 +1,99 @@
 {% extends 'base_auth.html' %}
-{% block title %}Create Your Account - ConnectFlow{% endblock %}
+{% block title %}Onboarding | ConnectFlow{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='onboarding_premium.css') }}">
+{% endblock %}
+
 {% block content %}
-<div class="reg-page-wrapper">
-    <div class="reg-container shadow-2xl">
-        <!-- Sidebar: Steps Indicator -->
-        <div class="reg-sidebar">
-            <div class="sidebar-header">
-                <div class="brand-logo mb-2">
-                    <i class="bi bi-hexagon-fill text-accent fs-3"></i>
-                </div>
+<div class="onboarding-wrapper">
+    <!-- Left Panel: Branding & Stepper -->
+    <aside class="onboarding-side">
+        <div class="glow-element glow-1"></div>
+        <div class="glow-element glow-2"></div>
+        
+        <div class="side-content-wrapper">
+            <div class="brand">
+                <div class="logo">Connect<span>Flow</span></div>
                 <h2>Join ConnectFlow</h2>
-                <p>Launch your organization in minutes.</p>
+                <p class="tagline">Launch your organization and communication infrastructure in minutes.</p>
+                <p class="tagline" style="font-size: 0.95rem; opacity: 0.8; margin-top: -1rem;">Built for scale, automation, and enterprise workflow management.</p>
             </div>
 
-            <div class="stepper-steps">
-                <div class="step-item active" id="stepIndicator1">
-                    <div class="step-icon">1</div>
-                    <div class="step-label">
-                        <span class="label-title">Organization</span>
-                        <span class="label-desc">Company Profile</span>
+            <nav class="premium-stepper">
+                <div class="stepper-item active" id="stepIndicator1">
+                    <div class="stepper-icon">1</div>
+                    <div class="stepper-label">
+                        <h4>Organization</h4>
+                        <p>Company Profile</p>
                     </div>
                 </div>
-                <div class="step-item" id="stepIndicator2">
-                    <div class="step-icon">2</div>
-                    <div class="step-label">
-                        <span class="label-title">Account</span>
-                        <span class="label-desc">Admin Details</span>
+                <div class="stepper-item" id="stepIndicator2">
+                    <div class="stepper-icon">2</div>
+                    <div class="stepper-label">
+                        <h4>Account</h4>
+                        <p>Admin Details</p>
                     </div>
                 </div>
-                <div class="step-item" id="stepIndicator3">
-                    <div class="step-icon">3</div>
-                    <div class="step-label">
-                        <span class="label-title">Branding</span>
-                        <span class="label-desc">Customization</span>
+                <div class="stepper-item" id="stepIndicator3">
+                    <div class="stepper-icon">3</div>
+                    <div class="stepper-label">
+                        <h4>Branding</h4>
+                        <p>Customization</p>
                     </div>
                 </div>
-                <div class="step-item" id="stepIndicator4">
-                    <div class="step-icon">4</div>
-                    <div class="step-label">
-                        <span class="label-title">Review</span>
-                        <span class="label-desc">Legal & Finish</span>
+                <div class="stepper-item" id="stepIndicator4">
+                    <div class="stepper-icon">4</div>
+                    <div class="stepper-label">
+                        <h4>Review</h4>
+                        <p>Legal & Finish</p>
                     </div>
                 </div>
-            </div>
+            </nav>
 
-            <div class="sidebar-footer">
-                <p>Designed & Developed by Harshith D</p>
+            <div class="auth-side-bottom">
+                <div class="trust-text">ENTERPRISE OS FOR OPERATIONS</div>
+                <div class="dev-text">Designed & Developed by Harshith D</div>
             </div>
         </div>
+    </aside>
 
-        <!-- Main Content: Form Sections -->
-        <div class="reg-content">
-            <form id="registrationForm" method="post" action="{{ url_for('main.org_register') }}"
-                enctype="multipart/form-data">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    <!-- Right Panel: Onboarding Form -->
+    <main class="onboarding-content">
+        <form id="registrationForm" method="post" action="{{ url_for('main.org_register') }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
-                <!-- Step 1: Organization Details -->
-                <div class="step-section animate-in" id="step1">
-                    <div class="form-header mb-4">
-                        <span class="badge rounded-pill bg-light text-primary mb-2 px-3">Step 1 of 4</span>
-                        <h1 class="h2 fw-bold text-dark">Company Details</h1>
-                        <p class="text-muted">Tell us about your organization to personalize your experience.</p>
-                    </div>
-
-                    <div class="form-group mb-4">
-                        <label class="form-label-premium">Organization Name</label>
-                        <div class="input-group-premium">
-                            <i class="bi bi-building"></i>
-                            <input type="text" name="org_name" class="form-control-premium" placeholder="e.g. Acme Corp"
-                                required autocomplete="organization">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, msg in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }}">
+                            {{msg}}
                         </div>
-                    </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
 
-                    <div class="row g-4 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label-premium">Organization Type</label>
-                            <select name="org_type" class="form-select-premium" required>
+            <!-- Step 1: Organization Details -->
+            <section class="step-section active" id="step1">
+                <div class="onboarding-header">
+                    <span class="step-tag">Step 1 of 4</span>
+                    <h1>Company Details</h1>
+                    <p>Tell us about your organization to personalize your experience.</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Organization Name</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-building"></i>
+                        <input type="text" name="org_name" class="form-input" placeholder="e.g. Acme Corp" required>
+                    </div>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Organization Type</label>
+                            <select name="org_type" class="form-input" style="padding-left: 1rem;" required>
                                 <option value="" disabled selected>Select Type</option>
                                 <option value="Company">Company</option>
                                 <option value="Startup">Startup</option>
@@ -84,9 +102,11 @@
                                 <option value="Others">Others</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label-premium">Industry</label>
-                            <select name="industry" class="form-select-premium" required>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Industry</label>
+                            <select name="industry" class="form-input" style="padding-left: 1rem;" required>
                                 <option value="" disabled selected>Select Industry</option>
                                 <option value="Education">Education</option>
                                 <option value="IT">Technology</option>
@@ -96,616 +116,234 @@
                             </select>
                         </div>
                     </div>
+                </div>
 
-                    <div class="form-group mb-4">
-                        <label class="form-label-premium">Country</label>
-                        <div class="input-group-premium">
-                            <i class="bi bi-globe"></i>
-                            <input type="text" name="country" class="form-control-premium" placeholder="e.g. India"
-                                required autocomplete="country-name">
-                        </div>
-                    </div>
-
-                    <div class="form-group mb-5">
-                        <label class="form-label-premium">Office Address</label>
-                        <div class="input-group-premium align-items-start">
-                            <i class="bi bi-geo-alt mt-2"></i>
-                            <textarea name="office_address" class="form-control-premium" rows="3"
-                                placeholder="Street, City, State, ZIP" required></textarea>
-                        </div>
-                    </div>
-
-                    <div class="form-actions d-flex justify-content-between align-items-center">
-                        <a href="{{ url_for('org.login') }}"
-                            class="text-decoration-none fw-semibold text-muted small">Already have an account? <span
-                                class="text-primary">Sign In</span></a>
-                        <button type="button" class="btn-premium btn-primary-premium" onclick="nextStep(2)">
-                            Continue <i class="bi bi-arrow-right ms-2"></i>
-                        </button>
+                <div class="form-group">
+                    <label class="form-label">Country</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-globe"></i>
+                        <input type="text" name="country" class="form-input" placeholder="e.g. India" required>
                     </div>
                 </div>
 
-                <!-- Step 2: Admin Account -->
-                <div class="step-section" id="step2" style="display: none;">
-                    <div class="form-header mb-4">
-                        <span class="badge rounded-pill bg-light text-primary mb-2 px-3">Step 2 of 4</span>
-                        <h1 class="h2 fw-bold text-dark">Admin Account</h1>
-                        <p class="text-muted">Create the primary owner account for this organization.</p>
-                    </div>
-
-                    <div class="form-group mb-4">
-                        <label class="form-label-premium">Full Name</label>
-                        <div class="input-group-premium">
-                            <i class="bi bi-person"></i>
-                            <input type="text" name="full_name" class="form-control-premium" placeholder="e.g. John Doe"
-                                required autocomplete="name">
-                        </div>
-                    </div>
-
-                    <div class="form-group mb-4">
-                        <label class="form-label-premium">Work Email Address</label>
-                        <div class="input-group-premium">
-                            <i class="bi bi-envelope"></i>
-                            <input type="email" name="email" class="form-control-premium"
-                                placeholder="admin@company.com" required autocomplete="email">
-                        </div>
-                    </div>
-
-                    <div class="row g-4 mb-4">
-                        <div class="col-md-6">
-                            <label class="form-label-premium">Designation</label>
-                            <input type="text" name="designation" class="form-control-premium" placeholder="e.g. CEO"
-                                required>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label-premium">Mobile Number</label>
-                            <input type="tel" name="phone" class="form-control-premium" placeholder="9876543210"
-                                required autocomplete="tel" pattern="\d{10}" maxlength="10" inputmode="numeric"
-                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
-                            <div class="invalid-feedback"
-                                style="display:none; color: #ef4444; font-size: 0.75rem; margin-top: 5px;">Must be
-                                exactly 10 digits</div>
-                        </div>
-                    </div>
-
-                    <div class="form-group mb-5">
-                        <label class="form-label-premium">Password</label>
-                        <div class="input-group-premium">
-                            <i class="bi bi-lock"></i>
-                            <input type="password" name="password" class="form-control-premium"
-                                placeholder="Create a strong password" required autocomplete="new-password">
-                        </div>
-                    </div>
-
-                    <div class="form-actions d-flex justify-content-between mt-5">
-                        <button type="button" class="btn-premium border-0 bg-light text-dark" onclick="prevStep(1)">
-                            <i class="bi bi-arrow-left me-2"></i> Back
-                        </button>
-                        <button type="button" class="btn-premium btn-primary-premium" onclick="nextStep(3)">
-                            Continue <i class="bi bi-arrow-right ms-2"></i>
-                        </button>
+                <div class="form-group">
+                    <label class="form-label">Office Address</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-geo-alt" style="top: 1.25rem; transform: none;"></i>
+                        <textarea name="office_address" class="form-input" rows="3" placeholder="Street, City, State, ZIP" style="padding-top: 1rem;" required></textarea>
                     </div>
                 </div>
 
-                <!-- Step 3: Branding -->
-                <div class="step-section" id="step3" style="display: none;">
-                    <div class="form-header mb-4">
-                        <span class="badge rounded-pill bg-light text-primary mb-2 px-3">Step 3 of 4</span>
-                        <h1 class="h2 fw-bold text-dark">Branding</h1>
-                        <p class="text-muted">Customize your workspace with company logo and preferences.</p>
+                <div class="form-footer mt-5">
+                    <div class="auth-links" style="margin: 0; text-align: left;">
+                        <p class="text-muted small mb-0">Already have an account? <a href="{{ url_for('org.login') }}" class="fw-bold text-dark">Sign In</a></p>
                     </div>
+                    <button type="button" class="btn-black" style="width: auto; padding: 1rem 3rem;" onclick="nextStep(2)">
+                        Continue <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </section>
 
-                    <div class="form-group mb-4 text-center">
-                        <label class="form-label-premium d-block text-start">Organization Logo</label>
-                        <div class="logo-upload-box" onclick="document.getElementById('logoInput').click()">
-                            <i class="bi bi-cloud-upload display-4 text-muted mb-3 d-block"></i>
-                            <p class="mb-1 fw-semibold">Click to upload logo</p>
-                            <p class="small text-muted mb-0">PNG or JPG (Max 2MB)</p>
-                            <input type="file" id="logoInput" name="logo" class="d-none" accept="image/*"
-                                onchange="previewLogo(this)">
-                        </div>
-                        <div id="logoPreview" class="mt-3 d-none">
-                            <img src="" alt="Logo Preview" class="img-thumbnail rounded" style="max-height: 80px;">
-                        </div>
-                    </div>
+            <!-- Step 2: Admin Account -->
+            <section class="step-section" id="step2">
+                <div class="onboarding-header">
+                    <span class="step-tag">Step 2 of 4</span>
+                    <h1>Admin Account</h1>
+                    <p>Create the primary owner account for this organization.</p>
+                </div>
 
-                    <div class="form-group mb-4">
-                        <label class="form-label-premium">Preferred Language</label>
-                        <select name="language_preference" class="form-select-premium">
-                            <option value="English">English (United States)</option>
-                            <option value="Hindi">Hindi</option>
-                            <option value="Spanish">Spanish</option>
-                        </select>
-                    </div>
-
-                    <div class="row g-4 mb-5">
-                        <div class="col-md-6">
-                            <label class="form-label-premium">Public Support Email</label>
-                            <input type="email" name="support_email" class="form-control-premium"
-                                placeholder="support@company.com" required>
-                            <div class="invalid-feedback"
-                                style="display:none; color: #ef4444; font-size: 0.75rem; margin-top: 5px;">Must be a
-                                valid email</div>
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label-premium">Public Support Phone</label>
-                            <input type="tel" name="support_phone" class="form-control-premium" placeholder="9876543210"
-                                required pattern="\d{10}" maxlength="10" inputmode="numeric"
-                                oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
-                            <div class="invalid-feedback"
-                                style="display:none; color: #ef4444; font-size: 0.75rem; margin-top: 5px;">Must be
-                                exactly 10 digits</div>
-                        </div>
-                    </div>
-
-                    <div class="form-actions d-flex justify-content-between mt-5">
-                        <button type="button" class="btn-premium border-0 bg-light text-dark" onclick="prevStep(2)">
-                            <i class="bi bi-arrow-left me-2"></i> Back
-                        </button>
-                        <button type="button" class="btn-premium btn-primary-premium" onclick="nextStep(4)">
-                            Review & Finish <i class="bi bi-arrow-right ms-2"></i>
-                        </button>
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-person"></i>
+                        <input type="text" name="full_name" class="form-input" placeholder="e.g. John Doe" required>
                     </div>
                 </div>
 
-                <!-- Step 4: Finish -->
-                <div class="step-section" id="step4" style="display: none;">
-                    <div class="form-header mb-4">
-                        <span class="badge rounded-pill bg-light text-primary mb-2 px-3">Final Step</span>
-                        <h1 class="h2 fw-bold text-dark">Legal & Review</h1>
-                        <p class="text-muted">Review and accept our terms to complete registration.</p>
-                    </div>
-
-                    <div class="agreement-cards mb-4">
-                        <div class="agreement-card mb-3 p-3 border rounded shadow-sm bg-white">
-                            <div class="form-check d-flex align-items-center">
-                                <input class="form-check-input me-3" type="checkbox" id="termsCheck" required
-                                    style="width: 1.5rem; height: 1.5rem;">
-                                <label class="form-check-label small" for="termsCheck">
-                                    I accept the <a href="{{ url_for('main.terms_of_service') }}" target="_blank"
-                                        class="text-primary fw-bold">Terms of Service</a> and <a
-                                        href="{{ url_for('main.privacy_policy') }}" target="_blank"
-                                        class="text-primary fw-bold">Privacy Policy</a>.
-                                </label>
-                            </div>
-                        </div>
-                        <div class="agreement-card mb-3 p-3 border rounded shadow-sm bg-white">
-                            <div class="form-check d-flex align-items-center">
-                                <input class="form-check-input me-3" type="checkbox" id="dpaCheck" required
-                                    style="width: 1.5rem; height: 1.5rem;">
-                                <label class="form-check-label small" for="dpaCheck">
-                                    I accept the <a href="{{ url_for('main.dpa') }}" target="_blank"
-                                        class="text-primary fw-bold">Data Processing Agreement
-                                        (DPA)</a>.
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="verification-note p-4 bg-primary-subtle rounded mb-5 d-flex">
-                        <i class="bi bi-info-circle-fill text-primary fs-3 me-3"></i>
-                        <div>
-                            <p class="small mb-0"><strong>Platform Verification:</strong> After submission, our team
-                                will verify your account. You will receive an email within 24-48 hours once activated.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="form-actions d-flex justify-content-between mt-5">
-                        <button type="button" class="btn-premium border-0 bg-light text-dark" onclick="prevStep(3)">
-                            <i class="bi bi-arrow-left me-2"></i> Back
-                        </button>
-                        <button type="submit" class="btn-premium btn-success-premium px-5">
-                            Submit Registration <i class="bi bi-check-lg ms-2"></i>
-                        </button>
+                <div class="form-group">
+                    <label class="form-label">Work Email Address</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-envelope"></i>
+                        <input type="email" name="email" class="form-input" placeholder="admin@company.com" required>
                     </div>
                 </div>
-            </form>
-        </div>
-    </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Designation</label>
+                            <input type="text" name="designation" class="form-input" style="padding-left: 1.25rem;" placeholder="e.g. CEO" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Mobile Number</label>
+                            <input type="tel" name="phone" class="form-input" style="padding-left: 1.25rem;" placeholder="9876543210" required maxlength="10">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-lock"></i>
+                        <input type="password" name="password" class="form-input" placeholder="Create a strong password" required>
+                    </div>
+                </div>
+
+                <div class="form-footer mt-5">
+                    <button type="button" class="btn-outline" style="width: auto; padding: 0.875rem 2rem;" onclick="prevStep(1)">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </button>
+                    <button type="button" class="btn-black" style="width: auto; padding: 1rem 3rem;" onclick="nextStep(3)">
+                        Continue <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Step 3: Branding -->
+            <section class="step-section" id="step3">
+                <div class="onboarding-header">
+                    <span class="step-tag">Step 3 of 4</span>
+                    <h1>Branding</h1>
+                    <p>Customize your workspace with company logo and preferences.</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Organization Logo</label>
+                    <div class="premium-upload-box" onclick="document.getElementById('logoInput').click()" id="uploadZone">
+                        <i class="bi bi-cloud-arrow-up"></i>
+                        <div class="upload-title">Click to upload logo</div>
+                        <div class="upload-hint">PNG or JPG (Max 2MB)</div>
+                        <input type="file" id="logoInput" name="logo" style="display: none !important;" accept="image/*" onchange="previewLogo(this)">
+                    </div>
+                    <div id="logoPreview" class="mt-4 d-none text-center">
+                        <div class="p-2 bg-white rounded-4 d-inline-block border shadow-sm">
+                            <img src="" alt="Preview" class="rounded-3" style="max-height: 120px; width: auto; display: block;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Preferred Language</label>
+                    <select name="language_preference" class="form-input" style="padding-left: 1.25rem;">
+                        <option value="English">English (United States)</option>
+                        <option value="Hindi">Hindi</option>
+                        <option value="Spanish">Spanish</option>
+                    </select>
+                </div>
+
+                <div class="row g-4 mb-4">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Public Support Email</label>
+                            <input type="email" name="support_email" class="form-input" style="padding-left: 1.25rem;" placeholder="support@company.com" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Public Support Phone</label>
+                            <input type="tel" name="support_phone" class="form-input" style="padding-left: 1.25rem;" placeholder="9876543210" required maxlength="10">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-footer mt-5">
+                    <button type="button" class="btn-outline" style="width: auto; padding: 0.875rem 2rem;" onclick="prevStep(2)">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </button>
+                    <button type="button" class="btn-black" style="width: auto; padding: 1rem 3rem;" onclick="nextStep(4)">
+                        Review & Finish <i class="bi bi-arrow-right"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Step 4: Finish -->
+            <section class="step-section" id="step4">
+                <div class="onboarding-header">
+                    <span class="step-tag">Final Step</span>
+                    <h1>Legal & Review</h1>
+                    <p>Review and accept our terms to complete registration.</p>
+                </div>
+
+                <div class="form-group">
+                    <div class="agreement-card">
+                        <label class="custom-checkbox-container">
+                            <input type="checkbox" id="termsCheck" required>
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label">
+                                I accept the <a href="{{ url_for('main.terms_of_service') }}" target="_blank">Terms of Service</a> and <a href="{{ url_for('main.privacy_policy') }}" target="_blank">Privacy Policy</a>.
+                            </span>
+                        </label>
+                    </div>
+                    <div class="agreement-card">
+                        <label class="custom-checkbox-container">
+                            <input type="checkbox" id="dpaCheck" required>
+                            <span class="checkmark"></span>
+                            <span class="checkbox-label">
+                                I accept the <a href="{{ url_for('main.dpa') }}" target="_blank">Data Processing Agreement (DPA)</a>.
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="verification-note">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <div class="note-content">
+                        <strong>Platform Verification</strong>
+                        <p>After submission, our team will verify your account. You will receive an email within 24-48 hours once activated.</p>
+                    </div>
+                </div>
+
+                <div class="form-footer mt-5">
+                    <button type="button" class="btn-outline" style="width: auto; padding: 0.875rem 2rem;" onclick="prevStep(3)">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </button>
+                    <button type="submit" class="btn-black" style="width: auto; padding: 1rem 4rem;">
+                        Submit Registration <i class="bi bi-check-lg ms-2"></i>
+                    </button>
+                </div>
+            </section>
+        </form>
+    </main>
 </div>
-
-<style>
-    :root {
-        --reg-sidebar-width: 320px;
-        --accent-color: #00C4CC;
-        --primary-gradient: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
-        --primary-vibrant: #6c5ce7;
-    }
-
-    body {
-        background: #f0f2f5;
-        font-family: 'Poppins', sans-serif;
-        overflow-x: hidden;
-    }
-
-    .reg-page-wrapper {
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 40px 20px;
-    }
-
-    .reg-container {
-        width: 100%;
-        max-width: 1000px;
-        background: white;
-        border-radius: 30px;
-        display: flex;
-        overflow: hidden;
-        min-height: 700px;
-        border: 1px solid rgba(0, 0, 0, 0.05);
-    }
-
-    /* Sidebar Styles */
-    .reg-sidebar {
-        width: var(--reg-sidebar-width);
-        background: var(--primary-gradient);
-        color: white;
-        padding: 60px 40px;
-        display: flex;
-        flex-direction: column;
-        justify-content: space-between;
-        position: relative;
-    }
-
-    .reg-sidebar::after {
-        content: '';
-        position: absolute;
-        width: 200px;
-        height: 200px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 50%;
-        bottom: -50px;
-        left: -50px;
-        z-index: 1;
-    }
-
-    .sidebar-header h2 {
-        font-weight: 800;
-        font-size: 1.8rem;
-        letter-spacing: -0.02em;
-        margin-bottom: 10px;
-        color: white !important;
-    }
-
-    .sidebar-header p {
-        font-size: 0.95rem;
-        opacity: 0.8;
-    }
-
-    .stepper-steps {
-        position: relative;
-        z-index: 2;
-        margin-top: 40px;
-    }
-
-    .step-item {
-        display: flex;
-        align-items: center;
-        margin-bottom: 35px;
-        opacity: 0.5;
-        transition: all 0.3s ease;
-    }
-
-    .step-item.active {
-        opacity: 1;
-        transform: translateX(10px);
-    }
-
-    .step-icon {
-        width: 36px;
-        height: 36px;
-        border: 2px solid rgba(255, 255, 255, 0.4);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        margin-right: 15px;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-    }
-
-    .step-item.active .step-icon {
-        background: white;
-        color: var(--primary-vibrant);
-        border-color: white;
-        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .step-label .label-title {
-        display: block;
-        font-weight: 700;
-        font-size: 0.95rem;
-    }
-
-    .step-label .label-desc {
-        font-size: 0.75rem;
-        opacity: 0.75;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    /* Content Area Styles */
-    .reg-content {
-        flex: 1;
-        padding: 60px 80px;
-        background: white;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .form-header h1 {
-        font-size: 2.2rem;
-        letter-spacing: -0.01em;
-    }
-
-    /* Premium Form Controls */
-    .form-label-premium {
-        font-weight: 600;
-        font-size: 0.85rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--text-dark);
-        margin-bottom: 10px;
-    }
-
-    .input-group-premium {
-        display: flex;
-        align-items: center;
-        background: #f8fafc;
-        border: 2px solid #f1f5f9;
-        border-radius: 16px;
-        padding: 0 18px;
-        transition: all 0.3s ease;
-    }
-
-    .input-group-premium:focus-within {
-        border-color: var(--primary-vibrant);
-        background: white;
-        box-shadow: 0 8px 20px rgba(108, 92, 231, 0.08);
-    }
-
-    .input-group-premium i {
-        color: #94a3b8;
-        font-size: 1.1rem;
-        margin-right: 12px;
-    }
-
-    .form-control-premium,
-    .form-select-premium {
-        background: transparent !important;
-        border: none !important;
-        padding: 14px 0 !important;
-        width: 100%;
-        font-size: 1rem;
-        font-weight: 500;
-        color: #1e293b;
-        box-shadow: none !important;
-    }
-
-    .form-control-premium::placeholder {
-        color: #cbd5e1;
-    }
-
-    .form-select-premium {
-        padding: 14px 10px 14px 0 !important;
-    }
-
-    /* Buttons */
-    .btn-premium {
-        padding: 14px 30px;
-        border-radius: 16px;
-        font-weight: 700;
-        font-size: 1rem;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        border: none;
-    }
-
-    .btn-primary-premium {
-        background: var(--primary-vibrant);
-        color: white;
-        box-shadow: 0 8px 25px rgba(108, 92, 231, 0.3);
-    }
-
-    .btn-primary-premium:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 30px rgba(108, 92, 231, 0.4);
-        background: #5b4cc4;
-    }
-
-    .btn-success-premium {
-        background: #10b981;
-        color: white;
-        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3);
-    }
-
-    .btn-success-premium:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 30px rgba(16, 185, 129, 0.4);
-        background: #059669;
-    }
-
-    /* Custom Logo Box */
-    .logo-upload-box {
-        border: 2px dashed #e2e8f0;
-        border-radius: 20px;
-        padding: 30px;
-        cursor: pointer;
-        transition: all 0.3s ease;
-        background: #f8fafc;
-    }
-
-    .logo-upload-box:hover {
-        border-color: var(--primary-vibrant);
-        background: #f0f9ff;
-    }
-
-    /* Animations */
-    .animate-in {
-        animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    @keyframes slideUp {
-        from {
-            opacity: 0;
-            transform: translateY(20px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    /* Responsive */
-    @media (max-width: 992px) {
-        .reg-container {
-            flex-direction: column;
-            width: 95%;
-            max-width: 600px;
-            margin: 20px auto;
-            border-radius: 20px;
-        }
-
-        .reg-sidebar {
-            width: 100%;
-            padding: 30px;
-        }
-
-        .stepper-steps {
-            display: flex;
-            flex-wrap: wrap;
-            margin-top: 20px;
-            gap: 10px;
-            justify-content: center;
-        }
-
-        .step-item {
-            margin-bottom: 0;
-            opacity: 0.6;
-            transform: none !important;
-        }
-
-        .step-item.active {
-            opacity: 1;
-        }
-
-        .step-label {
-            display: none;
-        }
-
-        .reg-content {
-            padding: 40px 20px;
-        }
-
-        .form-header h1 {
-            font-size: 1.7rem;
-        }
-
-        .sidebar-footer {
-            display: none;
-        }
-
-        .form-actions {
-            flex-direction: column-reverse;
-            gap: 1rem;
-        }
-
-        .form-actions button,
-        .form-actions a {
-            width: 100%;
-            justify-content: center;
-        }
-    }
-</style>
 
 <script>
     function nextStep(step) {
-        const currentWrapper = document.querySelector('.step-section:not([style*="display: none"])');
+        const currentWrapper = document.querySelector('.step-section.active');
         const inputs = currentWrapper.querySelectorAll('input[required], select[required], textarea[required]');
         let valid = true;
 
         inputs.forEach(input => {
-            const group = input.closest('.input-group-premium') || input;
+            const wrapper = input.closest('.input-wrapper') || input;
             if (!input.value) {
-                if (group.classList.contains('input-group-premium')) {
-                    group.style.borderColor = '#ef4444';
-                    group.style.background = '#fef2f2';
-                } else {
-                    input.style.borderColor = '#ef4444';
-                }
-                valid = false;
-            } else if ((input.name === 'phone' || input.name === 'support_phone') && input.value.length !== 10) {
-                // Specific Mobile/Support Phone Validation
-                input.style.borderColor = '#ef4444';
-                // Show feedback message if exists
-                const feedback = input.parentElement.querySelector('.invalid-feedback');
-                if (feedback) feedback.style.display = 'block';
-                valid = false;
-            } else if (input.type === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value)) {
-                // Email Validation
-                input.style.borderColor = '#ef4444';
-                // Create or show feedback
-                let feedback = input.parentElement.querySelector('.invalid-feedback');
-                if (!feedback) {
-                    feedback = document.createElement('div');
-                    feedback.className = 'invalid-feedback';
-                    feedback.style.color = '#ef4444';
-                    feedback.style.fontSize = '0.75rem';
-                    feedback.style.marginTop = '5px';
-                    feedback.innerText = 'Please enter a valid email address';
-                    input.parentElement.appendChild(feedback);
-                }
-                feedback.style.display = 'block';
+                wrapper.style.borderColor = '#ef4444';
                 valid = false;
             } else {
-                if (group.classList.contains('input-group-premium')) {
-                    group.style.borderColor = '';
-                    group.style.background = '';
-                } else {
-                    input.style.borderColor = '';
-                }
-                const feedback = input.parentElement.querySelector('.invalid-feedback');
-                if (feedback) feedback.style.display = 'none';
+                wrapper.style.borderColor = '';
             }
         });
 
-        if (!valid) {
-            // Shake effect or simple alert
-            return;
-        }
+        if (!valid) return;
 
-        // Transitions
-        currentWrapper.classList.remove('animate-in');
-        currentWrapper.style.display = 'none';
-
+        currentWrapper.classList.remove('active');
         const nextWrapper = document.getElementById(`step${step}`);
-        nextWrapper.style.display = 'block';
-        nextWrapper.classList.add('animate-in');
+        nextWrapper.classList.add('active');
 
-        // Indicators
-        document.querySelectorAll('.step-item').forEach(item => item.classList.remove('active'));
+        document.querySelectorAll('.stepper-item').forEach(item => item.classList.remove('active'));
         document.getElementById(`stepIndicator${step}`).classList.add('active');
-
-        window.scrollTo(0, 0);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function prevStep(step) {
-        const currentWrapper = document.querySelector('.step-section:not([style*="display: none"])');
-        currentWrapper.style.display = 'none';
-
+        const currentWrapper = document.querySelector('.step-section.active');
+        currentWrapper.classList.remove('active');
         const prevWrapper = document.getElementById(`step${step}`);
-        prevWrapper.style.display = 'block';
-        prevWrapper.classList.add('animate-in');
+        prevWrapper.classList.add('active');
 
-        document.querySelectorAll('.step-item').forEach(item => item.classList.remove('active'));
+        document.querySelectorAll('.stepper-item').forEach(item => item.classList.remove('active'));
         document.getElementById(`stepIndicator${step}`).classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function previewLogo(input) {

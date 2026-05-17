@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ConnectFlow | Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard_premium.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+    <!-- Premium Sidebar -->
+    <aside class="premium-sidebar">
+        <div class="sidebar-logo">
+            Connect<span>Flow</span>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('org.dashboard') }}" class="nav-item {% if request.endpoint == 'org.dashboard' %}active{% endif %}">
+                <i class="bi bi-grid-1x2"></i> Dashboard
+            </a>
+            <a href="{{ url_for('org.manage_workers') }}" class="nav-item {% if request.endpoint == 'org.manage_workers' %}active{% endif %}">
+                <i class="bi bi-people"></i> Workers
+            </a>
+            <a href="{{ url_for('org.communication_settings') }}" class="nav-item {% if request.endpoint == 'org.communication_settings' %}active{% endif %}">
+                <i class="bi bi-chat-dots"></i> Communication
+            </a>
+            <a href="{{ url_for('org.campaigns_dashboard') }}" class="nav-item {% if request.endpoint == 'org.campaigns_dashboard' %}active{% endif %}">
+                <i class="bi bi-megaphone"></i> Campaigns
+            </a>
+            <a href="{{ url_for('org.reports_dashboard') }}" class="nav-item {% if request.endpoint == 'org.reports_dashboard' %}active{% endif %}">
+                <i class="bi bi-bar-chart"></i> Reports
+            </a>
+            <a href="{{ url_for('org.analytics_dashboard') }}" class="nav-item {% if request.endpoint == 'org.analytics_dashboard' %}active{% endif %}">
+                <i class="bi bi-cpu"></i> Analytics
+            </a>
+            <a href="{{ url_for('org.profile') }}" class="nav-item {% if request.endpoint == 'org.profile' %}active{% endif %}">
+                <i class="bi bi-gear"></i> Settings
+            </a>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="user-avatar">
+                    {{ current_user.email[0].upper() }}
+                </div>
+                <div class="user-info">
+                    <h6>{{ current_user.organization.name }}</h6>
+                    <p>{{ current_user.email }}</p>
+                </div>
+            </div>
+            <a href="{{ url_for('org.logout') }}" class="nav-item" style="margin-top: 1rem; color: #ef4444;">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <main class="main-wrapper">
+        <header class="premium-topbar">
+            <div class="topbar-left">
+                <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+            </div>
+            
+            <div class="topbar-right">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Search modules, workers, or tasks...">
+                </div>
+                <div class="topbar-actions">
+                    <button class="btn-icon">
+                        <i class="bi bi-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </button>
+                    <button class="btn-icon"><i class="bi bi-chat-left-dots"></i></button>
+                </div>
+            </div>
+        </header>
+
+        <section class="dashboard-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, msg in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }}" 
+                             style="padding: 1rem; border-radius: 12px; margin-bottom: 2rem; background: var(--white); border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium);">
+                            {{msg}}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,89 +1,296 @@
-{% extends 'base.html' %}
-{% block title %}Worker Workspace{% endblock %}
+{% extends "base_worker_premium.html" %}
+
+{% block title %}ConnectFlow | My Workspace{% endblock %}
+{% block page_title %}My Workspace{% endblock %}
+
 {% block content %}
-<div class="row align-items-center mb-5">
-  <div class="col">
-    <h1 class="mb-0">My Workspace</h1>
-    <p class="text-muted mb-0">Manage modules, data, and campaigns</p>
-  </div>
-  <div class="col-auto">
-    <a href="{{ url_for('worker.create_module') }}" class="btn btn-primary">
-      <i class="bi bi-plus-lg me-2"></i>Create Module
-    </a>
-  </div>
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Modules</span>
+            <div class="kpi-icon">
+                <i class="bi bi-box"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ modules|length }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-graph-up"></i>
+            <span>System Online</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Active Campaigns</span>
+            <div class="kpi-icon">
+                <i class="bi bi-lightning-charge"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ active_campaigns }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-check-circle"></i>
+            <span>Running</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Records</span>
+            <div class="kpi-icon">
+                <i class="bi bi-database"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ total_records }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-database-check"></i>
+            <span>Stored</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Avg Success Rate</span>
+            <div class="kpi-icon">
+                <i class="bi bi-check-circle"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ success_rate }}%</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-arrow-up-right"></i>
+            <span>Optimum</span>
+        </div>
+    </div>
 </div>
 
-<!-- Stats Overview -->
-<div class="row g-4 mb-5">
-  <div class="col-md-6 col-lg-4">
-    <div class="card h-100 p-4 border-start border-5 border-primary">
-      <div class="d-flex align-items-center justify-content-between">
-        <div>
-          <div class="text-uppercase text-primary fw-bold small mb-1">Total Modules</div>
-          <div class="display-5 fw-bold text-dark">{{ modules|length }}</div>
+<div class="row g-4 mt-2">
+    <!-- Main Content: Modules -->
+    <div class="col-lg-8">
+        <div class="premium-card">
+            <div class="card-header-premium">
+                <div class="header-left">
+                    <h2>Your Modules</h2>
+                    <p>Manage and monitor your active data modules</p>
+                </div>
+                <div class="header-right d-flex gap-2">
+                    <a href="{{ url_for('worker.create_module') }}" class="btn-premium primary"><i class="bi bi-plus-lg"></i> Create Module</a>
+                    <a href="{{ url_for('worker.modules') }}" class="btn-premium secondary"><i class="bi bi-gear"></i> Manage Modules</a>
+                </div>
+            </div>
+            
+            <div class="modules-grid-premium">
+                {% for module in modules %}
+                <div class="module-card-premium" onclick="window.location.href='{{ url_for('worker.manage_module', mid=module.id) }}'">
+                    <div class="module-status {{ module.status }}"></div>
+                    <div class="module-header">
+                        <div class="module-meta">
+                            <span class="badge-premium">{{ module.status|capitalize }}</span>
+                        </div>
+                    </div>
+                    <div class="module-body">
+                        <h4>{{ module.name }}</h4>
+                        <div class="module-stats-mini">
+                            <div class="m-stat">
+                                <span class="label">Records</span>
+                                <span class="value">{{ module.record_count }}</span>
+                            </div>
+                            <div class="m-stat">
+                                <span class="label">Campaigns</span>
+                                <span class="value">{{ module.campaign_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="module-actions-premium mt-3 d-flex gap-2">
+                        <button class="btn-action-premium" onclick="event.stopPropagation(); configureModule({{ module.id }}, '{{ module.name }}')">
+                            <i class="bi bi-gear"></i> Configure
+                        </button>
+                        <button class="btn-action-premium" onclick="event.stopPropagation(); viewReport({{ module.id }})">
+                            <i class="bi bi-file-earmark-bar-graph"></i> Report
+                        </button>
+                        <button class="btn-action-premium dark" onclick="event.stopPropagation(); window.location.href='{{ url_for('worker.manage_module', mid=module.id) }}'">
+                            <i class="bi bi-box-arrow-in-right"></i> Go Inside
+                        </button>
+                    </div>
+                    <div class="module-footer">
+                        <span class="last-activity">Last activity: {{ module.last_activity }}</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <p>No modules assigned to you yet.</p>
+                </div>
+                {% endfor %}
+                <div class="module-card-premium empty-add-card" onclick="window.location.href='{{ url_for('worker.create_module') }}'">
+                    <div class="add-content text-center py-4 d-flex flex-column align-items-center justify-content-center h-100">
+                        <div class="add-icon mb-3">
+                            <i class="bi bi-plus-circle-dotted" style="font-size: 2.5rem; color: var(--grey-300);"></i>
+                        </div>
+                        <h5 class="fw-bold">Create New Module</h5>
+                        <p class="text-muted small">Design a new data capture schema</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-          style="width: 60px; height: 60px;">
-          <i class="bi bi-folder2-open h3 mb-0"></i>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <div class="col-md-6 col-lg-4">
-    <div class="card h-100 p-4 border-start border-5 border-success">
-      <div class="d-flex align-items-center justify-content-between">
-        <div>
-          <div class="text-uppercase text-success fw-bold small mb-1">Active Campaigns</div>
-          <div class="display-5 fw-bold text-dark">-</div>
-        </div>
-        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center"
-          style="width: 60px; height: 60px;">
-          <i class="bi bi-megaphone h3 mb-0"></i>
-        </div>
-      </div>
+
     </div>
-  </div>
+
+    <!-- Right Sidebar: Analytics -->
+    <div class="col-lg-4">
+        <div class="premium-card h-100">
+            <div class="card-header-premium">
+                <div class="header-left">
+                    <h2>Performance</h2>
+                    <p>Activity trends & distribution</p>
+                </div>
+            </div>
+            <div class="card-body-premium">
+                <div id="performance-trend-chart"></div>
+                <div class="divider-premium"></div>
+                <div id="records-distribution-chart"></div>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 
-<!-- Modules Grid -->
-<h3 class="mb-4">Your Modules</h3>
-<div class="row g-4">
-  {% for m in modules %}
-  <div class="col-md-6 col-lg-4">
-    <div class="card h-100 hover-card">
-      <div class="d-flex justify-content-between align-items-start mb-3">
-        <h5 class="fw-bold text-primary mb-0 text-truncate w-75" title="{{ m.name }}">{{ m.name }}</h5>
-        <span class="badge bg-light text-dark border">{{ m.records|length }} Records</span>
-      </div>
-      <p class="text-muted small mb-4 flex-grow-1">
-        {{ m.description or 'No description provided.' }}
-      </p>
-
-      <div class="d-grid gap-2">
-        <a href="{{ url_for('worker.manage_groups', mid=m.id) }}" class="btn btn-primary btn-sm w-100">
-          Manage Data
-        </a>
-      </div>
-
-      <div class="mt-3 pt-3 border-top text-muted small">
-        Created on {{ m.created_at.strftime('%b %d, %Y') }}
-      </div>
+<!-- Configure Module Modal -->
+<div class="modal fade" id="configureModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-modal">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Configure Module</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="configureForm">
+                <div class="modal-body">
+                    <input type="hidden" id="config-module-id">
+                    <div class="mb-3">
+                        <label class="form-label">Module Name</label>
+                        <input type="text" class="form-control premium-input" id="config-module-name" required>
+                    </div>
+                    <p class="text-muted small">Update the display name for this module in your workspace.</p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn-premium secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-premium primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
     </div>
-  </div>
-  {% else %}
-  <div class="col-12">
-    <div class="text-center py-5 card">
-      <div class="mb-3">
-        <i class="bi bi-folder-plus text-primary" style="font-size: 4rem; opacity: 0.3;"></i>
-      </div>
-      <h3>No modules found</h3>
-      <p class="text-muted mb-4">Get started by creating your first data module.</p>
-      <a href="{{ url_for('worker.create_module') }}" class="btn btn-primary px-4 py-2">
-        <i class="bi bi-plus-lg me-2"></i>Create New Module
-      </a>
-    </div>
-  </div>
-  {% endfor %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const configureModal = new bootstrap.Modal(document.getElementById('configureModal'));
+
+    function configureModule(id, name) {
+        document.getElementById('config-module-id').value = id;
+        document.getElementById('config-module-name').value = name;
+        configureModal.show();
+    }
+
+    function viewReport(id) {
+        window.location.href = `/worker/reports?module_id=${id}`;
+    }
+
+    document.getElementById('configureForm').onsubmit = async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('config-module-id').value;
+        const name = document.getElementById('config-module-name').value;
+        
+        try {
+            const response = await fetch(`/worker/api/modules/${id}/update`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name })
+            });
+            const res = await response.json();
+            if (res.success) {
+                location.reload();
+            } else {
+                alert(res.error || 'Failed to update module');
+            }
+        } catch (err) {
+            alert('An error occurred');
+        }
+    };
+    // Initialize Charts
+    async function loadAnalytics() {
+        const response = await fetch('/worker/api/worker-analytics');
+        const data = await response.json();
+
+        // Trend Chart
+        const trendOptions = {
+            series: [{
+                name: 'Deliveries',
+                data: data.trend.data
+            }],
+            chart: {
+                type: 'area',
+                height: 250,
+                toolbar: { show: false },
+                zoom: { enabled: false }
+            },
+            colors: ['#6366f1'],
+            dataLabels: { enabled: false },
+            stroke: { curve: 'smooth', width: 2 },
+            xaxis: {
+                categories: data.trend.labels,
+                axisBorder: { show: false },
+                axisTicks: { show: false }
+            },
+            yaxis: { show: false },
+            grid: {
+                borderColor: '#f1f1f1',
+                strokeDashArray: 4
+            },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.4,
+                    opacityTo: 0,
+                    stops: [0, 100]
+                }
+            }
+        };
+
+        // Distribution Chart
+        const distOptions = {
+            series: data.distribution.data,
+            chart: {
+                type: 'donut',
+                height: 300
+            },
+            labels: data.distribution.labels,
+            colors: ['#6366f1', '#22c55e', '#f59e0b', '#a855f7', '#ef4444'],
+            legend: { position: 'bottom' },
+            dataLabels: { enabled: false },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '75%',
+                        labels: {
+                            show: true,
+                            total: {
+                                show: true,
+                                label: 'Total Records',
+                                formatter: () => data.distribution.data.reduce((a, b) => a + b, 0)
+                            }
+                        }
+                    }
+                }
+            }
+        };
+
+        new ApexCharts(document.querySelector("#performance-trend-chart"), trendOptions).render();
+        new ApexCharts(document.querySelector("#records-distribution-chart"), distOptions).render();
+    }
+
+
+
+    // Initial Load
+    loadAnalytics();
+
+
+</script>
 {% endblock %}

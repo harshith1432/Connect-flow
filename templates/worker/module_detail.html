@@ -52,7 +52,7 @@
 
 <div class="row g-4">
     <!-- Left Column: Data Records -->
-    <div class="col-lg-8">
+    <div class="col-12">
         <div class="card h-100 border-0 shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom">
                 <h5 class="mb-0 fw-bold text-primary">Data Records {% if group %}<span
@@ -82,7 +82,7 @@
                 {% endif %}
             </div>
             <div class="table-responsive">
-                <table class="table align-middle mb-0">
+                <table class="table align-middle mb-0 text-nowrap">
                     <thead class="bg-light">
                         <tr>
                             {% for f in fields %}
@@ -96,20 +96,22 @@
                         {% for r in group.records %}
                         <tr>
                             {% for field in fields %}
-                            <td>
-                                {% set val = r.values|selectattr('field_id', 'equalto', field.id)|first %}
-                                {% if val %}
-                                {% if field.field_type == 'file' and val.value %}
-                                <a href="{{ url_for('static', filename=val.value) }}" target="_blank"
-                                    class="text-decoration-none">
-                                    <i class="bi bi-file-earmark-text me-1"></i> View File
-                                </a>
-                                {% else %}
-                                {{ val.value }}
-                                {% endif %}
-                                {% else %}
-                                <span class="text-muted">-</span>
-                                {% endif %}
+                            <td title="{{ r.field_values.get(field.id, '') }}">
+                                <div style="max-width: 200px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                                    {% set val_text = r.field_values.get(field.id, '') %}
+                                    {% if val_text %}
+                                    {% if field.field_type == 'file' %}
+                                    <a href="{{ url_for('static', filename=val_text) }}" target="_blank"
+                                        class="text-decoration-none">
+                                        <i class="bi bi-file-earmark-text me-1"></i> View File
+                                    </a>
+                                    {% else %}
+                                    {{ val_text }}
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </div>
                             </td>
                             {% endfor %}
                             <td class="text-end">
@@ -178,19 +180,11 @@
         </div>
     </div>
 
-    <!-- Right Column: Fields / Structure -->
-    <div class="col-lg-4">
-
-
-
-
-
-    </div>
 </div>
 
 <!-- Add Field / Determine Data Modal -->
 <div class="modal fade" id="addFieldModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Determine Data</h5>
@@ -508,7 +502,7 @@
 
 <!-- Add RecordModal -->
 <div class="modal fade" id="addRecordModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <form method="post" action="{{ url_for('worker.add_record', gid=group.id if group else 0) }}"
                 enctype="multipart/form-data" class="needs-validation">
@@ -610,7 +604,7 @@
 
 <!-- View Record Modal -->
 <div class="modal fade" id="viewRecordModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Record Details</h5>
@@ -633,7 +627,7 @@
 
 <!-- Edit Record Modal -->
 <div class="modal fade" id="editRecordModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
         <div class="modal-content">
             <form id="editRecordForm" method="post" enctype="multipart/form-data" class="needs-validation">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />

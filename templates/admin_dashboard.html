@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="mb-3">
+  <h1>Platform Dashboard</h1>
+  <p style="color: var(--text-muted);">Overview of system performance and management</p>
+</div>
+
+<div class="grid" style="grid-template-columns: 2fr 1fr;">
+  <!-- Organizations Section -->
+  <div class="card">
+    <div class="d-flex justify-between items-center mb-3">
+      <h3>Organizations</h3>
+      <span style="font-size: 0.875rem; color: var(--text-muted);">{{ orgs|length }} Active</span>
+    </div>
+    <div style="overflow-x: auto;">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Organization</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in orgs %}
+          <tr>
+            <td>
+              <div style="font-weight: 500;">{{o.name}}</div>
+              <div style="font-size: 0.875rem; color: var(--text-muted);">ID: {{o.id}}</div>
+            </td>
+            <td>
+              <span class="badge bg-success">Active</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Pending Numbers Section -->
+  <div class="card">
+    <h3>Pending Numbers</h3>
+    {% if numbers %}
+    <ul style="list-style: none; margin-top: 1rem;">
+      {% for n in numbers %}
+      <li class="d-flex justify-between items-center"
+        style="padding: 0.75rem 0; border-bottom: 1px solid var(--border-color);">
+        <span style="font-weight: 500;">{{n.number}}</span>
+        <form style="display:inline" method="post" action="/admin/numbers/approve/{{n.id}}">
+          {{ csrf_token() }}
+          <button class="btn btn-secondary"
+            style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background:#ECFDF5; color:#065F46; border-color:#A7F3D0;">Approve</button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p style="color: var(--text-muted); margin-top: 1rem;">No pending numbers.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

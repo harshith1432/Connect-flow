@@ -33,9 +33,9 @@
       </button>
 
       <!-- Navigation Menu -->
-      <div class="navbar-menu flex-grow-1" id="navbarMenu">
+      <div class="navbar-menu" id="navbarMenu">
         {% if current_user.is_authenticated %}
-        <div class="d-flex flex-column flex-md-row align-items-md-center w-100 p-mobile-2 position-relative">
+        <div class="d-flex flex-column flex-md-row align-items-md-center p-mobile-2 position-relative">
 
           <!-- User Info - Absolute Center on Desktop -->
           <div class="navbar-center-brand d-flex flex-column align-items-center mb-3 mb-md-0">
@@ -60,7 +60,7 @@
           </div>
         </div>
         {% else %}
-        <div class="d-flex flex-row gap-3 align-items-center justify-content-end w-100 p-mobile-2">
+        <div class="d-flex flex-row gap-3 align-items-center p-mobile-2">
           <a href="{{ url_for('org.login') }}" class="fw-bold text-decoration-none"
             style="color: var(--secondary-color);">Login</a>
           <a href="{{ url_for('org.register') }}" class="btn btn-primary" style="border-radius: 20px;">Get Started</a>

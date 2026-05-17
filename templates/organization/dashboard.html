@@ -1,210 +1,398 @@
-{% extends 'base.html' %}
-{% block title %}Organization Dashboard{% endblock %}
+{% extends 'base_org_premium.html' %}
+
+{% block title %}ConnectFlow | Executive Dashboard{% endblock %}
+{% block page_title %}Organization Overview{% endblock %}
+
 {% block content %}
-<div class="mb-4 text-center text-md-start">
-  <h1 class="h2 mb-1">Organization Overview</h1>
-  <p style="color: var(--text-muted);">Monitor your team and communication channels</p>
+
+<!-- Subscription Banners -->
+{% if not subscription %}
+<div class="premium-panel mb-4" style="background: var(--grey-900); color: var(--white);">
+    <div class="d-flex align-items-center justify-content-between">
+        <div>
+            <h3 style="color: var(--white);">Subscription Required</h3>
+            <p style="color: var(--grey-400);">Activate your enterprise plan to start managing your workforce and communications.</p>
+        </div>
+        <a href="{{ url_for('org.browse_plans') }}" class="btn-black" style="background: var(--white); color: var(--black) !important; padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 600;">Upgrade to Premium</a>
+    </div>
 </div>
-
-<!-- Subscription State Banners -->
-<div class="row g-3 mb-4">
-  {% if not subscription %}
-  <div class="col-12">
-    <div class="alert alert-primary border-0 shadow-sm d-flex align-items-center p-4 mb-0" style="border-radius: 15px;">
-      <i class="bi bi-shield-check fs-2 me-4"></i>
-      <div class="flex-grow-1">
-        <h5 class="fw-bold mb-1">Subscription Required</h5>
-        <p class="mb-0 small">Welcome! Your account is approved. Please purchase a subscription plan to start adding
-          workers and using our services.</p>
-      </div>
-      <a href="{{ url_for('org.browse_plans') }}" class="btn btn-primary fw-bold px-4 py-2"
-        style="border-radius: 10px;">Buy Subscription Plan</a>
-    </div>
-  </div>
-  {% elif grace_days_left %}
-  <div class="col-12">
-    <div class="alert alert-danger border-0 shadow-sm d-flex align-items-center p-4 mb-0" style="border-radius: 15px;">
-      <i class="bi bi-clock-history fs-2 me-4"></i>
-      <div class="flex-grow-1">
-        <h5 class="fw-bold mb-1">Grace Period Active</h5>
-        <p class="mb-0 small">Your subscription has expired! You have <strong>{{ grace_days_left }} day(s)</strong>
-          remaining to renew before services are fully suspended.</p>
-      </div>
-      <a href="{{ url_for('org.browse_plans') }}" class="btn btn-danger fw-bold px-4 py-2"
-        style="border-radius: 10px;">Renew Now</a>
-    </div>
-  </div>
-  {% elif days_until_expiry %}
-  <div class="col-12">
-    <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center p-4 mb-0" style="border-radius: 15px;">
-      <i class="bi bi-exclamation-triangle-fill fs-2 me-4"></i>
-      <div class="flex-grow-1">
-        <h5 class="fw-bold mb-1">Subscription Ending Soon</h5>
-        <p class="mb-0 small">Your subscription is ending within <strong>{{ days_until_expiry }} day(s)</strong>. Please
-          subscribe to continue our services.</p>
-      </div>
-      <a href="{{ url_for('org.browse_plans') }}" class="btn btn-dark fw-bold px-4 py-2"
-        style="border-radius: 10px;">Subscribe Now</a>
-    </div>
-  </div>
-  {% endif %}
-</div>
-
-<!-- Stats Grid -->
-<!-- Stats Grid -->
-<!-- Stats Grid -->
-<!-- Stats Grid -->
-<div class="row g-4 mb-5">
-  <!-- Active Workers -->
-  <div class="col-md-4">
-    <div class="card border-0 shadow-sm py-3 h-100" style="border-radius: 20px;">
-      <div class="card-body text-center">
-        <div class="mb-3">
-          <i class="bi bi-people-fill fs-2 text-primary"></i>
-        </div>
-        <h3 class="fw-bold text-dark mb-1">{{ worker_count }}</h3>
-        <div class="text-uppercase fw-bold text-muted small" style="letter-spacing: 0.5px;">Active Workers</div>
-      </div>
-    </div>
-  </div>
-  <!-- Messages Sent -->
-  <div class="col-md-4">
-    <div class="card border-0 shadow-sm py-3 h-100" style="border-radius: 20px;">
-      <div class="card-body text-center">
-        <div class="mb-3">
-          <i class="bi bi-chat-left-text-fill fs-2 text-dark"></i>
-        </div>
-        <h3 class="fw-bold text-dark mb-1">{{ total_messages }}</h3>
-        <div class="text-uppercase fw-bold text-muted small" style="letter-spacing: 0.5px;">Messages Sent</div>
-      </div>
-    </div>
-  </div>
-  <!-- Calls Made -->
-  <div class="col-md-4">
-    <div class="card border-0 shadow-sm py-3 h-100" style="border-radius: 20px;">
-      <div class="card-body text-center">
-        <div class="mb-3">
-          <i class="bi bi-telephone-fill fs-2 text-success"></i>
-        </div>
-        <h3 class="fw-bold text-dark mb-1">{{ total_calls }}</h3>
-        <div class="text-uppercase fw-bold text-muted small" style="letter-spacing: 0.5px;">Calls Made</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-{% if subscription and subscription.is_expired %}
-<!-- Subscription Completed Popup -->
-<div class="modal fade" id="subscriptionInactivePopup" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1"
-  aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-      <div class="modal-body p-5 text-center">
-        <div class="mb-4">
-          <div class="bg-warning-subtle d-inline-flex p-4 rounded-circle">
-            <i class="bi bi-exclamation-octagon text-warning fs-1"></i>
-          </div>
-        </div>
-        <h2 class="fw-bold mb-3">Subscription Plan Completed</h2>
-        <p class="text-muted fs-5 mb-5">
-          Your subscription plan has been Completed. Please Subscribe to continue our premium services.
-        </p>
-
-        <div class="row g-4 mb-5">
-          <div class="col-md-6 mx-auto">
-            <div class="card border-primary p-4 bg-light shadow-sm">
-              <h5 class="fw-bold">Renew Access</h5>
-              <p class="small text-muted">Restore worker login and all management features.</p>
-              <a href="{{ url_for('org.browse_plans') }}" class="btn btn-primary w-100 fw-bold py-3"
-                style="border-radius: 12px;">Browse Plans</a>
-            </div>
-          </div>
-        </div>
-
-        <div class="text-muted small">
-          Need help? <a href="#" class="text-primary text-decoration-none">Contact Support</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    var myModal = new bootstrap.Modal(document.getElementById('subscriptionInactivePopup'));
-    myModal.show();
-  });
-</script>
 {% endif %}
 
+<!-- KPI Cards -->
+<div class="kpi-grid">
+    <!-- Active Workers -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <div class="kpi-label">Active Workers</div>
+            <div class="kpi-icon"><i class="bi bi-people"></i></div>
+        </div>
+        <div class="kpi-value">{{ worker_count }}</div>
+        <div class="kpi-trend">
+            <span class="trend-up"><i class="bi bi-arrow-up-short"></i> 12.5%</span>
+            <span style="color: var(--grey-400); font-weight: 500;">vs last month</span>
+        </div>
+        <div id="sparkline1" style="min-height: 40px; margin-top: 1rem;"></div>
+    </div>
+
+    <!-- Messages Sent -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <div class="kpi-label">Messages Sent</div>
+            <div class="kpi-icon"><i class="bi bi-chat-left-text"></i></div>
+        </div>
+        <div class="kpi-value">{{ total_messages }}</div>
+        <div class="kpi-trend">
+            <span class="trend-up"><i class="bi bi-arrow-up-short"></i> 8.2%</span>
+            <span style="color: var(--grey-400); font-weight: 500;">vs yesterday</span>
+        </div>
+        <div id="sparkline2" style="min-height: 40px; margin-top: 1rem;"></div>
+    </div>
+
+    <!-- Calls Completed -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <div class="kpi-label">Calls Completed</div>
+            <div class="kpi-icon"><i class="bi bi-telephone"></i></div>
+        </div>
+        <div class="kpi-value">{{ total_calls }}</div>
+        <div class="kpi-trend">
+            <span class="trend-down"><i class="bi bi-arrow-down-short"></i> 2.4%</span>
+            <span style="color: var(--grey-400); font-weight: 500;">vs yesterday</span>
+        </div>
+        <div id="sparkline3" style="min-height: 40px; margin-top: 1rem;"></div>
+    </div>
+
+    <!-- Conversion Rate / Success Rate -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <div class="kpi-label">Success Rate</div>
+            <div class="kpi-icon"><i class="bi bi-check2-circle"></i></div>
+        </div>
+        <div class="kpi-value">94.2%</div>
+        <div class="kpi-trend">
+            <span class="trend-up"><i class="bi bi-arrow-up-short"></i> 0.5%</span>
+            <span style="color: var(--grey-400); font-weight: 500;">Stable</span>
+        </div>
+        <div id="sparkline4" style="min-height: 40px; margin-top: 1rem;"></div>
+    </div>
+</div>
+
+<!-- Main Performance Graph -->
+<div class="chart-row">
+    <div class="premium-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h3>Performance Overview</h3>
+                <p>Communication trends across all modules</p>
+            </div>
+            <div class="panel-actions">
+                <select class="form-select-premium" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--grey-200); font-size: 0.815rem; font-weight: 600;">
+                    <option>Last 7 Days</option>
+                    <option>Last 30 Days</option>
+                </select>
+            </div>
+        </div>
+        <div id="mainChart" style="min-height: 350px;"></div>
+    </div>
+
+    <!-- Lead Sources / Channel Performance -->
+    <div class="premium-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h3>Channel Distribution</h3>
+                <p>Engagement by medium</p>
+            </div>
+        </div>
+        <div id="donutChart" style="min-height: 250px;"></div>
+        <div class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span style="font-size: 0.875rem; color: var(--grey-600);"><i class="bi bi-whatsapp me-2"></i> WhatsApp</span>
+                <span style="font-weight: 700;">65%</span>
+            </div>
+            <div class="progress" style="height: 6px; border-radius: 10px; background: var(--grey-100); margin-bottom: 1rem;">
+                <div class="progress-bar" style="width: 65%; background: var(--black); border-radius: 10px;"></div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span style="font-size: 0.875rem; color: var(--grey-600);"><i class="bi bi-telephone me-2"></i> Voice</span>
+                <span style="font-weight: 700;">25%</span>
+            </div>
+            <div class="progress" style="height: 6px; border-radius: 10px; background: var(--grey-100); margin-bottom: 1rem;">
+                <div class="progress-bar" style="width: 25%; background: var(--grey-600); border-radius: 10px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="chart-row" style="grid-template-columns: 1fr;">
+    <!-- Recent Activities (Full Width for Live Audit focus) -->
+    <div class="premium-panel" style="flex: 2;">
+        <div class="panel-header">
+            <div class="panel-title">
+                <div class="d-flex align-items-center gap-2">
+                    <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></div>
+                    <h3 style="margin: 0;">Live Organizational Audit</h3>
+                </div>
+                <p>Real-time event stream across all departments</p>
+            </div>
+            <div class="panel-actions">
+                <span class="status-badge status-completed" style="font-size: 0.75rem; background: var(--grey-50); color: var(--grey-600); border: 1px solid var(--grey-100);">
+                    <i class="bi bi-arrow-repeat me-1"></i> Auto-Sync Active
+                </span>
+            </div>
+        </div>
+        <div class="activity-feed" style="max-height: 400px; overflow-y: auto; padding-right: 1rem;">
+            <!-- Dynamic Content via JS -->
+            <div style="text-align: center; padding: 3rem 0; color: var(--grey-400);">
+                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                Initialising real-time audit stream...
+            </div>
+            <div class="text-center mt-3">
+                <a href="{{ url_for('org.reports_dashboard') }}" class="view-all-link">View Full Audit Logs <i class="bi bi-chevron-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Team Performance & Module Oversight -->
 <div class="row g-4">
-  <!-- Management Actions -->
-  <div class="col-md-6">
-    <div class="card h-100">
-      <h3>Team Management</h3>
-      <p class="text-muted mb-4">Create accounts for your staff to manage modules and campaigns.</p>
-      <a href="{{ url_for('org.manage_workers') }}" class="btn btn-primary w-full">Manage Workers</a>
+    <div class="col-12">
+        <div class="premium-panel">
+            <div class="panel-header">
+                <div class="panel-title">
+                    <h3>Module Oversight</h3>
+                    <p>Current operational modules within organization</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('org.manage_modules') }}" class="btn-black" style="background: var(--black); color: var(--white) !important; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.815rem; font-weight: 600;">Manage Module</a>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="activity-table">
+                    <thead>
+                        <tr>
+                            <th>Module Name</th>
+                            <th>Status</th>
+                            <th>Records</th>
+                            <th>Campaigns</th>
+                            <th>Creation Date</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in modules %}
+                        <tr>
+                            <td class="fw-bold" style="cursor: pointer; color: var(--black);" onclick="window.location.href='{{ url_for('org.module_detail', mid=m.id) }}'">
+                                {{ m.name }}
+                            </td>
+                            <td><span class="status-badge status-completed">{{ m.status }}</span></td>
+                            <td>{{ m.records }}</td>
+                            <td>{{ m.campaigns }}</td>
+                            <td class="text-muted">{{ m.created_at }}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 32px; height: 32px; border-radius: 10px;">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-premium border-0" style="min-width: 180px;">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('org.module_detail', mid=m.id) }}">
+                                                <i class="bi bi-eye"></i> View Complete Report
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url_for('org.module_detail', mid=m.id) }}">
+                                                <i class="bi bi-gear"></i> Module Settings
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="#">
+                                                <i class="bi bi-trash"></i> Delete Module
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
-
-  <!-- Configuration -->
-  <div class="col-md-6">
-    <div class="card h-100">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <h3>Communication Settings</h3>
-        <a href="{{ url_for('org.communication_settings') }}" class="btn btn-outline-primary btn-sm">Configure</a>
-      </div>
-      <p class="text-muted mb-4">Review your number configuration and request access.</p>
-      {% if numbers %}
-      <ul class="list-unstyled mb-0">
-        {% for n in numbers %}
-        <li class="d-flex justify-content-between border-bottom py-2">
-          <span class="fw-bold">{{ n.number }}</span>
-          {% if n.is_platform_owned %}
-          <span class="badge bg-info text-white">Platform Default</span>
-          {% else %}
-          <span class="badge bg-success text-white">Custom ({{ 'Approved' if n.approved else 'Pending' }})</span>
-          {% endif %}
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="text-muted">No numbers assigned.</p>
-      {% endif %}
-    </div>
-  </div>
 </div>
 
-<!-- Read-Only Module View -->
-<div class="card mt-4">
-  <h3>Module Oversight</h3>
-  <div class="table-responsive">
-    <table class="table mt-3 align-middle">
-      <thead>
-        <tr>
-          <th>Module Name</th>
-          <th>Status</th>
-          <th>Records</th>
-          <th>Created At</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for m in modules %}
-        <tr>
-          <td class="fw-bold">
-            <a href="{{ url_for('org.module_detail', mid=m.id) }}" class="text-decoration-none">{{ m.name }}</a>
-          </td>
-          <td><span class="badge bg-light text-dark">{{ m.status }}</span></td>
-          <td>{{ m.records|length }}</td>
-          <td>{{ m.created_at.strftime('%Y-%m-%d') }}</td>
-        </tr>
-        {% else %}
-        <tr>
-          <td colspan="4" class="text-center text-muted py-4">No modules created yet.</td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
-  </div>
+{% endblock %}
+
+{% block extra_modals %}
+<!-- Module Intelligence Modal -->
+<div id="moduleReportModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="premium-panel" style="width: 100%; max-width: 650px; padding: 2.5rem; border-radius: 24px;">
+        <div class="panel-header mb-4">
+            <div class="panel-title">
+                <h3 id="m_modal_name" style="font-size: 1.5rem; margin-bottom: 0.25rem;">Module Report</h3>
+                <p>Real-time operational performance data</p>
+            </div>
+            <button onclick="hideModuleReport()" style="background: none; border: none; font-size: 1.75rem; color: var(--grey-400); cursor: pointer; transition: color 0.2s;">&times;</button>
+        </div>
+        
+        <div class="row g-4 mb-4">
+            <div class="col-6 col-md-3">
+                <div style="background: var(--grey-50); padding: 1.25rem; border-radius: 16px; text-align: center;">
+                    <div style="font-size: 0.75rem; color: var(--grey-500); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Campaigns</div>
+                    <div id="m_modal_campaigns" style="font-size: 1.5rem; font-weight: 800; color: var(--black);">0</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div style="background: var(--grey-50); padding: 1.25rem; border-radius: 16px; text-align: center;">
+                    <div style="font-size: 0.75rem; color: var(--grey-500); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Records</div>
+                    <div id="m_modal_records" style="font-size: 1.5rem; font-weight: 800; color: var(--black);">0</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div style="background: var(--grey-50); padding: 1.25rem; border-radius: 16px; text-align: center;">
+                    <div style="font-size: 0.75rem; color: var(--grey-500); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Total Calls</div>
+                    <div id="m_modal_calls" style="font-size: 1.5rem; font-weight: 800; color: var(--black);">0</div>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div style="background: var(--grey-50); padding: 1.25rem; border-radius: 16px; text-align: center;">
+                    <div style="font-size: 0.75rem; color: var(--grey-500); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Messages</div>
+                    <div id="m_modal_messages" style="font-size: 1.5rem; font-weight: 800; color: var(--black);">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: var(--black); color: var(--white); padding: 1.5rem; border-radius: 20px; margin-bottom: 1.5rem;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div style="font-size: 0.75rem; opacity: 0.7; font-weight: 600;">MODULE CREATOR</div>
+                    <div id="m_modal_creator" style="font-size: 1.125rem; font-weight: 700;">System Administrator</div>
+                </div>
+                <div class="text-end">
+                    <div style="font-size: 0.75rem; opacity: 0.7; font-weight: 600;">CREATION DATE</div>
+                    <div id="m_modal_date" style="font-size: 1.125rem; font-weight: 700;">2024-05-15</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end">
+            <button onclick="hideModuleReport()" class="btn-black" style="padding: 0.75rem 2rem;">Close Intelligence Report</button>
+        </div>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const chartOptions = {
+        chart: { type: 'line', height: 350, toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'Inter, sans-serif' },
+        stroke: { curve: 'smooth', width: 3, colors: ['#000000', '#6b7280'] },
+        series: [
+            { name: 'Messages', data: [31, 40, 28, 51, 42, 109, 100] },
+            { name: 'Calls', data: [11, 32, 45, 32, 34, 52, 41] }
+        ],
+        xaxis: { categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], axisBorder: { show: false }, axisTicks: { show: false } },
+        yaxis: { labels: { style: { colors: '#6b7280' } } },
+        grid: { borderColor: '#f3f4f6', strokeDashArray: 4 },
+        legend: { position: 'top', horizontalAlign: 'right' },
+        markers: { size: 0, hover: { size: 5 } }
+    };
+    new ApexCharts(document.querySelector("#mainChart"), chartOptions).render();
+
+    const donutOptions = {
+        chart: { type: 'donut', height: 250, fontFamily: 'Inter, sans-serif' },
+        series: [65, 25, 10],
+        labels: ['WhatsApp', 'Voice', 'SMS'],
+        colors: ['#000000', '#6b7280', '#e5e7eb'],
+        legend: { show: false },
+        plotOptions: { pie: { donut: { size: '75%', labels: { show: true, total: { show: true, label: 'Total', formatter: () => '100%' } } } } },
+        stroke: { width: 0 }
+    };
+    new ApexCharts(document.querySelector("#donutChart"), donutOptions).render();
+
+    // Sparklines
+    const sparklineGen = (color) => ({
+        chart: { type: 'area', height: 40, sparkline: { enabled: true }, animations: { enabled: false } },
+        stroke: { curve: 'smooth', width: 2 },
+        fill: { opacity: 0.1, colors: [color] },
+        series: [{ data: [15, 25, 18, 30, 22, 35, 28] }],
+        colors: [color],
+        tooltip: { enabled: false }
+    });
+    new ApexCharts(document.querySelector("#sparkline1"), sparklineGen('#000000')).render();
+    new ApexCharts(document.querySelector("#sparkline2"), sparklineGen('#000000')).render();
+    new ApexCharts(document.querySelector("#sparkline3"), sparklineGen('#6b7280')).render();
+    new ApexCharts(document.querySelector("#sparkline4"), sparklineGen('#000000')).render();
+
+    // Real-time Activity Feed Polling
+    function fetchRecentActivities() {
+        fetch('{{ url_for("org.get_recent_activities") }}')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.querySelector('.activity-feed');
+                const viewAllLink = container.querySelector('.text-center.mt-3');
+                
+                // Remove existing activity items
+                const existingItems = container.querySelectorAll('.d-flex.gap-3.mb-4');
+                existingItems.forEach(item => item.remove());
+                
+                // Remove no-data message if exists
+                const noDataMsg = container.querySelector('.no-activity-msg');
+                if (noDataMsg) noDataMsg.remove();
+                
+                if (data.length === 0) {
+                    const noData = document.createElement('div');
+                    noData.className = 'no-activity-msg';
+                    noData.style.cssText = "text-align: center; padding: 2rem 0; color: var(--grey-400); font-size: 0.875rem;";
+                    noData.innerText = "No recent activity recorded.";
+                    container.insertBefore(noData, viewAllLink);
+                    return;
+                }
+                
+                data.forEach(act => {
+                    const div = document.createElement('div');
+                    div.className = "d-flex gap-3 mb-4 border-bottom-dashed pb-4";
+                    
+                    let iconClass = 'bi-pencil-square';
+                    if (act.action.includes('Login')) iconClass = 'bi-shield-lock';
+                    if (act.action.includes('Create') || act.action.includes('Add')) iconClass = 'bi-plus-circle';
+                    if (act.action.includes('Security')) iconClass = 'bi-key';
+                    if (act.action.includes('Campaign')) iconClass = 'bi-megaphone';
+                    
+                    div.innerHTML = `
+                        <div class="activity-icon">
+                            <i class="bi ${iconClass}"></i>
+                        </div>
+                        <div>
+                            <h6 class="activity-item-title" style="margin-bottom: 2px;">${act.action}: ${act.details}</h6>
+                            <p class="activity-item-time" style="margin: 0; opacity: 0.8;">${act.time} • <span class="fw-bold">${act.user}</span></p>
+                        </div>
+                    `;
+                    container.insertBefore(div, viewAllLink);
+                });
+            })
+            .catch(err => console.error('Error fetching activities:', err));
+    }
+
+    // Start polling
+    fetchRecentActivities();
+    setInterval(fetchRecentActivities, 30000);
+
+    function showModuleReport(data) {
+        document.getElementById('m_modal_name').innerText = data.name + ' Report';
+        document.getElementById('m_modal_campaigns').innerText = data.campaigns;
+        document.getElementById('m_modal_records').innerText = data.records;
+        document.getElementById('m_modal_calls').innerText = data.calls;
+        document.getElementById('m_modal_messages').innerText = data.messages;
+        document.getElementById('m_modal_creator').innerText = data.creator;
+        document.getElementById('m_modal_date').innerText = data.created_at;
+        
+        document.getElementById('moduleReportModal').style.display = 'flex';
+    }
+
+    function hideModuleReport() {
+        document.getElementById('moduleReportModal').style.display = 'none';
+    }
+</script>
 {% endblock %}

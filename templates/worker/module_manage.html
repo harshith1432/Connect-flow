@@ -1,0 +1,866 @@
+{% extends "base_worker_premium.html" %}
+
+{% block title %}Manage Module | {{ module.name }}{% endblock %}
+
+{% block page_title %}
+    <span class="text-muted fw-normal">Modules /</span> {{ module.name }}
+{% endblock %}
+
+{% block content %}
+<div class="crm-dashboard-wrapper">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Module Intelligence: {{ module.name }}</h2>
+            <p class="text-muted small mb-0">Harnessing dynamic data capture and processing.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-premium-white" onclick="window.location.href='{{ url_for('worker.dashboard') }}'">
+                Back
+            </button>
+            <button class="btn btn-premium-white" onclick="window.location.href='{{ url_for('worker.create_module') }}'">
+                <i class="bi bi-plus-circle me-2"></i>New Module
+            </button>
+            <button class="btn btn-premium-dark" data-bs-toggle="modal" data-bs-target="#addRecordModal">
+                <i class="bi bi-plus-lg me-2"></i>Add Entry
+            </button>
+            <div class="dropdown">
+                <button class="btn btn-premium-white dropdown-toggle" data-bs-toggle="dropdown">
+                    Operations
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-xl">
+                    <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-cloud-arrow-up me-2"></i>Import Data</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="{{ url_for('worker.export_records', mid=module.id, format='csv') }}"><i class="bi bi-filetype-csv me-2"></i>Export CSV</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('worker.export_records', mid=module.id, format='excel') }}"><i class="bi bi-filetype-xlsx me-2"></i>Export Excel</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Bar (Search & Bulk) -->
+    <div class="crm-action-bar mb-4 glass-morphism">
+        <div class="row align-items-center g-3">
+            <div class="col-md-4">
+                <div class="input-group search-group">
+                    <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" id="recordSearch" class="form-control border-start-0 bg-transparent" placeholder="Search entries..." onkeyup="filterRecords()">
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="d-flex align-items-center justify-content-md-end gap-3 flex-wrap">
+                    <div class="unique-control-group d-flex align-items-center gap-3 px-3 py-2 bg-white rounded-xl border shadow-sm transition-all" id="uniqueFilterGroup">
+                        <div class="form-check mb-0">
+                            <input class="form-check-input" type="checkbox" id="uniqueFilter" onchange="toggleUniqueFilter()">
+                            <label class="form-check-label small fw-bold text-dark" for="uniqueFilter">Unique Filter</label>
+                        </div>
+                        <div class="vr mx-1" style="height: 20px;"></div>
+                        <select id="uniqueField" class="form-select form-select-sm border-0 bg-transparent fw-semibold text-muted" style="width: auto; box-shadow: none; cursor: pointer;" onchange="filterRecords()">
+                            <option value="all">Check: All Attributes</option>
+                            {% for f in fields %}
+                            <option value="{{ f.id }}">By: {{ f.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div id="bulkActions" class="d-none animate__animated animate__fadeIn">
+                        <span class="me-2 smaller fw-bold text-muted"><span id="selectedCount">0</span> selected</span>
+                        <button class="btn btn-sm btn-danger rounded-pill px-3" onclick="bulkDelete()">Delete Selected</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dynamic Table Section -->
+    <div class="premium-table-container">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0 crm-table" id="mainRecordsTable">
+                <thead>
+                    <tr>
+                        <th class="ps-4" style="width: 50px;">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                            </div>
+                        </th>
+                        <th style="min-width: 120px;">Created</th>
+                        {% for f in fields %}
+                        <th style="min-width: 150px;">{{ f.name }}</th>
+                        {% endfor %}
+                        <th class="text-end pe-4" style="width: 120px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="recordTableBody">
+                    {% for r in records %}
+                    <tr class="crm-row" data-id="{{ r.id }}">
+                        <td class="ps-4">
+                            <div class="form-check">
+                                <input class="form-check-input record-checkbox" type="checkbox" value="{{ r.id }}" onchange="updateBulkActions()">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="date-cell">
+                                <span class="d-block fw-semibold text-dark">{{ r.created_at.strftime('%d %b, %H:%M') }}</span>
+                                <span class="smaller text-muted">ID: #{{ r.id }}</span>
+                            </div>
+                        </td>
+                        {% for f in fields %}
+                        <td>
+                            {% set val = r.computed_values.get(f.id, '-') %}
+                            <div class="field-cell">
+                                {% if f.field_type == 'phone' and val != '-' %}
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="text-dark fw-medium">{{ val }}</span>
+                                        <a href="https://wa.me/{{ val|replace(' ', '')|replace('+', '')|replace('-', '') }}" target="_blank" class="whatsapp-icon-link" title="WhatsApp this contact">
+                                            <i class="bi bi-whatsapp"></i>
+                                        </a>
+                                    </div>
+                                {% elif f.field_type == 'email' and val != '-' %}
+                                    <a href="mailto:{{ val }}" class="text-dark-link text-decoration-none border-bottom border-dark">{{ val }}</a>
+                                {% elif f.field_type == 'boolean' %}
+                                    <span class="status-pill {% if val == 'True' %}status-active{% else %}status-inactive{% endif %}">
+                                        {{ val }}
+                                    </span>
+                                {% elif f.field_type == 'calculated' %}
+                                    <span class="fw-bold text-dark px-2 py-1 bg-light rounded border smaller">{{ val }}</span>
+                                {% elif f.field_type == 'file' and val != '-' %}
+                                    <a href="/instance/uploads/{{ val }}" target="_blank" class="btn btn-sm btn-premium-white py-1 px-2 rounded-pill smaller">View File</a>
+                                {% else %}
+                                    <span class="text-dark text-truncate d-inline-block" style="max-width: 200px;">{{ val }}</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        {% endfor %}
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <button class="btn btn-sm btn-premium-action" onclick="editRecord('{{ r.id }}')" title="Edit Entry">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="btn btn-sm btn-premium-action-danger" onclick="deleteRecord('{{ r.id }}')" title="Delete Entry">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{{ fields|length + 3 }}" class="text-center py-5">
+                            <div class="empty-state py-5">
+                                <div class="empty-icon-wrapper mb-4">
+                                    <i class="bi bi-folder2-open display-1 text-light"></i>
+                                </div>
+                                <h4 class="fw-bold">No Records Found</h4>
+                                <p class="text-muted mx-auto" style="max-width: 300px;">This module currently has no dynamic data. Start by adding a record manually or import a file.</p>
+                                <div class="mt-4 d-flex justify-content-center gap-2">
+                                    <button class="btn btn-premium-dark px-4" data-bs-toggle="modal" data-bs-target="#addRecordModal">Add Record</button>
+                                    <button class="btn btn-premium-white px-4" data-bs-toggle="modal" data-bs-target="#importModal">Import CSV</button>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modals & Styles... -->
+<!-- Modals remain mostly the same but with enhanced premium styling -->
+
+<!-- Manage Fields Modal -->
+<div class="modal fade" id="manageFieldsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-2xl">
+            <div class="modal-header border-0 px-4 pt-4">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark">Module Architecture</h5>
+                    <p class="small text-muted mb-0">Define how data should be captured and processed in this module.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 pb-4">
+                <div class="mb-4">
+                    <label class="small fw-bold text-uppercase text-muted mb-3 d-block">Active Schema Structure</label>
+                    <div id="fieldsList" class="d-flex flex-wrap gap-2">
+                        <!-- Loaded via JS -->
+                    </div>
+                </div>
+
+                <div class="field-builder-card p-4 rounded-xl border-dashed">
+                    <h6 class="fw-bold mb-4 text-dark border-bottom pb-3"><i class="bi bi-layers me-2"></i>Append New Attribute</h6>
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <div class="premium-form-group">
+                                <label class="small fw-bold text-muted mb-1">Attribute Name</label>
+                                <input type="text" id="newFieldName" class="form-control" placeholder="e.g. Current Status">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="premium-form-group">
+                                <label class="small fw-bold text-muted mb-1">Data Logic Type</label>
+                                <select id="newFieldType" class="form-select" onchange="toggleFieldLogic()">
+                                    <optgroup label="Static Inputs">
+                                        <option value="text">Standard Text</option>
+                                        <option value="number">Numeric Value</option>
+                                        <option value="phone">Phone / Mobile</option>
+                                        <option value="email">Email Address</option>
+                                        <option value="date">Date Entry</option>
+                                    </optgroup>
+                                    <optgroup label="Selection">
+                                        <option value="select">Custom Dropdown</option>
+                                        <option value="language">Language Set</option>
+                                        <option value="file">File Upload</option>
+                                    </optgroup>
+                                    <optgroup label="Automation Logic">
+                                        <option value="calculated">Calculated Formula</option>
+                                        <option value="boolean">Conditional Logic</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="checkbox" id="newFieldUnique">
+                                <label class="form-check-label small fw-bold text-dark" for="newFieldUnique">
+                                    Enforce Unique Constraint (No duplicates allowed)
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Options for Select -->
+                        <div id="dropdownOptionsSection" class="col-12 d-none">
+                            <div class="premium-form-group">
+                                <label class="small fw-bold text-muted mb-1">Selectable Options (Comma separated)</label>
+                                <input type="text" id="fieldOptions" class="form-control" placeholder="Active, Pending, Completed, Error">
+                            </div>
+                        </div>
+
+                        <!-- Formula for Calculated -->
+                        <div id="calculatedFormulaSection" class="col-12 d-none">
+                            <div class="premium-form-group">
+                                <label class="small fw-bold text-muted mb-1">Mathematical Formula Matrix</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0">f(x)</span>
+                                    <input type="text" id="fieldFormula" class="form-control border-start-0" placeholder="({rate} * {hours}) + {bonus}">
+                                </div>
+                                <p class="smaller text-muted mt-2"><i class="bi bi-info-circle me-1"></i> Reference other fields using <b>{field_name}</b> syntax.</p>
+                            </div>
+                        </div>
+
+                        <!-- Conditions for Boolean -->
+                        <div id="booleanConditionSection" class="col-12 d-none">
+                            <div class="premium-form-group">
+                                <label class="small fw-bold text-muted mb-1">Conditional Logical Rule</label>
+                                <div id="conditionBuilder" class="bg-light p-3 rounded-xl border">
+                                    <div class="condition-row d-flex gap-2">
+                                        <input type="text" class="form-control form-control-sm cond-field" placeholder="Field Name">
+                                        <select class="form-select form-select-sm cond-op">
+                                            <option value="==">is exactly</option>
+                                            <option value="!=">is not</option>
+                                            <option value=">">greater than</option>
+                                            <option value="<">less than</option>
+                                            <option value="contains">contains</option>
+                                        </select>
+                                        <input type="text" class="form-control form-control-sm cond-val" placeholder="Target Value">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 text-end">
+                            <button class="btn btn-premium-dark px-5" onclick="addField()">Deploy Attribute</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-2xl">
+            <div class="modal-header border-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold">Bulk Ingest Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('worker.import_records', mid=module.id) }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body px-4">
+                    <div class="import-zone p-5 text-center bg-light border-2 border-dashed rounded-xl mb-3 position-relative">
+                        <i class="bi bi-file-earmark-arrow-up display-6 text-muted"></i>
+                        <p class="mt-3 mb-0 text-muted small">Drop your CSV or Excel file here or <br><span class="text-dark fw-bold">Click to Browse</span></p>
+                        <input type="file" name="file" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" required>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 p-3 bg-light rounded-lg border">
+                        <i class="bi bi-lightbulb text-warning"></i>
+                        <p class="smaller mb-0 text-muted">Tip: Ensure column names in your file exactly match your active attributes for auto-mapping.</p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-premium-white px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-premium-dark px-4">Execute Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Record Modal -->
+<div class="modal fade" id="addRecordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-2xl">
+            <div class="modal-header border-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold">Capture New Intel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('worker.add_record', mid=module.id) }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body px-4 pb-4">
+                    <div class="row g-4">
+                        {% for f in fields %}
+                            {% if f.field_type not in ['calculated', 'boolean'] %}
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">{{ f.name }}</label>
+                                {% if f.field_type == 'text' %}
+                                    <input type="text" name="field_{{ f.id }}" class="form-control" placeholder="Enter {{ f.name }}">
+                                {% elif f.field_type == 'number' %}
+                                    <input type="number" name="field_{{ f.id }}" class="form-control">
+                                {% elif f.field_type == 'phone' %}
+                                    <input type="tel" name="field_{{ f.id }}" class="form-control" placeholder="+91 XXXXX XXXXX">
+                                {% elif f.field_type == 'email' %}
+                                    <input type="email" name="field_{{ f.id }}" class="form-control" placeholder="name@company.com">
+                                {% elif f.field_type == 'date' %}
+                                    <input type="date" name="field_{{ f.id }}" class="form-control">
+                                {% elif f.field_type == 'select' %}
+                                    <select name="field_{{ f.id }}" class="form-select">
+                                        <option value="">Select Option...</option>
+                                        {% for opt in f.options %}
+                                            <option value="{{ opt }}">{{ opt }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% elif f.field_type == 'language' %}
+                                    <select name="field_{{ f.id }}" class="form-select">
+                                        <option value="English">English</option>
+                                        <option value="Hindi">Hindi</option>
+                                        <option value="Marathi">Marathi</option>
+                                        <option value="Gujarati">Gujarati</option>
+                                        <option value="Tamil">Tamil</option>
+                                        <option value="Telugu">Telugu</option>
+                                    </select>
+                                {% elif f.field_type == 'file' %}
+                                    <input type="file" name="field_{{ f.id }}" class="form-control">
+                                {% else %}
+                                    <input type="text" name="field_{{ f.id }}" class="form-control">
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-premium-white px-4" data-bs-dismiss="modal">Discard</button>
+                    <button type="submit" class="btn btn-premium-dark px-5">Submit Intel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Record Modal -->
+<div class="modal fade" id="editRecordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-2xl">
+            <div class="modal-header border-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold">Update Record Intel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editRecordForm" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body px-4 pb-4" id="editRecordFields">
+                    <!-- Dynamic Injected -->
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-premium-white px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-premium-dark px-5">Apply Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Executive Monochrome CRM Theme - Refined */
+    :root {
+        --crm-black: #000000;
+        --crm-white: #ffffff;
+        --crm-grey-50: #f9fafb;
+        --crm-grey-100: #f3f4f6;
+        --crm-grey-200: #e5e7eb;
+        --crm-grey-600: #4b5563;
+        --crm-grey-800: #1f2937;
+        --crm-border: #eeeeee;
+        --crm-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        --crm-radius: 16px;
+    }
+
+    .crm-dashboard-wrapper {
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    .glass-morphism {
+        background: rgba(255, 255, 255, 0.7) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    }
+
+    /* Action Bar Styling */
+    .crm-action-bar {
+        padding: 1rem 1.5rem;
+        border-radius: var(--crm-radius);
+    }
+
+    .search-group .form-control {
+        border-radius: 12px;
+        font-size: 0.9rem;
+        box-shadow: none;
+    }
+
+    /* Buttons */
+    .btn-premium-dark {
+        background: var(--crm-black);
+        color: var(--crm-white);
+        border-radius: 12px;
+        padding: 0.6rem 1.8rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-premium-dark:hover {
+        background: #222;
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn-premium-white {
+        background: var(--crm-white);
+        color: var(--crm-black);
+        border: 1px solid var(--crm-grey-200);
+        border-radius: 12px;
+        padding: 0.6rem 1.8rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-premium-white:hover {
+        background: var(--crm-grey-50);
+        border-color: var(--crm-black);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    /* Table Enhancements */
+    .premium-table-container {
+        background: var(--crm-white);
+        border-radius: var(--crm-radius);
+        border: 1px solid var(--crm-border);
+        box-shadow: var(--crm-shadow);
+        overflow: hidden;
+    }
+
+    .crm-table thead {
+        background: var(--crm-grey-50);
+        border-bottom: 2px solid var(--crm-grey-100);
+    }
+    .crm-table thead th {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--crm-grey-600);
+        padding: 1.5rem 1rem;
+        border: none;
+    }
+
+    .crm-row {
+        border-bottom: 1px solid var(--crm-grey-100);
+        transition: all 0.2s;
+    }
+    .crm-row:hover {
+        background: var(--crm-grey-50);
+    }
+
+    .whatsapp-btn {
+        color: #25D366;
+        font-size: 1.1rem;
+        transition: transform 0.2s;
+    }
+    .whatsapp-btn:hover {
+        transform: scale(1.2);
+        color: #128C7E;
+    }
+
+    .status-pill {
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .status-active { background: #000; color: #fff; }
+    .status-inactive { background: #f3f4f6; color: #4b5563; }
+
+    /* Action Buttons */
+    .btn-premium-action {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: var(--crm-white);
+        color: var(--crm-black);
+        border: 1.5px solid var(--crm-black);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .btn-premium-action:hover {
+        background: var(--crm-black);
+        color: var(--crm-white);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .btn-premium-action-danger {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: #fff5f5;
+        color: #e03131;
+        border: 1.5px solid #e03131;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .btn-premium-action-danger:hover {
+        background: #e03131;
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(224, 49, 49, 0.2);
+    }
+
+    .whatsapp-icon-link {
+        color: #25D366;
+        font-size: 1.1rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #f0fff4;
+        border: 1px solid #c6f6d5;
+    }
+    .whatsapp-icon-link:hover {
+        background: #25D366;
+        color: #fff;
+        transform: scale(1.1);
+    }
+
+    .unique-active {
+        border-color: var(--crm-black) !important;
+        background: #f8f9fa !important;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05) !important;
+    }
+
+    .hover-dark:hover {
+        color: #000 !important;
+        border-color: #000 !important;
+    }
+
+    /* Field Tags in Modal */
+    .field-tag {
+        background: #fff;
+        border: 1px solid var(--crm-grey-200);
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        display: inline-block;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .field-tag:hover {
+        border-color: var(--crm-black);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .type-indicator {
+        font-size: 0.6rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--crm-grey-600);
+        background: var(--crm-grey-50);
+        padding: 3px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--crm-grey-100);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .rounded-xl { border-radius: 1.25rem; }
+    .shadow-2xl { box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.15); }
+</style>
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleUniqueFilter() {
+        const checkbox = document.getElementById('uniqueFilter');
+        const group = document.getElementById('uniqueFilterGroup');
+        if (checkbox.checked) {
+            group.classList.add('unique-active');
+        } else {
+            group.classList.remove('unique-active');
+        }
+        filterRecords();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadFields();
+        
+        // Select All Logic
+        const selectAll = document.getElementById('selectAll');
+        if (selectAll) {
+            selectAll.addEventListener('change', function() {
+                document.querySelectorAll('.record-checkbox').forEach(cb => {
+                    cb.checked = this.checked;
+                });
+                updateBulkActions();
+            });
+        }
+    });
+
+    function updateBulkActions() {
+        const selected = document.querySelectorAll('.record-checkbox:checked');
+        const bulkBar = document.getElementById('bulkActions');
+        const countSpan = document.getElementById('selectedCount');
+        
+        if (selected.length > 0) {
+            bulkBar.classList.remove('d-none');
+            countSpan.innerText = selected.length;
+        } else {
+            bulkBar.classList.add('d-none');
+        }
+    }
+
+    async function bulkDelete() {
+        const selected = Array.from(document.querySelectorAll('.record-checkbox:checked')).map(cb => cb.value);
+        if (!selected.length) return;
+        
+        if (!confirm(`Are you sure you want to delete ${selected.length} selected records? This action cannot be undone.`)) return;
+        
+        const res = await fetch(`/worker/api/records/bulk-delete`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
+            body: JSON.stringify({ record_ids: selected })
+        });
+        
+        const data = await res.json();
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Error deleting records: ' + (data.error || 'Unknown error'));
+        }
+    }
+
+    // Field metadata for JS
+    const fields = [
+        {% for f in fields %}
+        { id: "{{ f.id }}", name: "{{ f.name }}", type: "{{ f.field_type }}" },
+        {% endfor %}
+    ];
+
+    function filterRecords() {
+        const query = document.getElementById('recordSearch').value.toLowerCase();
+        const uniqueOnly = document.getElementById('uniqueFilter').checked;
+        const uniqueFieldId = document.getElementById('uniqueField').value;
+        const rows = Array.from(document.querySelectorAll('#recordTableBody .crm-row'));
+        
+        const seen = new Set();
+        
+        rows.forEach(row => {
+            let isVisible = true;
+            
+            // 1. Search filter
+            const rowText = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim()).join(' ').toLowerCase();
+            if (query && !rowText.includes(query)) {
+                isVisible = false;
+            }
+            
+            // 2. Unique filter logic
+            if (isVisible && uniqueOnly) {
+                let valToCompare = "";
+                if (uniqueFieldId === 'all') {
+                    // All fields except first 2 (CB, Date) and last (Actions)
+                    valToCompare = Array.from(row.querySelectorAll('td')).slice(2, -1).map(td => td.innerText.trim()).join('::');
+                } else {
+                    // Find field index
+                    const fieldIdx = fields.findIndex(f => f.id.toString() === uniqueFieldId.toString());
+                    if (fieldIdx !== -1) {
+                        const cell = row.querySelectorAll('td')[fieldIdx + 2];
+                        valToCompare = cell ? cell.innerText.trim() : "";
+                    }
+                }
+                
+                if (seen.has(valToCompare)) {
+                    isVisible = false;
+                } else {
+                    seen.add(valToCompare);
+                }
+            }
+            
+            row.style.display = isVisible ? '' : 'none';
+        });
+        
+        // Update stats if needed
+        const visibleCount = rows.filter(r => r.style.display !== 'none').length;
+        console.log(`Filtering complete: ${visibleCount} records visible`);
+    }
+
+    async function loadFields() {
+        const res = await fetch(`/worker/api/modules/{{ module.id }}/fields`);
+        const data = await res.json();
+        if (data.success) {
+            const list = document.getElementById('fieldsList');
+            list.innerHTML = '';
+            data.fields.forEach(f => {
+                const badge = document.createElement('div');
+                badge.className = 'field-tag animate__animated animate__fadeIn';
+                badge.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold">${f.name}</span>
+                        <span class="type-indicator">${f.type}</span>
+                        <button class="btn-tag-delete ms-1" onclick="deleteField(${f.id})"><i class="bi bi-x-lg"></i></button>
+                    </div>
+                `;
+                list.appendChild(badge);
+            });
+        }
+    }
+
+    function toggleFieldLogic() {
+        const type = document.getElementById('newFieldType').value;
+        const sections = {
+            'select': 'dropdownOptionsSection',
+            'calculated': 'calculatedFormulaSection',
+            'boolean': 'booleanConditionSection'
+        };
+        
+        Object.values(sections).forEach(id => document.getElementById(id).classList.add('d-none'));
+        if (sections[type]) document.getElementById(sections[type]).classList.remove('d-none');
+    }
+
+    async function addField() {
+        const nameInput = document.getElementById('newFieldName');
+        const typeInput = document.getElementById('newFieldType');
+        const name = nameInput.value;
+        const type = typeInput.value;
+        const isUnique = document.getElementById('newFieldUnique').checked;
+        
+        if (!name) return alert('Attribute name is required');
+        
+        const meta = {};
+        if (type === 'select') meta.options = document.getElementById('fieldOptions').value.split(',').map(o => o.trim());
+        if (type === 'calculated') meta.formula = document.getElementById('fieldFormula').value;
+        if (type === 'boolean') {
+            const row = document.querySelector('.condition-row');
+            meta.conditions = [{
+                field: row.querySelector('.cond-field').value,
+                operator: row.querySelector('.cond-op').value,
+                value: row.querySelector('.cond-val').value,
+                joiner: 'AND'
+            }];
+        }
+
+        const res = await fetch(`/worker/api/modules/{{ module.id }}/fields`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
+            body: JSON.stringify({ action: 'add', name, field_type: type, is_unique: isUnique, meta })
+        });
+        
+        if ((await res.json()).success) {
+            location.reload();
+        } else {
+            alert('Failed to add attribute');
+        }
+    }
+
+    async function deleteField(fid) {
+        if (!confirm('This will purge all data associated with this attribute. Proceed?')) return;
+        const res = await fetch(`/worker/api/modules/{{ module.id }}/fields`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
+            body: JSON.stringify({ action: 'delete', field_id: fid })
+        });
+        if ((await res.json()).success) location.reload();
+    }
+
+    async function editRecord(rid) {
+        const res = await fetch(`/worker/api/records/${rid}`);
+        const data = await res.json();
+        if (data.success) {
+            const container = document.getElementById('editRecordFields');
+            container.innerHTML = '<div class="row g-4"></div>';
+            const row = container.firstChild;
+            
+            data.fields.forEach(f => {
+                if (['calculated', 'boolean'].includes(f.type)) return;
+                
+                const val = data.values[f.id] || '';
+                const col = document.createElement('div');
+                col.className = 'col-md-6';
+                col.innerHTML = `<label class="form-label small fw-bold text-muted">${f.name}</label>`;
+                
+                if (f.type === 'select') {
+                    let opts = `<option value="">Select Option...</option>`;
+                    (f.options || []).forEach(opt => opts += `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`);
+                    col.innerHTML += `<select name="field_${f.id}" class="form-select">${opts}</select>`;
+                } else if (f.type === 'file') {
+                    col.innerHTML += `
+                        <div class="smaller text-muted mb-2"><i class="bi bi-paperclip me-1"></i>Current: ${val || 'None'}</div>
+                        <input type="file" name="field_${f.id}" class="form-control">`;
+                } else if (f.type === 'date') {
+                    col.innerHTML += `<input type="date" name="field_${f.id}" class="form-control" value="${val}">`;
+                } else if (f.type === 'number') {
+                    col.innerHTML += `<input type="number" name="field_${f.id}" class="form-control" value="${val}">`;
+                } else {
+                    col.innerHTML += `<input type="text" name="field_${f.id}" class="form-control" value="${val}">`;
+                }
+                row.appendChild(col);
+            });
+            
+            document.getElementById('editRecordForm').action = `/worker/api/records/${rid}/update`;
+            new bootstrap.Modal(document.getElementById('editRecordModal')).show();
+        }
+    }
+
+    async function deleteRecord(rid) {
+        if (!confirm('This record will be permanently removed. Continue?')) return;
+        const res = await (await fetch(`/worker/api/records/${rid}/delete`, {
+            method: 'POST',
+            headers: { 'X-CSRF-Token': '{{ csrf_token() }}' }
+        })).json();
+        if (res.success) location.reload();
+    }
+</script>
+{% endblock %}

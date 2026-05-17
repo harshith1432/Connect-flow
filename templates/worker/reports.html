@@ -1,0 +1,149 @@
+{% extends "base_worker_premium.html" %}
+
+{% block title %}ConnectFlow | Reports{% endblock %}
+{% block page_title %}Detailed Reports{% endblock %}
+
+{% block content %}
+<div class="premium-card">
+    <div class="card-header-premium">
+        <div class="header-left">
+            <h2>Module Performance Report</h2>
+            <p>Comprehensive analysis of module delivery and record metrics</p>
+        </div>
+        <div class="header-right">
+            <button class="btn-premium secondary" onclick="window.print()"><i class="bi bi-printer"></i> Print Report</button>
+        </div>
+    </div>
+    
+    <div class="card-body-premium">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="report-stat-box">
+                    <span class="label">Module Name</span>
+                    <h4 id="report-module-name">All Modules</h4>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="report-stat-box">
+                    <span class="label">Total Delivery Attempts</span>
+                    <h4 id="report-total-delivery">0</h4>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="report-stat-box">
+                    <span class="label">Success Rate</span>
+                    <h4 id="report-success-rate">0%</h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider-premium mt-4 mb-4"></div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <h5>Delivery Timeline</h5>
+                <div id="report-timeline-chart"></div>
+            </div>
+            <div class="col-lg-4">
+                <h5>Status Distribution</h5>
+                <div id="report-status-chart"></div>
+            </div>
+        </div>
+
+        <div class="divider-premium mt-4 mb-4"></div>
+
+        <div class="table-responsive">
+            <table class="table premium-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Action</th>
+                        <th>Status</th>
+                        <th>Module</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody id="report-table-body">
+                    <!-- Loaded via JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const moduleId = urlParams.get('module_id');
+
+    async function loadReport() {
+        const response = await fetch(`/worker/api/worker-analytics?module_id=${moduleId || ''}`);
+        const data = await response.json();
+
+        if (moduleId) {
+            document.getElementById('report-module-name').innerText = data.module_name || 'Selected Module';
+        }
+
+        // Timeline Chart
+        const timelineOptions = {
+            series: [{
+                name: 'Success',
+                data: data.trend.data
+            }],
+            chart: { type: 'area', height: 350, toolbar: { show: false } },
+            colors: ['#22c55e'],
+            stroke: { curve: 'smooth' },
+            xaxis: { categories: data.trend.labels }
+        };
+
+        // Status Chart
+        const statusOptions = {
+            series: data.distribution.data,
+            chart: { type: 'pie', height: 350 },
+            labels: data.distribution.labels,
+            colors: ['#6366f1', '#22c55e', '#f59e0b', '#ef4444']
+        };
+
+        new ApexCharts(document.querySelector("#report-timeline-chart"), timelineOptions).render();
+        new ApexCharts(document.querySelector("#report-status-chart"), statusOptions).render();
+
+        // Load Table Data
+        const tableBody = document.getElementById('report-table-body');
+        const activityResponse = await fetch('/worker/api/recent-activities');
+        const activities = await activityResponse.json();
+
+        tableBody.innerHTML = activities.map(a => `
+            <tr>
+                <td>${a.timestamp}</td>
+                <td>${a.action}</td>
+                <td><span class="badge-premium">Completed</span></td>
+                <td>${data.module_name || 'System'}</td>
+                <td>${a.details}</td>
+            </tr>
+        `).join('');
+    }
+
+    loadReport();
+</script>
+
+<style>
+    .report-stat-box {
+        padding: 1.5rem;
+        background: var(--grey-50);
+        border-radius: 12px;
+        border: 1px solid var(--grey-100);
+    }
+    .report-stat-box .label {
+        font-size: 0.85rem;
+        color: var(--grey-500);
+        display: block;
+        margin-bottom: 0.5rem;
+    }
+    .report-stat-box h4 {
+        margin: 0;
+        font-weight: 700;
+        color: var(--grey-900);
+    }
+</style>
+{% endblock %}

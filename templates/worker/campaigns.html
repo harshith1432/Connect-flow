@@ -26,8 +26,8 @@
         <h5 class="mb-0 fw-bold text-primary">All Campaigns <span class="badge bg-light text-dark ms-2">{{
                 campaigns|length }}</span></h5>
     </div>
-    <div class="table-responsive">
-        <table class="table align-middle mb-0">
+    <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+        <table class="table align-middle mb-0 text-nowrap">
             <thead class="bg-light">
                 <tr>
                     <th class="text-uppercase small text-muted font-weight-bold ps-4">Campaign Name</th>
@@ -41,12 +41,14 @@
             <tbody>
                 {% for c in campaigns %}
                 <tr>
-                    <td class="fw-bold ps-4">{{ c.name }}</td>
+                    <td class="fw-bold ps-4" title="{{ c.name }}">
+                        <div style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {{ c.name }}
+                        </div>
+                    </td>
                     <td>
                         {% if c.type == 'whatsapp_text' %}
                         <span class="badge bg-success text-white"><i class="bi bi-whatsapp me-1"></i> WhatsApp</span>
-                        {% elif c.type == 'whatsapp_voice' %}
-                        <span class="badge bg-success text-white"><i class="bi bi-mic me-1"></i> Voice</span>
                         {% else %}
                         <span class="badge bg-primary text-white"><i class="bi bi-telephone me-1"></i> Call</span>
                         {% endif %}
@@ -77,7 +79,7 @@
                         {% if c.status == 'draft' %}
                         <form method="post" action="{{ url_for('worker.start_campaign', cid=c.id) }}"
                             style="display:inline;"
-                            onsubmit="return confirm('Start this campaign? Messages will be queued.');">
+                            onsubmit="return confirm('Start this campaign? Communications will be queued.');">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                             <button class="btn btn-sm btn-primary"><i class="bi bi-play-fill me-1"></i>
                                 Start</button>
@@ -110,15 +112,15 @@
 
 <!-- Create Campaign Modal -->
 <div class="modal fade" id="createCampaignModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
         <div class="modal-content">
-            <form method="post">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <div class="modal-header">
-                    <h5 class="modal-title">Create New Campaign</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Campaign</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="max-height: 65vh; overflow-y: auto;">
+                <form id="campaignForm" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <div class="mb-3">
                         <label class="form-label">Campaign Name</label>
                         <input name="name" class="form-control" placeholder="e.g. Diwali Promo 2024" required>
@@ -126,19 +128,24 @@
                     <div class="mb-3">
                         <label class="form-label">Communication Type</label>
                         <select name="type" class="form-select" id="campaignTypeSelect">
-                            <option value="whatsapp_text">WhatsApp (Text & Voice)</option>
-                            <option value="call">Voice Call</option>
-                        </select>
+                        <option value="whatsapp_text">WhatsApp Message</option>
+                        <option value="call">Call</option>
+                    </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Select Script</label>
-                        <select name="script_id" class="form-select" id="scriptSelect" required>
-                            <option value="">-- Choose Script --</option>
-                            {% for s in scripts %}
-                            <option value="{{ s.id }}" data-type="{{ s.type }}">[{{ s.language }}] {{ s.content[:30]
-                                }}...</option>
-                            {% endfor %}
-                        </select>
+                        <div class="input-group">
+                            <select name="script_id" class="form-select" id="scriptSelect" required>
+                                <option value="">-- Choose Script --</option>
+                                {% for s in scripts %}
+                                <option value="{{ s.id }}" data-type="{{ s.type }}" data-content="{{ s.content }}"
+                                    data-lang="{{ s.language }}">[{{ s.language }}] {{ s.content[:30] }}...</option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-info" id="btnPreviewCampaignScript">
+                                <i class="bi bi-play-fill"></i>
+                            </button>
+                        </div>
                         <div class="form-text">Ensure the script matches your chosen communication type.</div>
                     </div>
 
@@ -147,74 +154,108 @@
                         <select name="sender_number_id" class="form-select" id="senderNumberSelect">
                             <option value="">-- Use Platform Default --</option>
                             {% for n in numbers %}
-                            <option value="{{ n.id }}" data-channel="{{ n.channel_type }}">{{ n.number }} ({{
-                                n.channel_type|title }})</option>
+                            <option value="{{ n.id }}" data-channel="{{ n.channel_type }}">{{ n.number }} ({{ n.channel_type|title }})</option>
                             {% endfor %}
                         </select>
                         <div class="form-text">Select a specific number or use the system default.</div>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button class="btn btn-primary">Create Draft</button>
-                </div>
-            </form>
+
+                    <!-- Voice Call Settings removed as requested -->
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="campaignForm" class="btn btn-primary">Create Draft</button>
+            </div>
         </div>
     </div>
 </div>
 
+
 <script>
-    // Filter scripts based on communication type
-    document.addEventListener('DOMContentLoaded', function () {
-        const typeSelect = document.getElementById('campaignTypeSelect');
-        const scriptSelect = document.getElementById('scriptSelect');
-        const senderSelect = document.getElementById('senderNumberSelect');
+document.addEventListener('DOMContentLoaded', function () {
+    const typeSelect   = document.getElementById('campaignTypeSelect');
+    const scriptSelect = document.getElementById('scriptSelect');
+    const senderSelect = document.getElementById('senderNumberSelect');
 
-        if (typeSelect && scriptSelect) {
-            const allScriptOptions = Array.from(scriptSelect.options).slice(1);
-            const allSenderOptions = senderSelect ? Array.from(senderSelect.options).slice(1) : [];
+    if (typeSelect && scriptSelect) {
+        const allScriptOptions = Array.from(scriptSelect.options).slice(1);
+        const allSenderOptions = senderSelect ? Array.from(senderSelect.options).slice(1) : [];
 
-            typeSelect.addEventListener('change', function () {
-                const selectedType = this.value;
+        typeSelect.addEventListener('change', function () {
+            const selectedType = this.value;
 
-                // Filter Scripts
-                scriptSelect.innerHTML = '<option value="">-- Choose Script --</option>';
-                allScriptOptions.forEach(option => {
-                    if (option.dataset.type === selectedType) {
-                        scriptSelect.appendChild(option.cloneNode(true));
-                    }
-                });
-
-                // Filter Sender Numbers
-                if (senderSelect) {
-                    senderSelect.innerHTML = '<option value="">-- Use Platform Default --</option>';
-                    allSenderOptions.forEach(option => {
-                        const channel = option.dataset.channel;
-                        if (selectedType === 'call') {
-                            // Voice campaigns can use 'voice', 'indian_voice', or 'myoperator_voice'
-                            if (['voice', 'indian_voice', 'myoperator_voice'].includes(channel)) {
-                                senderSelect.appendChild(option.cloneNode(true));
-                            }
-                        } else if (selectedType.startsWith('whatsapp')) {
-                            // WhatsApp campaigns can use 'whatsapp' or 'myoperator_whatsapp'
-                            if (['whatsapp', 'myoperator_whatsapp'].includes(channel)) {
-                                senderSelect.appendChild(option.cloneNode(true));
-                            }
-                        }
-                    });
-                }
-
-                if (scriptSelect.options.length === 1) {
-                    const noScriptOption = document.createElement('option');
-                    noScriptOption.value = '';
-                    noScriptOption.textContent = 'No scripts available for this type';
-                    noScriptOption.disabled = true;
-                    scriptSelect.appendChild(noScriptOption);
-                }
+            // Filter Scripts
+            scriptSelect.innerHTML = '<option value="">-- Choose Script --</option>';
+            allScriptOptions.forEach(opt => {
+                if (opt.dataset.type === selectedType)
+                    scriptSelect.appendChild(opt.cloneNode(true));
             });
 
-            typeSelect.dispatchEvent(new Event('change'));
-        }
-    });
+            // Filter Sender Numbers
+            if (senderSelect) {
+                senderSelect.innerHTML = '<option value="">-- Use Platform Default --</option>';
+                allSenderOptions.forEach(opt => {
+                    const ch = opt.dataset.channel;
+                    if (selectedType === 'call' && ['voice', 'hooman_voice'].includes(ch))
+                        senderSelect.appendChild(opt.cloneNode(true));
+                    else if (selectedType.startsWith('whatsapp') && ch === 'whatsapp')
+                        senderSelect.appendChild(opt.cloneNode(true));
+                });
+            }
+        });
+
+        typeSelect.dispatchEvent(new Event('change'));
+    }
+
+    // Voice Preview for Campaigns
+    const campaignPreviewBtn = document.getElementById('btnPreviewCampaignScript');
+    const audioPlayer = new Audio();
+
+    if (campaignPreviewBtn) {
+        campaignPreviewBtn.addEventListener('click', async function () {
+            const selectedOption = scriptSelect.options[scriptSelect.selectedIndex];
+            if (!selectedOption || !selectedOption.value) {
+                alert('Please select a script first.');
+                return;
+            }
+
+            const text = selectedOption.dataset.content;
+            const lang = selectedOption.dataset.lang;
+
+            const originalHtml = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+            try {
+                const response = await fetch('/worker/preview-voice', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ text: text, language: lang })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    audioPlayer.src = data.audio_url;
+                    audioPlayer.play();
+                } else {
+                    alert('Error generating preview: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Preview error:', error);
+                alert('Failed to play preview.');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = originalHtml;
+            }
+        });
+    }
+});
+
 </script>
 {% endblock %}
+

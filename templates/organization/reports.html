@@ -1,0 +1,441 @@
+{% extends 'base_org_premium.html' %}
+
+{% block title %}Operational Reports - ConnectFlow{% endblock %}
+{% block page_title %}Operational Reports{% endblock %}
+
+{% block content %}
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Team Perf. Score</span>
+            <div class="kpi-icon"><i class="bi bi-star-fill"></i></div>
+        </div>
+        <div class="kpi-value">{{ summary.performance_score }}/100</div>
+        <div class="kpi-trend trend-up"><i class="bi bi-arrow-up-short"></i> Top 5%</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Daily Calls</span>
+            <div class="kpi-icon"><i class="bi bi-telephone"></i></div>
+        </div>
+        <div class="kpi-value">{{ summary.calls_today }}</div>
+        <div class="kpi-trend trend-up">On target</div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Daily Messages</span>
+            <div class="kpi-icon"><i class="bi bi-chat-dots"></i></div>
+        </div>
+        <div class="kpi-value">{{ summary.messages_today }}</div>
+        <div class="kpi-trend trend-up">+14% vs avg</div>
+    </div>
+    <div class="kpi-card" onclick="document.getElementById('pending-tasks-section').scrollIntoView({behavior: 'smooth'})" style="cursor: pointer;">
+        <div class="kpi-header">
+            <span class="kpi-label">Pending Tasks</span>
+            <div class="kpi-icon" style="background: #fef3c7; color: #92400e;"><i class="bi bi-clock-history"></i></div>
+        </div>
+        <div class="kpi-value">{{ summary.tasks_pending }}</div>
+        <div class="kpi-trend trend-down">{{ 'Action required' if summary.tasks_pending > 0 else 'All caught up' }}</div>
+    </div>
+</div>
+
+<div class="chart-row">
+    <div class="premium-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h3>Monthly Efficiency Metrics</h3>
+                <p>Output and efficiency correlation across all departments.</p>
+            </div>
+            <div class="topbar-actions">
+                <button onclick="window.print()" class="btn-secondary-premium" style="padding: 0.5rem 1rem; font-size: 0.815rem;"><i class="bi bi-file-earmark-pdf me-1"></i> PDF</button>
+                <a href="{{ url_for('org.export_reports_excel') }}" class="btn-secondary-premium" style="padding: 0.5rem 1rem; font-size: 0.815rem; text-decoration: none; display: flex; align-items: center;"><i class="bi bi-file-earmark-excel me-1"></i> Excel</a>
+            </div>
+        </div>
+        <div id="efficiencyReportChart" style="height: 350px;"></div>
+    </div>
+
+    <div class="premium-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h3>Daily Activity Summary</h3>
+            </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--grey-50);">
+                <div>
+                    <div style="font-weight: 700; font-size: 0.875rem;">Worker Logins</div>
+                    <div style="font-size: 0.75rem; color: var(--grey-400);">Total unique sessions</div>
+                </div>
+                <div style="font-weight: 800; font-size: 1.1rem;">42</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--grey-50);">
+                <div>
+                    <div style="font-weight: 700; font-size: 0.875rem;">Admin Actions</div>
+                    <div style="font-size: 0.75rem; color: var(--grey-400);">System configuration changes</div>
+                </div>
+                <div style="font-weight: 800; font-size: 1.1rem;">{{ audit_logs|length }}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--grey-50);">
+                <div>
+                    <div style="font-weight: 700; font-size: 0.875rem;">Approval Requests</div>
+                    <div style="font-size: 0.75rem; color: var(--grey-400);">Awaiting executive review</div>
+                </div>
+                <div style="font-weight: 800; font-size: 1.1rem; color: #f59e0b;">{{ summary.tasks_pending }}</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 700; font-size: 0.875rem;">Escalated Issues</div>
+                    <div style="font-size: 0.75rem; color: var(--grey-400);">High priority tickets</div>
+                </div>
+                <div style="font-weight: 800; font-size: 1.1rem; color: #ef4444;">1</div>
+            </div>
+        </div>
+        <button onclick="window.print()" class="btn-black" style="width: 100%; margin-top: 2rem;">Generate Full Insight Report</button>
+    </div>
+</div>
+
+<div class="premium-panel mb-4">
+    <div class="panel-header">
+        <div class="panel-title">
+            <h3>Worker Performance Report</h3>
+            <p>Comprehensive productivity breakdown by individual team members.</p>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>Worker</th>
+                    <th>Dept & Activity</th>
+                    <th>Campaigns</th>
+                    <th>Data Entries</th>
+                    <th>Score</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for w in workers %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 700; color: var(--black);">{{ w.email.split('@')[0] }}</div>
+                        <div style="font-size: 0.75rem; color: var(--grey-400);">{{ w.email }}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 600; color: var(--black);">Operations</div>
+                        <div style="font-size: 0.75rem; color: var(--grey-400);">Last: {{ w.last_active }}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 800; color: var(--black);">{{ w.campaigns_count }}</div>
+                        <div style="font-size: 0.75rem; color: var(--grey-400);">Logins: {{ w.logins }}</div>
+                    </td>
+                    <td>
+                        <div style="font-weight: 800; color: var(--black);">{{ w.entries_count }}</div>
+                        <div style="font-size: 0.75rem; color: var(--grey-400);">Total Entries</div>
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <span style="font-weight: 800; color: var(--black);">{{ w.score|round|int }}%</span>
+                            <div style="width: 50px; height: 4px; background: var(--grey-50); border-radius: 10px; overflow: hidden;">
+                                <div style="width: {{ w.score }}%; height: 100%; background: var(--black);"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        {% if w.score >= 90 %}
+                        <span class="status-badge" style="background: #dcfce7; color: #15803d; font-weight: 700; border: 1px solid #bbf7d0;">Elite</span>
+                        {% elif w.score >= 70 %}
+                        <span class="status-badge" style="background: #e0f2fe; color: #0369a1; font-weight: 700; border: 1px solid #bae6fd;">Optimal</span>
+                        {% else %}
+                        <span class="status-badge" style="background: var(--grey-50); color: var(--grey-600); font-weight: 700; border: 1px solid var(--grey-100);">Standard</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="premium-panel mb-4" id="pending-tasks-section">
+    <div class="panel-header">
+        <div class="panel-title">
+            <h3>Tasks Awaiting Review</h3>
+            <p>Real-time queue of operational changes requiring administrative approval.</p>
+        </div>
+        <span class="status-badge" style="background: #fef3c7; color: #92400e; font-weight: 700;">{{ pending_tasks|length }} Pending</span>
+    </div>
+    <div class="table-responsive">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Requester</th>
+                    <th>Field/Module</th>
+                    <th>Proposed Change</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in pending_tasks %}
+                <tr>
+                    <td style="font-size: 0.815rem; color: var(--grey-500);">{{ task.created_at.strftime('%H:%M • %d %b') }}</td>
+                    <td>
+                        <div style="font-weight: 700; color: var(--black);">Worker ID: {{ task.user_id }}</div>
+                    </td>
+                    <td>
+                        <span style="font-weight: 700; color: var(--black);">{{ task.field_name|replace('_', ' ')|title }}</span>
+                    </td>
+                    <td>
+                        <div style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.815rem;">
+                            {{ task.new_value }}
+                        </div>
+                    </td>
+                    <td>
+                        {% if task.user and task.user.role == 'org_admin' %}
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <span class="status-badge" style="background: #e0f2fe; color: #0369a1; font-size: 0.65rem; padding: 0.1rem 0.4rem;">Pending Platform Review</span>
+                            <button class="btn-black" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;" 
+                                    onclick="showTaskModal('{{ task.id }}', '{{ task.field_name|replace('_', ' ')|title }}', '{{ task.admin_note or '' }}')">
+                                <i class="bi bi-chat-left-dots me-1"></i> Review
+                            </button>
+                        </div>
+                        {% else %}
+                        <div style="display: flex; gap: 0.5rem;">
+                            <form action="{{ url_for('org.task_action', tid=task.id, action='approve') }}" method="POST">
+                                <button type="submit" class="btn-black" style="padding: 0.25rem 0.75rem; font-size: 0.75rem; background: #000;">Approve</button>
+                            </form>
+                            <form action="{{ url_for('org.task_action', tid=task.id, action='reject') }}" method="POST">
+                                <button type="submit" class="btn-secondary-premium" style="padding: 0.25rem 0.75rem; font-size: 0.75rem;">Reject</button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 3rem; color: var(--grey-400);">
+                        <i class="bi bi-check2-all" style="font-size: 2rem; display: block; margin-bottom: 1rem;"></i>
+                        All tasks have been processed. No pending items.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Task Review Modal -->
+<div id="taskReviewModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+    <div class="premium-panel" style="width: 100%; max-width: 520px; padding: 2.5rem; border-radius: 28px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);">
+        <div class="panel-header mb-4" style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="panel-title">
+                <h3 id="modalTaskTitle" style="font-size: 1.5rem; margin-bottom: 0.25rem; font-weight: 800; letter-spacing: -0.025em;">Task Review</h3>
+                <p style="color: var(--grey-400); font-size: 0.875rem;">Communicate with Platform Administrator</p>
+            </div>
+            <button onclick="hideTaskModal()" style="background: var(--grey-50); border: none; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: var(--grey-400); cursor: pointer; transition: all 0.2s;">&times;</button>
+        </div>
+        
+        <form id="taskNoteForm" method="POST">
+            <div class="mb-4" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <label style="font-weight: 700; font-size: 0.815rem; color: var(--black); text-transform: uppercase; letter-spacing: 0.05em;">Current Status</label>
+                <div style="background: #f8fafc; padding: 1.25rem; border-radius: 16px; font-size: 0.875rem; color: #475569; border: 1px solid #e2e8f0; line-height: 1.6;">
+                    <i class="bi bi-info-circle me-2" style="color: var(--black);"></i>
+                    Awaiting Platform Admin approval. This request involves sensitive organizational changes.
+                </div>
+            </div>
+            
+            <div class="mb-4" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <label style="font-weight: 700; font-size: 0.815rem; color: var(--black); text-transform: uppercase; letter-spacing: 0.05em;">Message to Platform Admin</label>
+                <textarea name="admin_note" id="modalAdminNote" class="form-control-premium" rows="4" style="width: 100%; padding: 1rem; border-radius: 16px; border: 1px solid var(--grey-200); font-family: inherit; font-size: 0.875rem; resize: none;" placeholder="Request a speed-up or provide additional context..."></textarea>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button type="button" onclick="hideTaskModal()" class="btn-secondary-premium" style="flex: 1; padding: 0.875rem; border-radius: 14px; font-weight: 700;">Close</button>
+                <button type="submit" class="btn-black" style="flex: 2; padding: 0.875rem; border-radius: 14px; font-weight: 700; background: var(--black); color: var(--white);">Send Message</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Audit Detail Modal -->
+<div id="auditInfoModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2001; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+    <div class="premium-panel" style="width: 100%; max-width: 550px; padding: 2.5rem; border-radius: 28px;">
+        <div class="panel-header mb-4" style="display: flex; justify-content: space-between;">
+            <div class="panel-title">
+                <h3 style="font-size: 1.5rem; font-weight: 800;">Audit Detail</h3>
+                <p>Full forensic information of the operational event.</p>
+            </div>
+            <button onclick="hideAuditModal()" style="background: none; border: none; font-size: 1.5rem; color: var(--grey-400); cursor: pointer;">&times;</button>
+        </div>
+        
+        <div style="background: var(--grey-50); border-radius: 20px; padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div style="width: 48px; height: 48px; background: var(--black); color: var(--white); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                    <i class="bi bi-person"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.75rem; color: var(--grey-400); font-weight: 700; text-transform: uppercase;">Initiated By</div>
+                    <div id="audit_user" style="font-weight: 700; color: var(--black);">user@example.com</div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-6">
+                    <div style="font-size: 0.75rem; color: var(--grey-400); font-weight: 700; text-transform: uppercase; margin-bottom: 0.25rem;">Action Type</div>
+                    <div id="audit_action" style="font-weight: 600; color: var(--black);">Password Reset</div>
+                </div>
+                <div class="col-6">
+                    <div style="font-size: 0.75rem; color: var(--grey-400); font-weight: 700; text-transform: uppercase; margin-bottom: 0.25rem;">Exact Timestamp</div>
+                    <div id="audit_time" style="font-weight: 600; color: var(--black);">2024-05-15 17:48:22</div>
+                </div>
+            </div>
+        </div>
+
+        <div style="border: 1px solid var(--grey-100); border-radius: 20px; padding: 1.5rem;">
+            <div style="font-size: 0.75rem; color: var(--grey-400); font-weight: 700; text-transform: uppercase; margin-bottom: 1rem;">Change Metadata</div>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <div style="font-size: 0.815rem; font-weight: 600; margin-bottom: 0.25rem;">Original State</div>
+                    <code id="audit_old" style="display: block; background: #fff; padding: 0.75rem; border-radius: 10px; border: 1px solid #f1f5f9; font-size: 0.815rem;">[hidden]</code>
+                </div>
+                <div>
+                    <div style="font-size: 0.815rem; font-weight: 600; margin-bottom: 0.25rem;">New State / Value</div>
+                    <code id="audit_new" style="display: block; background: #f8fafc; padding: 0.75rem; border-radius: 10px; border: 1px solid #e2e8f0; color: var(--black); font-size: 0.815rem; word-break: break-all;">[proposed_value]</code>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="hideAuditModal()" class="btn-black w-100 mt-4" style="padding: 0.875rem; border-radius: 14px;">Dismiss Information</button>
+    </div>
+</div>
+
+<script>
+function showTaskModal(taskId, title, currentNote) {
+    const modal = document.getElementById('taskReviewModal');
+    const form = document.getElementById('taskNoteForm');
+    const titleEl = document.getElementById('modalTaskTitle');
+    const noteEl = document.getElementById('modalAdminNote');
+    
+    titleEl.innerText = 'Review: ' + title;
+    noteEl.value = currentNote;
+    form.action = "/org/tasks/" + taskId + "/note";
+    
+    modal.style.display = 'flex';
+}
+
+function hideTaskModal() {
+    document.getElementById('taskReviewModal').style.display = 'none';
+}
+
+function showAuditInfo(data) {
+    document.getElementById('audit_user').innerText = data.user;
+    document.getElementById('audit_action').innerText = data.action;
+    document.getElementById('audit_time').innerText = data.time;
+    document.getElementById('audit_old').innerText = data.old;
+    document.getElementById('audit_new').innerText = data.new;
+    
+    document.getElementById('auditInfoModal').style.display = 'flex';
+}
+
+function hideAuditModal() {
+    document.getElementById('auditInfoModal').style.display = 'none';
+}
+</script>
+
+<div class="premium-panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <h3>Organization Audit Log</h3>
+            <p>Immutable record of all administrative and operational changes.</p>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="activity-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Subject</th>
+                    <th>Status</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in audit_logs %}
+                <tr>
+                    <td style="font-size: 0.815rem; color: var(--grey-500);">{{ log.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>
+                        <span style="font-weight: 700; color: var(--black);">{{ log.field_name|replace('_', ' ')|title }}</span>
+                    </td>
+                    <td>{{ log.old_value if log.old_value else 'System' }}</td>
+                    <td>
+                        <span class="status-badge {{ 'status-completed' if log.status == 'approved' else 'status-pending' }}">
+                            {{ log.status|capitalize }}
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn-icon" style="width: 32px; height: 32px; border-radius: 10px; background: var(--grey-50);" 
+                                onclick='showAuditInfo({{ {
+                                    "user": log.user.email if log.user else "System",
+                                    "action": log.field_name|replace("_", " ")|title,
+                                    "time": log.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                                    "old": log.old_value or "N/A",
+                                    "new": log.new_value or "N/A"
+                                }|tojson }})'>
+                            <i class="bi bi-info"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var options = {
+            series: [{
+                name: 'Daily Activity',
+                type: 'column',
+                data: {{ history|map(attribute='count')|list|tojson }}
+            }, {
+                name: 'Efficiency',
+                type: 'line',
+                data: {{ history|map(attribute='count')|list|tojson }} // Using same for line as example
+            }],
+            chart: {
+                height: 350,
+                type: 'line',
+                toolbar: { show: false },
+                fontFamily: 'Inter'
+            },
+            stroke: {
+                width: [0, 4],
+                curve: 'smooth'
+            },
+            colors: ['#000000', '#6b7280'],
+            dataLabels: {
+                enabled: true,
+                enabledOnSeries: [1],
+                style: { fontSize: '10px' }
+            },
+            labels: {{ history|map(attribute='day')|list|tojson }},
+            xaxis: { type: 'category' },
+            yaxis: [{
+                title: { text: 'Monthly Output' },
+            }, {
+                opposite: true,
+                title: { text: 'Efficiency Score' }
+            }],
+            grid: { borderColor: '#f3f4f6' },
+            tooltip: { theme: 'dark' }
+        };
+
+        var chart = new ApexCharts(document.querySelector("#efficiencyReportChart"), options);
+        chart.render();
+    });
+</script>
+{% endblock %}

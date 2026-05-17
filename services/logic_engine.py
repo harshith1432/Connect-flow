@@ -1,20 +1,21 @@
 import re
 import operator
 
+
 class LogicEngine:
     def __init__(self):
         self.operators = {
-            '+': operator.add,
-            '-': operator.sub,
-            '*': operator.mul,
-            '/': operator.truediv,
-            '%': operator.mod,
-            '>': operator.gt,
-            '<': operator.lt,
-            '>=': operator.ge,
-            '<=': operator.le,
-            '==': operator.eq,
-            '!=': operator.ne,
+            "+": operator.add,
+            "-": operator.sub,
+            "*": operator.mul,
+            "/": operator.truediv,
+            "%": operator.mod,
+            ">": operator.gt,
+            "<": operator.lt,
+            ">=": operator.ge,
+            "<=": operator.le,
+            "==": operator.eq,
+            "!=": operator.ne,
         }
 
     def evaluate_formula(self, formula, context):
@@ -25,13 +26,13 @@ class LogicEngine:
             # Replace placeholders {field_name} with values from context
             expression = formula
             for key, value in context.items():
-                pattern = re.compile(re.escape('{' + key + '}'), re.IGNORECASE)
+                pattern = re.compile(re.escape("{" + key + "}"), re.IGNORECASE)
                 # If value is numeric, keep it; if it's text, we might need quotes (but formulas are usually numeric)
-                val_str = str(value) if value is not None else '0'
+                val_str = str(value) if value is not None else "0"
                 expression = pattern.sub(val_str, expression)
 
             # Safety check: only allow numbers, operators, and parentheses
-            if not re.match(r'^[0-9\.\s\+\-\*\/\%\(\)]*$', expression):
+            if not re.match(r"^[0-9\.\s\+\-\*\/\%\(\)]*$", expression):
                 return "Error: Invalid characters in expression"
 
             # Evaluate the expression
@@ -58,14 +59,14 @@ class LogicEngine:
             return False
 
         try:
-            op = logic.get('operator', 'AND')
-            conditions = logic.get('conditions', [])
-            
+            op = logic.get("operator", "AND")
+            conditions = logic.get("conditions", [])
+
             results = []
             for cond in conditions:
-                field_val = context.get(cond['field'])
-                target_val = cond['value']
-                condition_op = cond['op']
+                field_val = context.get(cond["field"])
+                target_val = cond["value"]
+                condition_op = cond["op"]
 
                 # Convert both to float if possible for numeric comparison
                 try:
@@ -75,34 +76,35 @@ class LogicEngine:
                     f_val = field_val
                     t_val = target_val
 
-                if condition_op == '>':
+                if condition_op == ">":
                     results.append(f_val > t_val)
-                elif condition_op == '<':
+                elif condition_op == "<":
                     results.append(f_val < t_val)
-                elif condition_op == '==':
+                elif condition_op == "==":
                     results.append(f_val == t_val)
-                elif condition_op == '>=':
+                elif condition_op == ">=":
                     results.append(f_val >= t_val)
-                elif condition_op == '<=':
+                elif condition_op == "<=":
                     results.append(f_val <= t_val)
-                elif condition_op == '!=':
+                elif condition_op == "!=":
                     results.append(f_val != t_val)
-                elif condition_op == 'contains':
+                elif condition_op == "contains":
                     results.append(str(t_val).lower() in str(f_val).lower())
-                elif condition_op == 'starts_with':
+                elif condition_op == "starts_with":
                     results.append(str(f_val).lower().startswith(str(t_val).lower()))
-                elif condition_op == 'ends_with':
+                elif condition_op == "ends_with":
                     results.append(str(f_val).lower().endswith(str(t_val).lower()))
 
-            if op == 'AND':
+            if op == "AND":
                 return all(results) if results else True
-            elif op == 'OR':
+            elif op == "OR":
                 return any(results) if results else False
-            
+
             return False
         except Exception as e:
             print(f"Logic Error: {e}")
             return False
+
 
 def get_logic_engine():
     return LogicEngine()

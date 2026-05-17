@@ -1,0 +1,73 @@
+{% extends "base_worker_premium.html" %}
+
+{% block title %}ConnectFlow | My Preferences{% endblock %}
+{% block page_title %}Workspace Preferences{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-8">
+        <div class="premium-card">
+            <div class="card-header-premium">
+                <div class="header-left">
+                    <h2>Workspace Customization</h2>
+                    <p>Adjust how ConnectFlow looks and behaves for you</p>
+                </div>
+            </div>
+            <div class="card-body-premium p-4">
+                <form action="{{ url_for('worker.preferences') }}" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="preference-section mb-5">
+                        <h4 class="mb-3">Display Settings</h4>
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Theme Mode</label>
+                                <select name="theme" class="form-select premium-input">
+                                    <option value="system" {% if user.theme == 'system' %}selected{% endif %}>System Default</option>
+                                    <option value="light" {% if user.theme == 'light' %}selected{% endif %}>Light Mode</option>
+                                    <option value="dark" {% if user.theme == 'dark' %}selected{% endif %}>Dark Mode</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Language</label>
+                                <select name="language" class="form-select premium-input">
+                                    <option value="en" {% if user.language == 'en' %}selected{% endif %}>English (US)</option>
+                                    <option value="en-gb" {% if user.language == 'en-gb' %}selected{% endif %}>English (UK)</option>
+                                    <option value="es" {% if user.language == 'es' %}selected{% endif %}>Español</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="divider-premium mb-5"></div>
+
+                    <div class="preference-section mb-5">
+                        <h4 class="mb-3">Notification Preferences</h4>
+                        <div class="notification-options">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="notif_email" id="notif_email" {% if user.notif_email %}checked{% endif %}>
+                                <label class="form-check-label ms-2" for="notif_email">
+                                    <strong>Email Notifications</strong>
+                                    <p class="text-muted small mb-0">Receive daily summaries and critical alerts via email.</p>
+                                </label>
+                            </div>
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" name="notif_browser" id="notif_browser" {% if user.notif_browser %}checked{% endif %}>
+                                <label class="form-check-label ms-2" for="notif_browser">
+                                    <strong>Browser Notifications</strong>
+                                    <p class="text-muted small mb-0">Get real-time updates while working in your browser.</p>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-3 mt-5">
+                        <a href="{{ url_for('worker.profile') }}" class="btn-premium secondary">Back to Profile</a>
+                        <button type="submit" class="btn-premium primary">Save Preferences</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

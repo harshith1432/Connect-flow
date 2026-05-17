@@ -1,89 +1,233 @@
-{% extends "base.html" %}
+{% extends 'base_org_premium.html' %}
 
-{% block title %}Subscription Plans{% endblock %}
+{% block title %}Subscription Plans - ConnectFlow{% endblock %}
+{% block page_title %}Subscription Plans{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <nav aria-label="breadcrumb">
-        <ul class="breadcrumb-premium d-flex align-items-center mb-0 p-0">
-            <li class="breadcrumb-item-premium">
-                <a href="{{ url_for('org.dashboard') }}">
-                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
-                </a>
-            </li>
-            <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50">
-                <i class="bi bi-chevron-right small"></i>
-            </li>
-            <li class="breadcrumb-item-premium active fw-bold text-dark">
-                Subscription Plans
-            </li>
-        </ul>
-    </nav>
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Current Plan</span>
+            <div class="kpi-icon"><i class="bi bi-shield-check"></i></div>
+        </div>
+        <div class="kpi-value">{{ subscription.plan if subscription else 'Trial' }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-patch-check-fill"></i> Verified
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Monthly Spend</span>
+            <div class="kpi-icon"><i class="bi bi-currency-dollar"></i></div>
+        </div>
+        <div class="kpi-value">₹{{ subscription.price|int if subscription else '0' }}</div>
+        <div class="kpi-trend" style="color: var(--grey-400);">
+            Next: June 15
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Renewal Date</span>
+            <div class="kpi-icon"><i class="bi bi-calendar-event"></i></div>
+        </div>
+        <div class="kpi-value">June 15</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-clock-history"></i> 30 Days left
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Usage Score</span>
+            <div class="kpi-icon"><i class="bi bi-bar-chart"></i></div>
+        </div>
+        <div class="kpi-value">82%</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-graph-up"></i> Optimal
+        </div>
+    </div>
 </div>
 
-<div class="text-center mb-5">
-    <h2 class="fw-bold">Choose Your Plan</h2>
-    <p class="text-muted">Scale your customer care with the right features.</p>
-</div>
+<div class="premium-panel mb-5">
+    <div class="panel-header" style="text-align: center; display: block; margin-bottom: 3rem;">
+        <h2 style="font-size: 2rem; margin-bottom: 0.5rem;">Choose the Right Plan</h2>
+        <p style="color: var(--grey-500); max-width: 600px; margin: 0 auto;">Scale your organization operations and communication infrastructure with our enterprise-grade solutions.</p>
+        
+        <div style="margin-top: 2rem; display: inline-flex; background: var(--grey-50); padding: 0.35rem; border-radius: 12px; border: 1px solid var(--grey-100);">
+            <button class="btn-black" style="padding: 0.5rem 1.5rem; font-size: 0.815rem; border-radius: 10px;">Monthly</button>
+            <button class="btn-secondary-premium" style="padding: 0.5rem 1.5rem; font-size: 0.815rem; border-radius: 10px; border: none; background: transparent;">Yearly (Save 20%)</button>
+        </div>
+    </div>
 
-<div class="row g-4 justify-content-center">
-    {% for plan in plans %}
-    <div class="col-md-4">
-        <div class="card h-100 border-0 shadow-sm plan-card {% if plan.name|lower == 'pro' %}plan-card-pro border-primary{% endif %}"
-            style="border-radius: 20px; transition: transform 0.3s ease;">
-            {% if plan.name|lower == 'pro' %}
-            <div class="position-absolute top-0 start-50 translate-middle">
-                <span class="badge bg-primary px-3 py-2" style="border-radius: 20px;">MOST POPULAR</span>
-            </div>
-            {% endif %}
-
-            <div class="card-body p-5 text-center">
-                <h4 class="fw-bold mb-3">{{ plan.name }}</h4>
-                <div class="mb-4">
-                    <span class="display-5 fw-bold">₹{{ plan.price|int }}</span>
-                    <span class="text-muted">/{{ plan.billing_interval }}</span>
+    <div class="row g-4 justify-content-center" style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+        {% for plan in plans %}
+        <div style="flex: 1; min-width: 320px; max-width: 400px;">
+            <div class="premium-panel h-100 {% if plan.name|lower == 'pro' %}active-plan-card{% endif %}" 
+                 style="position: relative; transition: var(--transition-base); border: 1px solid {% if plan.name|lower == 'pro' %}var(--black){% else %}var(--grey-100){% endif %}; padding: 3rem 2rem;">
+                
+                {% if plan.name|lower == 'pro' %}
+                <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--black); color: var(--white); padding: 0.35rem 1rem; border-radius: 100px; font-size: 0.7rem; font-weight: 800; letter-spacing: 1px;">
+                    MOST POPULAR
                 </div>
-                <p class="text-muted small mb-4">{{ plan.description }}</p>
+                {% endif %}
 
-                <ul class="list-unstyled text-start mb-5">
-                    {% for feature in plan.features %}
-                    <li class="mb-3 d-flex align-items-center">
-                        <i class="bi bi-check-circle-fill text-success me-3"></i>
-                        <span>{{ feature }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
+                <div style="text-align: center; margin-bottom: 2.5rem;">
+                    <h4 style="font-size: 1.25rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 1px; color: var(--grey-500);">{{ plan.name }}</h4>
+                    <div style="margin-bottom: 0.5rem;">
+                        <span style="font-size: 3rem; font-weight: 800; font-family: var(--font-heading); color: var(--black);">₹{{ plan.price|int }}</span>
+                        <span style="color: var(--grey-400); font-weight: 600;">/{{ plan.billing_interval }}</span>
+                    </div>
+                    <p style="font-size: 0.875rem; color: var(--grey-500); font-weight: 500;">{{ plan.description }}</p>
+                </div>
 
-                <div class="d-grid mt-auto">
-                    <a href="{{ url_for('org.checkout', plan_id=plan.id) }}"
-                        class="btn {% if plan.name|lower == 'pro' %}btn-primary{% else %}btn-outline-primary{% endif %} py-3 fw-bold"
-                        style="border-radius: 15px;">
-                        Select Plan
+                <div style="border-top: 1px solid var(--grey-50); padding-top: 2rem; margin-bottom: 3rem;">
+                    <ul style="list-style: none; padding: 0; margin: 0;">
+                        {% for feature in plan.features %}
+                        <li style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; font-size: 0.9rem; color: var(--grey-700); font-weight: 500;">
+                            <i class="bi bi-check2-circle" style="color: var(--black); font-size: 1.1rem;"></i>
+                            {{ feature }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div style="margin-top: auto;">
+                    <a href="{{ url_for('org.checkout', plan_id=plan.id) }}" 
+                       class="{% if plan.name|lower == 'pro' %}btn-black{% else %}btn-secondary-premium{% endif %}" 
+                       style="width: 100%; padding: 1rem; font-size: 1rem;">
+                        Select {{ plan.name }}
                     </a>
                 </div>
             </div>
         </div>
+        {% endfor %}
     </div>
-    {% endfor %}
 </div>
 
-<div class="text-center mt-5">
-    <p class="text-muted">Need a custom plan? <a href="#" class="text-primary fw-bold text-decoration-none">Contact
-            Sales</a></p>
+<div class="chart-row">
+    <div class="premium-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h3>Usage Insights</h3>
+                <p>Real-time resource utilization across your organization.</p>
+            </div>
+        </div>
+        
+        <div class="row g-4" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div>
+                <div class="mb-4">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.815rem; font-weight: 700;">Worker Limit</span>
+                        <span style="font-size: 0.815rem; font-weight: 700;">12 / 25</span>
+                    </div>
+                    <div style="height: 8px; background: var(--grey-50); border-radius: 10px; overflow: hidden;">
+                        <div style="width: 48%; height: 100%; background: var(--black);"></div>
+                    </div>
+                </div>
+                <div class="mb-4">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.815rem; font-weight: 700;">Message Volume</span>
+                        <span style="font-size: 0.815rem; font-weight: 700;">4,280 / 10,000</span>
+                    </div>
+                    <div style="height: 8px; background: var(--grey-50); border-radius: 10px; overflow: hidden;">
+                        <div style="width: 42%; height: 100%; background: var(--black);"></div>
+                    </div>
+                </div>
+                <div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-size: 0.815rem; font-weight: 700;">API Requests</span>
+                        <span style="font-size: 0.815rem; font-weight: 700;">92% Utilization</span>
+                    </div>
+                    <div style="height: 8px; background: var(--grey-50); border-radius: 10px; overflow: hidden;">
+                        <div style="width: 92%; height: 100%; background: #ef4444;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="background: var(--grey-50); border-radius: 20px; padding: 1.5rem; display: flex; align-items: center; justify-content: center;">
+                <div id="usageMiniChart" style="width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="premium-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h3>Billing History</h3>
+            </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px dashed var(--grey-200);">
+                <div>
+                    <div style="font-weight: 700; font-size: 0.875rem;">May 2026 - Pro Plan</div>
+                    <div style="font-size: 0.75rem; color: var(--grey-400);">Paid on May 15, 2026</div>
+                </div>
+                <div style="font-weight: 800; font-family: var(--font-heading);">₹1499</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px dashed var(--grey-200);">
+                <div>
+                    <div style="font-weight: 700; font-size: 0.875rem;">Apr 2026 - Pro Plan</div>
+                    <div style="font-size: 0.75rem; color: var(--grey-400);">Paid on Apr 15, 2026</div>
+                </div>
+                <div style="font-weight: 800; font-family: var(--font-heading);">₹1499</div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 700; font-size: 0.875rem;">Mar 2026 - Pro Plan</div>
+                    <div style="font-size: 0.75rem; color: var(--grey-400);">Paid on Mar 15, 2026</div>
+                </div>
+                <div style="font-weight: 800; font-family: var(--font-heading);">₹1499</div>
+            </div>
+        </div>
+        <a href="#" class="view-all-link" style="margin-top: 2rem; width: 100%; justify-content: center;">Download All Invoices</a>
+    </div>
 </div>
 
 <style>
-    .plan-card:hover {
-        transform: translateY(-10px);
-        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.1) !important;
+    .active-plan-card {
+        transform: scale(1.02);
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08) !important;
+        background: var(--white);
+        z-index: 10;
     }
-
-    .plan-card-pro {
-        border: 2px solid var(--primary-color) !important;
+    
+    .premium-panel:hover {
+        border-color: var(--grey-300) !important;
     }
-
-    .display-5 {
-        font-size: 2.5rem;
+    
+    .active-plan-card:hover {
+        border-color: var(--black) !important;
     }
 </style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var options = {
+            series: [{
+                name: 'Usage',
+                data: [44, 55, 41, 67, 22, 43, 21, 33, 45, 31, 87, 65]
+            }],
+            chart: {
+                type: 'bar',
+                height: 150,
+                sparkline: { enabled: true }
+            },
+            colors: ['#000000'],
+            plotOptions: {
+                bar: {
+                    borderRadius: 4,
+                    columnWidth: '60%'
+                }
+            },
+            tooltip: {
+                theme: 'dark',
+                fontFamily: 'Inter'
+            }
+        };
+
+        var chart = new ApexCharts(document.querySelector("#usageMiniChart"), options);
+        chart.render();
+    });
+</script>
 {% endblock %}
