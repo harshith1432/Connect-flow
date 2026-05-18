@@ -98,18 +98,27 @@ def create_app():
         timeout_redirect = SessionManager.enforce_session_timeout()
         if timeout_redirect:
             return timeout_redirect
-            
+
         # 2. Check for suspicious activity
         if current_user.is_authenticated:
-            user_type = "platform_admin" if hasattr(current_user, "role") and current_user.role == "platform_owner" else "org_user"
-            if not SuspiciousActivityMonitor.monitor_current_request(current_user.id, user_type):
+            user_type = (
+                "platform_admin"
+                if hasattr(current_user, "role")
+                and current_user.role == "platform_owner"
+                else "org_user"
+            )
+            if not SuspiciousActivityMonitor.monitor_current_request(
+                current_user.id, user_type
+            ):
                 return redirect(url_for("main.index"))
 
     @app.after_request
     def log_and_secure_request(response):
         # Add Cache-Control headers to prevent browser back-button caching
         if not request.path.startswith("/static"):
-            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, max-age=0"
+            response.headers[
+                "Cache-Control"
+            ] = "no-cache, no-store, must-revalidate, max-age=0"
             response.headers["Pragma"] = "no-cache"
             response.headers["Expires"] = "0"
 
@@ -131,6 +140,7 @@ def create_app():
     # Initialize rate limiting and security headers
     from app.security.rate_limit import init_rate_limiting
     from app.security.security_headers import init_security_headers
+
     init_rate_limiting(app)
     init_security_headers(app)
 
@@ -167,12 +177,12 @@ def create_app():
 
     # Platform owner routes are intentionally prefixed with /platform to isolate them
     app.register_blueprint(super_admin_bp, url_prefix="/platform")
-    
+
     # Exempt api blueprint from CSRF checks if needed.
     csrf.exempt(api_bp)
     app.register_blueprint(org_bp, url_prefix="/org")
     app.register_blueprint(worker_bp)
-    
+
     # Webhooks and internal proxies are CSRF-exempt
     app.register_blueprint(webhooks_bp, url_prefix="/webhooks")
     csrf.exempt(webhooks_bp)
@@ -234,6 +244,7 @@ def create_app():
         )
         if explicit_status:
             from app.features.webhooks.routes import _normalise
+
             status = _normalise(explicit_status)
         elif event:
             event_map = {
@@ -271,6 +282,7 @@ def create_app():
 
         try:
             from app.models import DeliveryLog
+
             delivery_log = None
 
             if call_uuid:

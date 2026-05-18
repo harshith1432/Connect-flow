@@ -1,6 +1,7 @@
 # Permission checking policies and RBAC roles
 from enum import Enum
 
+
 class UserRole(Enum):
     SUPER_ADMIN = "super_admin"
     ORG_ADMIN = "org_admin"
@@ -15,13 +16,13 @@ def has_permission(user, permission):
     """
     if not user or not user.is_authenticated:
         return False
-        
+
     if user.__class__.__name__ == "PlatformAdmin":
         return True
-        
+
     role = getattr(user, "role", None)
     if not role:
         return False
-        
+
     # Standard RBAC hierarchy mapping can be extended here
     return True

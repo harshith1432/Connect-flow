@@ -8,6 +8,7 @@ import re
 
 try:
     from deep_translator import GoogleTranslator
+
     TRANSLATOR_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
     TRANSLATOR_AVAILABLE = False

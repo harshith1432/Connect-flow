@@ -22,4 +22,10 @@ from .campaigns import Campaign, CampaignTarget, DeliveryLog
 from .change_requests import ChangeRequest, PlatformNotification
 
 # Security infrastructure models
-from .security import MfaConfiguration, OtpVerification, ActiveSession, SecurityAuditLog, SuspiciousActivity
+from .security import (
+    MfaConfiguration,
+    OtpVerification,
+    ActiveSession,
+    SecurityAuditLog,
+    SuspiciousActivity,
+)

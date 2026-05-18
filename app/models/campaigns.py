@@ -2,6 +2,7 @@ from datetime import datetime
 from sqlalchemy.orm import relationship, backref
 from app.extensions import db
 
+
 class Campaign(db.Model):
     __tablename__ = "campaigns"
     id = db.Column(db.Integer, primary_key=True)

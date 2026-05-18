@@ -65,9 +65,10 @@ class Config:
     DEFAULT_ADMIN_PASSWORD = os.environ.get("DEFAULT_ADMIN_PASSWORD", "")
 
     BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
-    
+
     # Session / security
     from datetime import timedelta
+
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SECURE = True
     SESSION_COOKIE_SAMESITE = "Lax"

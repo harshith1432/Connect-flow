@@ -34,7 +34,13 @@ from datetime import datetime, timedelta
 import os
 import time
 
-worker_bp = Blueprint("worker", __name__, url_prefix="/worker", template_folder="templates", static_folder="static")
+worker_bp = Blueprint(
+    "worker",
+    __name__,
+    url_prefix="/worker",
+    template_folder="templates",
+    static_folder="static",
+)
 
 
 @worker_bp.route("/dashboard")
@@ -223,6 +229,7 @@ def login():
 
         # --- Brute Force Protection ---
         from app.security.auth_protection import BruteForceProtection
+
         locked, lock_msg = BruteForceProtection.is_locked_out(email)
         if locked:
             flash(lock_msg, "danger")
@@ -250,7 +257,9 @@ def login():
                 session["pre_mfa_user_type"] = user_type
                 session["pre_mfa_remember"] = "remember" in request.form
 
-                success, msg = MFAService.generate_and_send_otp(user.id, user_type, method=config.mfa_type)
+                success, msg = MFAService.generate_and_send_otp(
+                    user.id, user_type, method=config.mfa_type
+                )
                 if success:
                     flash("Verification code sent.", "info")
                     return redirect(url_for("security.verify_otp"))
@@ -337,6 +346,7 @@ def login():
 @login_required
 def logout():
     from app.security.session_manager import SessionManager
+
     SessionManager.logout_and_clean()
     return redirect(url_for("main.index"))
 
@@ -522,6 +532,7 @@ def oauth_select_org():
             login_user(user)
             # Session hardening for OAuth org-select login
             from app.security.session_manager import SessionManager
+
             SessionManager.regenerate_session()
             SessionManager.track_session(user.id, "org_user")
             session.pop("oauth_email", None)

@@ -1,13 +1,24 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from app.extensions import db
-from app.models import Organization, OrganizationUser, Subscription, PlatformNotification
+from app.models import (
+    Organization,
+    OrganizationUser,
+    Subscription,
+    PlatformNotification,
+)
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
 import os
 import re
 from sqlalchemy import text
 
-main_bp = Blueprint("main", __name__, template_folder="templates", static_folder="static", static_url_path="/main_static")
+main_bp = Blueprint(
+    "main",
+    __name__,
+    template_folder="templates",
+    static_folder="static",
+    static_url_path="/main_static",
+)
 
 
 @main_bp.route("/subscription-expired")
@@ -218,6 +229,7 @@ def google_callback():
         login_user(user)
         # Session hardening for OAuth login
         from app.security.session_manager import SessionManager
+
         SessionManager.regenerate_session()
         SessionManager.track_session(user.id, "org_user")
         return redirect(url_for("worker.dashboard"))

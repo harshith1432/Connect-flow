@@ -15,7 +15,7 @@ from app.models import (
     Subscription,
     DeliveryLog,
     PlatformNotification,
-    Payment
+    Payment,
 )
 from app.extensions import db
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -40,6 +40,7 @@ def login():
 
         # --- Brute Force Protection ---
         from app.security.auth_protection import BruteForceProtection
+
         locked, lock_msg = BruteForceProtection.is_locked_out(email)
         if locked:
             flash(lock_msg, "danger")
@@ -102,15 +103,18 @@ def login():
                 # MFA Check
                 from app.security.mfa import MFAService
                 from flask import session
+
                 user_type = "org_user"
                 config = MFAService.get_mfa_config(user.id, user_type)
-                
+
                 if config.is_enabled:
                     session["pre_mfa_user_id"] = user.id
                     session["pre_mfa_user_type"] = user_type
                     session["pre_mfa_remember"] = "remember" in request.form
-                    
-                    success, msg = MFAService.generate_and_send_otp(user.id, user_type, method=config.mfa_type)
+
+                    success, msg = MFAService.generate_and_send_otp(
+                        user.id, user_type, method=config.mfa_type
+                    )
                     if success:
                         flash("Verification code sent.", "info")
                         return redirect(url_for("security.verify_otp"))
@@ -119,6 +123,7 @@ def login():
                         return render_template("auth/org_login.html")
                 else:
                     from app.security.session_manager import SessionManager
+
                     login_user(user, remember="remember" in request.form)
                     SessionManager.regenerate_session()
                     SessionManager.track_session(user.id, user_type)
@@ -165,15 +170,18 @@ def login():
             # MFA Check
             from app.security.mfa import MFAService
             from flask import session
+
             user_type = "org_user"
             config = MFAService.get_mfa_config(user.id, user_type)
-            
+
             if config.is_enabled:
                 session["pre_mfa_user_id"] = user.id
                 session["pre_mfa_user_type"] = user_type
                 session["pre_mfa_remember"] = "remember" in request.form
-                
-                success, msg = MFAService.generate_and_send_otp(user.id, user_type, method=config.mfa_type)
+
+                success, msg = MFAService.generate_and_send_otp(
+                    user.id, user_type, method=config.mfa_type
+                )
                 if success:
                     flash("Verification code sent.", "info")
                     return redirect(url_for("security.verify_otp"))
@@ -182,6 +190,7 @@ def login():
                     return render_template("auth/org_login.html")
             else:
                 from app.security.session_manager import SessionManager
+
                 login_user(user, remember="remember" in request.form)
                 SessionManager.regenerate_session()
                 SessionManager.track_session(user.id, user_type)
@@ -1060,11 +1069,13 @@ def campaigns_dashboard():
 @active_subscription_required
 def reports_dashboard():
     org_id = current_user.organization_id
-    workers = OrganizationUser.query.filter_by(
-        org_id, role="worker"
-    ).all() if hasattr(OrganizationUser, "org_id") else OrganizationUser.query.filter_by(
-        organization_id=org_id, role="worker"
-    ).all()
+    workers = (
+        OrganizationUser.query.filter_by(org_id, role="worker").all()
+        if hasattr(OrganizationUser, "org_id")
+        else OrganizationUser.query.filter_by(
+            organization_id=org_id, role="worker"
+        ).all()
+    )
 
     # Date Range for 'Today'
     today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
@@ -1505,5 +1516,6 @@ def export_reports_excel():
 @login_required
 def logout():
     from app.security.session_manager import SessionManager
+
     SessionManager.logout_and_clean()
     return redirect(url_for("main.index"))

@@ -4,6 +4,7 @@ from werkzeug.security import check_password_hash
 from app.extensions import db
 from .platform import Role
 
+
 class OrganizationUser(UserMixin, db.Model):
     __tablename__ = "organization_users"
     id = db.Column(db.Integer, primary_key=True)

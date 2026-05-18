@@ -10,7 +10,9 @@ def platform_required(f):
         # Platform admin is a different model; detect by class name to avoid circular imports
         if current_user.__class__.__name__ != "PlatformAdmin":
             flash("Access denied: platform owner only", "danger")
-            return redirect(url_for("super_admin.login"))  # Updated to the new blueprint name later
+            return redirect(
+                url_for("super_admin.login")
+            )  # Updated to the new blueprint name later
         return f(*args, **kwargs)
 
     return decorated

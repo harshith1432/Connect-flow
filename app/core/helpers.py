@@ -35,10 +35,10 @@ def time_ago(dt):
         return ""
     now = datetime.utcnow()
     diff = now - dt
-    
+
     seconds = diff.seconds
     days = diff.days
-    
+
     if days > 0:
         if days == 1:
             return "1 day ago"

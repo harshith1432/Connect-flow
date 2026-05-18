@@ -23,12 +23,14 @@ from app.models import (
     Script,
     Contact,
     ContactGroup,
-    Module
+    Module,
 )
 from app.core.decorators import platform_required
 from app.config import Config
 
-super_admin_bp = Blueprint("super_admin", __name__, template_folder="templates", static_folder="static")
+super_admin_bp = Blueprint(
+    "super_admin", __name__, template_folder="templates", static_folder="static"
+)
 
 
 @super_admin_bp.route("/login", methods=["GET", "POST"])
@@ -39,6 +41,7 @@ def login():
 
         # --- Brute Force Protection ---
         from app.security.auth_protection import BruteForceProtection
+
         locked, lock_msg = BruteForceProtection.is_locked_out(email)
         if locked:
             flash(lock_msg, "danger")
@@ -57,16 +60,19 @@ def login():
             # Check if MFA is enabled
             from app.security.mfa import MFAService
             from flask import session
+
             user_type = "platform_admin"
             config = MFAService.get_mfa_config(admin.id, user_type)
-            
+
             if config.is_enabled:
                 session["pre_mfa_user_id"] = admin.id
                 session["pre_mfa_user_type"] = user_type
                 session["pre_mfa_remember"] = "remember" in request.form
-                
+
                 # Generate and send OTP
-                success, msg = MFAService.generate_and_send_otp(admin.id, user_type, method=config.mfa_type)
+                success, msg = MFAService.generate_and_send_otp(
+                    admin.id, user_type, method=config.mfa_type
+                )
                 if success:
                     flash("Verification code sent.", "info")
                     return redirect(url_for("security.verify_otp"))
@@ -75,6 +81,7 @@ def login():
                     return render_template("auth/platform_login.html")
             else:
                 from app.security.session_manager import SessionManager
+
                 login_user(admin, remember="remember" in request.form)
                 SessionManager.regenerate_session()
                 SessionManager.track_session(admin.id, user_type)
@@ -121,14 +128,17 @@ def dashboard():
     recent_payments = Payment.query.order_by(Payment.id.desc()).limit(4).all()
 
     # Notifications
-    from app.common.notifications.service import get_recent_notifications, get_unread_count
+    from app.common.notifications.service import (
+        get_recent_notifications,
+        get_unread_count,
+    )
 
     notifications = get_recent_notifications(10)
     unread_notifs = get_unread_count()
-    
+
     growth_categories = []
     growth_data = []
-    
+
     now = datetime.utcnow()
     for i in range(5, -1, -1):
         m = now.month - i
@@ -136,11 +146,11 @@ def dashboard():
         if m <= 0:
             m += 12
             y -= 1
-            
+
         start_of_month = datetime(y, m, 1)
         _, last_day = calendar.monthrange(y, m)
         end_of_month = datetime(y, m, last_day, 23, 59, 59)
-        
+
         month_revenue = (
             db.session.query(func.sum(Payment.amount))
             .filter(Payment.status == "completed")
@@ -150,7 +160,7 @@ def dashboard():
         )
         if month_revenue is None:
             month_revenue = 0.0
-            
+
         month_abbr = calendar.month_abbr[m]
         growth_categories.append(month_abbr)
         growth_data.append(float(month_revenue))
@@ -174,7 +184,10 @@ def dashboard():
 @super_admin_bp.route("/notifications")
 @platform_required
 def notifications():
-    from app.common.notifications.service import get_recent_notifications, get_unread_count
+    from app.common.notifications.service import (
+        get_recent_notifications,
+        get_unread_count,
+    )
 
     # Fetch more for the full page
     all_notifs = get_recent_notifications(50)
@@ -440,6 +453,7 @@ def configure_twilio(org_id):
         if updated_hooman:
             org.hooman_config = hooman_cfg
             from sqlalchemy.orm.attributes import flag_modified
+
             flag_modified(org, "hooman_config")
 
             # Clear pending hooman_voice request
@@ -472,6 +486,7 @@ def configure_twilio(org_id):
     # Force update Twilio JSON column
     org.twilio_config = config
     from sqlalchemy.orm.attributes import flag_modified
+
     flag_modified(org, "twilio_config")
 
     try:
@@ -713,5 +728,6 @@ def delete_admin(aid):
 @login_required
 def logout():
     from app.security.session_manager import SessionManager
+
     SessionManager.logout_and_clean()
     return redirect(url_for("main.index"))

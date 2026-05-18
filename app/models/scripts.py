@@ -1,5 +1,6 @@
 from app.extensions import db
 
+
 class Script(db.Model):
     __tablename__ = "scripts"
     id = db.Column(db.Integer, primary_key=True)

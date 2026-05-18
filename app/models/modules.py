@@ -2,6 +2,7 @@ from datetime import datetime
 from sqlalchemy.orm import relationship, backref
 from app.extensions import db
 
+
 class Module(db.Model):
     __tablename__ = "modules"
     id = db.Column(db.Integer, primary_key=True)

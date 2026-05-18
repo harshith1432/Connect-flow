@@ -5,6 +5,7 @@ Uses Microsoft Edge TTS (edge-tts) for high-quality neural voices
 
 try:
     from app.common.translation.translator import translate_message, get_language_code
+
     TRANSLATOR_AVAILABLE = True
 except ImportError:
     TRANSLATOR_AVAILABLE = False

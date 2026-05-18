@@ -1,21 +1,26 @@
 from datetime import datetime
 from app.extensions import db
 
+
 class MfaConfiguration(db.Model):
     __tablename__ = "mfa_configurations"
     id = db.Column(db.Integer, primary_key=True)
-    user_type = db.Column(db.String(50), nullable=False)  # 'platform_admin' or 'org_user'
+    user_type = db.Column(
+        db.String(50), nullable=False
+    )  # 'platform_admin' or 'org_user'
     user_id = db.Column(db.Integer, nullable=False)
-    mfa_type = db.Column(db.String(50), default="none")  # 'email', 'sms', 'totp', 'none'
+    mfa_type = db.Column(
+        db.String(50), default="none"
+    )  # 'email', 'sms', 'totp', 'none'
     secret_key = db.Column(db.String(255), nullable=True)  # for TOTP
     is_enabled = db.Column(db.Boolean, default=False)
     backup_codes = db.Column(db.JSON, nullable=True)  # recovery codes list
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    __table_args__ = (
-        db.UniqueConstraint("user_type", "user_id", name="_user_mfa_uc"),
+    updated_at = db.Column(
+        db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
     )
+
+    __table_args__ = (db.UniqueConstraint("user_type", "user_id", name="_user_mfa_uc"),)
 
 
 class OtpVerification(db.Model):
@@ -58,7 +63,9 @@ class SecurityAuditLog(db.Model):
     ip_address = db.Column(db.String(100), nullable=True)
     user_agent = db.Column(db.String(500), nullable=True)
     details = db.Column(db.JSON, nullable=True)
-    severity = db.Column(db.String(50), default="low")  # 'low', 'medium', 'high', 'critical'
+    severity = db.Column(
+        db.String(50), default="low"
+    )  # 'low', 'medium', 'high', 'critical'
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
@@ -69,7 +76,9 @@ class SuspiciousActivity(db.Model):
     user_type = db.Column(db.String(50), nullable=True)
     user_id = db.Column(db.Integer, nullable=True)
     email = db.Column(db.String(255), nullable=True)
-    activity_type = db.Column(db.String(100), nullable=False)  # 'brute_force', 'unusual_ip', 'mfa_bypass_attempt'
+    activity_type = db.Column(
+        db.String(100), nullable=False
+    )  # 'brute_force', 'unusual_ip', 'mfa_bypass_attempt'
     details = db.Column(db.Text, nullable=True)
     resolved = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

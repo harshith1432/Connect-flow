@@ -7,6 +7,7 @@ from flask_login import current_user, logout_user
 from app.extensions import db
 from app.models.security import ActiveSession, SecurityAuditLog
 
+
 class SessionManager:
     TIMEOUT_MINUTES = 20
 
@@ -42,10 +43,12 @@ class SessionManager:
         ua_string = request.user_agent.string if request.user_agent else "Unknown"
         browser = request.user_agent.browser if request.user_agent else "Unknown"
         os_platform = request.user_agent.platform if request.user_agent else "Unknown"
-        
+
         # Simple device estimation
         device = "Desktop"
-        if request.user_agent and any(word in ua_string.lower() for word in ["mobi", "android", "iphone", "ipad"]):
+        if request.user_agent and any(
+            word in ua_string.lower() for word in ["mobi", "android", "iphone", "ipad"]
+        ):
             device = "Mobile"
 
         # Check if session token exists in DB
@@ -67,7 +70,7 @@ class SessionManager:
                 device=device,
                 os=os_platform,
                 last_activity=now,
-                created_at=now
+                created_at=now,
             )
             db.session.add(active_sess)
 
@@ -100,7 +103,10 @@ class SessionManager:
         if not active_sess:
             # Active session was deleted from backend (force logged out by admin or password change)
             SessionManager.logout_and_clean()
-            flash("Your session has been terminated by an administrator or a security event.", "danger")
+            flash(
+                "Your session has been terminated by an administrator or a security event.",
+                "danger",
+            )
             return redirect(url_for("main.index"))
 
         # Calculate time difference
@@ -109,22 +115,32 @@ class SessionManager:
             # Session timed out
             db.session.delete(active_sess)
             db.session.commit()
-            
+
             # Log audit
             audit = SecurityAuditLog(
                 user_id=current_user.id,
-                user_type="platform_admin" if hasattr(current_user, "role") and current_user.role == "platform_owner" else "org_user",
+                user_type="platform_admin"
+                if hasattr(current_user, "role")
+                and current_user.role == "platform_owner"
+                else "org_user",
                 action="session_timeout",
                 ip_address=request.remote_addr,
-                user_agent=request.user_agent.string if request.user_agent else "Unknown",
-                details={"message": f"Session timed out due to inactivity after {SessionManager.TIMEOUT_MINUTES} minutes."},
-                severity="low"
+                user_agent=request.user_agent.string
+                if request.user_agent
+                else "Unknown",
+                details={
+                    "message": f"Session timed out due to inactivity after {SessionManager.TIMEOUT_MINUTES} minutes."
+                },
+                severity="low",
             )
             db.session.add(audit)
             db.session.commit()
 
             SessionManager.logout_and_clean()
-            flash(f"You have been logged out due to inactivity for {SessionManager.TIMEOUT_MINUTES} minutes.", "info")
+            flash(
+                f"You have been logged out due to inactivity for {SessionManager.TIMEOUT_MINUTES} minutes.",
+                "info",
+            )
             return redirect(url_for("main.index"))
 
         # Update last activity
@@ -144,9 +160,13 @@ class SessionManager:
                 user_type=active_sess.user_type,
                 action="session_terminated",
                 ip_address=request.remote_addr,
-                user_agent=request.user_agent.string if request.user_agent else "Unknown",
-                details={"message": f"Session token {token[:10]}... terminated manually."},
-                severity="medium"
+                user_agent=request.user_agent.string
+                if request.user_agent
+                else "Unknown",
+                details={
+                    "message": f"Session token {token[:10]}... terminated manually."
+                },
+                severity="medium",
             )
             db.session.add(audit)
             db.session.delete(active_sess)
@@ -163,19 +183,21 @@ class SessionManager:
         query = ActiveSession.query.filter_by(user_id=user_id, user_type=user_type)
         if except_token:
             query = query.filter(ActiveSession.session_token != except_token)
-        
+
         sessions_to_kill = query.all()
         for s in sessions_to_kill:
             db.session.delete(s)
-            
+
         audit = SecurityAuditLog(
             user_id=user_id,
             user_type=user_type,
             action="all_sessions_terminated",
             ip_address=request.remote_addr,
             user_agent=request.user_agent.string if request.user_agent else "Unknown",
-            details={"message": f"All sessions terminated. except_token={except_token is not None}"},
-            severity="medium"
+            details={
+                "message": f"All sessions terminated. except_token={except_token is not None}"
+            },
+            severity="medium",
         )
         db.session.add(audit)
         db.session.commit()
