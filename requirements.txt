@@ -14,3 +14,5 @@ gtts
 deep-translator
 edge-tts
 asyncio
+pyotp
+Flask-Limiter

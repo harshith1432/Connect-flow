@@ -1,0 +1,286 @@
+{% extends "base_platform_premium.html" %}
+
+{% block title %}ConnectFlow | Platform Overview{% endblock %}
+{% block page_title %}Platform Overview{% endblock %}
+
+{% block content %}
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Organizations</span>
+            <div class="kpi-icon">
+                <i class="bi bi-buildings"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ total_orgs }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-graph-up"></i>
+            <span>Registered</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Active Subscriptions</span>
+            <div class="kpi-icon">
+                <i class="bi bi-check-circle"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ active_subs }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-check-circle"></i>
+            <span>Running</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Revenue</span>
+            <div class="kpi-icon">
+                <i class="bi bi-currency-dollar"></i>
+            </div>
+        </div>
+        <div class="kpi-value">₹{{ "%.2f"|format(total_revenue) }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-arrow-up-right"></i>
+            <span>Collected</span>
+        </div>
+    </div>
+    <div class="kpi-card" style="cursor: pointer;" onclick="window.location.href='{{ url_for('super_admin.notifications') }}'">
+        <div class="kpi-header">
+            <span class="kpi-label">Unread Notifications</span>
+            <div class="kpi-icon">
+                <i class="bi bi-bell{% if unread_notifs > 0 %}-fill text-danger{% endif %}"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ unread_notifs }}</div>
+        <div class="kpi-trend {% if unread_notifs > 0 %}trend-down{% else %}trend-up{% endif %}">
+            <i class="bi {% if unread_notifs > 0 %}bi-exclamation-circle{% else %}bi-check-circle{% endif %}"></i>
+            <span>{% if unread_notifs > 0 %}Action Required{% else %}All Caught Up{% endif %}</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <!-- Main Content: Organizations -->
+    <div class="col-lg-8">
+        <div class="premium-card mb-4">
+            <div class="card-header-premium">
+                <div class="header-left">
+                    <h2>Organizations</h2>
+                    <p>Manage all registered tenant organizations</p>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table align-middle table-hover" style="border-collapse: separate; border-spacing: 0 0.5rem; padding: 0 1.5rem;">
+                    <thead>
+                        <tr style="color: var(--grey-400); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <th class="border-0 pb-3">Organization</th>
+                            <th class="border-0 pb-3">Status</th>
+                            <th class="border-0 pb-3 text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for o in orgs %}
+                        <tr style="background: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-radius: 8px;">
+                            <td class="border-0 rounded-start" style="padding: 1rem;">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="org-logo-thumbnail" style="width: 40px; height: 40px; border-radius: 8px; background: var(--grey-50); display: flex; align-items: center; justify-content: center;">
+                                        {% if o.logo_url %}
+                                        <img src="{{ url_for('static', filename=o.logo_url) }}" alt="{{ o.name }}" style="max-width: 100%; max-height: 100%; border-radius: 6px;">
+                                        {% else %}
+                                        <i class="bi bi-building text-muted"></i>
+                                        {% endif %}
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold" style="color: var(--text-dark);">{{o.name}}</div>
+                                        <div class="small" style="color: var(--grey-400);">ID: {{o.id}}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="border-0" style="padding: 1rem;">
+                                {% if o.status == 'active' %}
+                                <span class="badge-premium" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">Active</span>
+                                {% elif o.status == 'pending' %}
+                                <span class="badge-premium" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">Pending</span>
+                                {% else %}
+                                <span class="badge-premium" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">{{ o.status|capitalize }}</span>
+                                {% endif %}
+                                {% if o.is_verified %}
+                                <i class="bi bi-patch-check-fill text-primary ms-1" title="Verified" style="font-size: 0.9rem;"></i>
+                                {% endif %}
+                            </td>
+                            <td class="border-0 rounded-end text-end" style="padding: 1rem;">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{{ url_for('super_admin.view_org_detail', org_id=o.id) }}" class="btn-action-premium" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if o.status != 'active' %}
+                                    <form method="post" action="{{ url_for('super_admin.approve_org', org_id=o.id) }}" style="margin: 0;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button class="btn-action-premium" style="color: #22c55e;" title="Approve">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    {% if o.status != 'suspended' %}
+                                    <form method="post" action="{{ url_for('super_admin.suspend_org', org_id=o.id) }}" style="margin: 0;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button class="btn-action-premium" style="color: #f59e0b;" title="Suspend">
+                                            <i class="bi bi-slash-circle"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                    <form method="post" action="{{ url_for('super_admin.delete_org', org_id=o.id) }}" style="margin: 0;" onsubmit="return confirm('Are you sure you want to delete {{ o.name }}? This action cannot be undone and will delete all associated data including workers, campaigns, and payments.');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button class="btn-action-premium" style="color: #ef4444;" title="Delete Organization">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4 border-0">
+                                <div class="empty-state">
+                                    <i class="bi bi-building"></i>
+                                    <p>No organizations found.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div class="col-lg-4">
+        <div class="d-flex flex-column gap-4">
+            
+            <!-- Platform Analytics -->
+            <div class="premium-card">
+                <div class="card-header-premium border-0 pb-0">
+                    <div class="header-left">
+                        <h2>Analytics</h2>
+                        <p>Platform growth trends</p>
+                    </div>
+                </div>
+                <div class="card-body-premium">
+                    <div id="platform-growth-chart"></div>
+                </div>
+            </div>
+
+            <!-- Recent Payments -->
+            <div class="premium-card">
+                <div class="card-header-premium border-0 pb-0">
+                    <div class="header-left">
+                        <h2>Recent Payments</h2>
+                    </div>
+                </div>
+                <div class="card-body-premium pt-2">
+                    {% if recent_payments %}
+                    <div class="d-flex flex-column gap-3">
+                        {% for p in recent_payments %}
+                        <div class="d-flex justify-content-between align-items-center p-3" style="background: var(--grey-50); border-radius: 8px;">
+                            <div>
+                                <div class="fw-bold" style="color: #22c55e;">₹{{ "%.2f"|format(p.amount) }}</div>
+                                <div class="small" style="color: var(--grey-400);">Org ID: {{p.organization_id}}</div>
+                            </div>
+                            <span class="badge-premium" style="background: var(--white); border: 1px solid var(--grey-200); color: var(--text-dark);">{{p.status}}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state py-3">
+                        <i class="bi bi-receipt"></i>
+                        <p class="small">No recent payments.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Pending Subscriptions -->
+            <div class="premium-card">
+                <div class="card-header-premium border-0 pb-0">
+                    <div class="header-left">
+                        <h2>Pending Subscriptions</h2>
+                        <p>Approved orgs awaiting plans</p>
+                    </div>
+                </div>
+                <div class="card-body-premium pt-2">
+                    {% if pending_subscription_orgs %}
+                    <div class="d-flex flex-column gap-2">
+                        {% for po in pending_subscription_orgs %}
+                        <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                            <div>
+                                <div class="fw-bold small">{{ po.name }}</div>
+                                <div class="small" style="color: var(--grey-400);">ID: {{ po.id }}</div>
+                            </div>
+                            <a href="{{ url_for('super_admin.view_org_detail', org_id=po.id) }}" class="btn-action-premium" style="font-size: 0.8rem; padding: 4px 8px;">Review</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state py-3">
+                        <i class="bi bi-check-all"></i>
+                        <p class="small">All approved orgs subscribed.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Initialize Platform Growth Chart with ApexCharts
+    document.addEventListener("DOMContentLoaded", function() {
+        const growthOptions = {
+            series: [{
+                name: 'Revenue (₹)',
+                data: {{ growth_data | tojson | safe }}
+            }],
+            chart: {
+                type: 'area',
+                height: 250,
+                toolbar: { show: false },
+                zoom: { enabled: false }
+            },
+            colors: ['#6366f1'],
+            dataLabels: { enabled: false },
+            stroke: { curve: 'smooth', width: 2 },
+            xaxis: {
+                categories: {{ growth_categories | tojson | safe }},
+                axisBorder: { show: false },
+                axisTicks: { show: false }
+            },
+            yaxis: { show: false },
+            grid: {
+                borderColor: '#f1f1f1',
+                strokeDashArray: 4,
+                padding: {
+                    left: 10,
+                    right: 10
+                }
+            },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.4,
+                    opacityTo: 0,
+                    stops: [0, 100]
+                }
+            }
+        };
+
+        const chart = new ApexCharts(document.querySelector("#platform-growth-chart"), growthOptions);
+        chart.render();
+    });
+</script>
+{% endblock %}

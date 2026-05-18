@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Platform Admins{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <nav aria-label="breadcrumb">
+            <ul class="breadcrumb-premium d-flex align-items-center mb-0 p-0">
+                <li class="breadcrumb-item-premium">
+                    <a href="{{ url_for('super_admin.dashboard') }}">
+                        <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                    </a>
+                </li>
+                <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50">
+                    <i class="bi bi-chevron-right small"></i>
+                </li>
+                <li class="breadcrumb-item-premium active fw-bold text-dark">
+                    Platform Admins
+                </li>
+            </ul>
+        </nav>
+        <h2 class="fw-bold mt-2">Security & Admin Management</h2>
+    </div>
+    <button class="btn btn-primary" style="border-radius: 20px;" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+        <i class="bi bi-person-plus me-1"></i> Add New Admin
+    </button>
+</div>
+
+<div class="row">
+    <!-- Security Settings Card -->
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">System Security</h5>
+                <p class="text-muted small mb-4">Manage system-level access controls and default credentials.</p>
+
+                <form method="POST" action="{{ url_for('super_admin.manage_admins') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded-3 mb-3">
+                        <div>
+                            <div class="fw-bold">Default Admin Login</div>
+                            <div class="smaller text-muted">Allow login via .env credentials</div>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="default_admin_enabled"
+                                id="defaultAdminSwitch" style="width: 2.5em; height: 1.25em;" {% if
+                                security.default_admin_enabled %}checked{% endif %} onchange="this.form.submit()">
+                        </div>
+                    </div>
+                </form>
+
+                <div class="alert alert-warning smaller mb-0" style="border-radius: 12px; border: none;">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <strong>Important:</strong> Disabling this will block the default account ({{ default_email }}).
+                    Ensure you have another admin account verified.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin List Card -->
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm" style="border-radius: 15px;">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Admin Email</th>
+                                <th>Created At</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for admin in admins %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">{{ admin.email }}</div>
+                                    {% if admin.email == default_email %}
+                                    <span class="badge bg-primary-subtle text-primary smaller">Default Account</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="small text-muted">{{ admin.created_at.strftime('%d %b, %Y') }}</div>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex gap-2 justify-content-end">
+                                        <button class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;"
+                                            data-bs-toggle="modal" data-bs-target="#editAdminModal{{ admin.id }}">
+                                            <i class="bi bi-pencil me-1"></i> Edit
+                                        </button>
+                                        {% if admin.email != default_email %}
+                                        <form action="{{ url_for('super_admin.delete_admin', aid=admin.id) }}" method="POST"
+                                            style="display:inline;">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                style="border-radius: 20px;"
+                                                onclick="return confirm('Are you sure you want to remove this admin?')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <!-- Edit Admin Modal -->
+                            <div class="modal fade" id="editAdminModal{{ admin.id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <div class="modal-content" style="border-radius: 20px;">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="fw-bold">Update Admin Account</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <form action="{{ url_for('super_admin.update_admin', aid=admin.id) }}" method="POST">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <div class="modal-body">
+                                                <div class="mb-3">
+                                                    <label
+                                                        class="form-label smaller fw-bold text-muted text-uppercase">Email
+                                                        Address</label>
+                                                    <input type="email" name="email" class="form-control"
+                                                        value="{{ admin.email }}" required style="border-radius: 12px;">
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label
+                                                        class="form-label smaller fw-bold text-muted text-uppercase">New
+                                                        Password (leave blank to keep current)</label>
+                                                    <input type="password" name="password" class="form-control"
+                                                        placeholder="••••••••" style="border-radius: 12px;">
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer border-0">
+                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal"
+                                                    style="border-radius: 12px;">Cancel</button>
+                                                <button type="submit" class="btn btn-primary"
+                                                    style="border-radius: 12px;">Update Admin</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Admin Modal -->
+<div class="modal fade" id="addAdminModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content" style="border-radius: 20px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold">Add Platform Admin</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('super_admin.add_admin') }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <p class="text-muted small mb-4">Create a new administrator with full access to the platform
+                        dashboard.</p>
+                    <div class="mb-3">
+                        <label class="form-label smaller fw-bold text-muted text-uppercase">Email Address</label>
+                        <input type="email" name="email" class="form-control" placeholder="admin@example.com" required
+                            style="border-radius: 12px;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label smaller fw-bold text-muted text-uppercase">Password</label>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required
+                            style="border-radius: 12px;">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal"
+                        style="border-radius: 12px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="border-radius: 12px;">Create Admin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .smaller {
+        font-size: 0.75rem;
+    }
+
+    .breadcrumb-premium {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .breadcrumb-item-premium a {
+        color: #94a3b8;
+        text-decoration: none;
+        transition: color 0.2s;
+        font-weight: 500;
+    }
+
+    .breadcrumb-item-premium a:hover {
+        color: #6c5ce7;
+    }
+
+    .breadcrumb-item-premium.active {
+        color: #475569;
+        font-weight: 600;
+    }
+
+    .breadcrumb-spacer-premium {
+        color: #cbd5e1;
+        font-size: 0.75rem;
+    }
+
+    .form-switch .form-check-input:checked {
+        background-color: #6c5ce7;
+        border-color: #6c5ce7;
+    }
+</style>
+{% endblock %}

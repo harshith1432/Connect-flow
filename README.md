@@ -6,7 +6,9 @@ ConnectFlow is a high-trust, enterprise-grade SaaS (Software as a Service) platf
 
 Featuring a modern, feature-based modular architecture, the system enforces complete data isolation between tenants, integrates dynamic no-code data modeling, and implements robust, startup-grade security standards.
 
-![Landing Hero](static/landing_hero.png)
+![ConnectFlow Landing Page — Hero Section](static/landing_hero.png)
+
+![ConnectFlow Landing Page — Features Overview](static/landing_features.png)
 
 ---
 

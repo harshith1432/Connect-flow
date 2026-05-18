@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}SaaS Platform{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+  {% block head_extra %}{% endblock %}
+</head>
+
+<body>
+  <nav class="navbar mb-5 sticky-top-mobile">
+    <div class="container">
+      <!-- Brand/Logo -->
+      <a href="{% if current_user.is_authenticated %}{% if current_user.role == 'platform_owner' %}{{ url_for('admin.dashboard') }}{% elif current_user.role == 'org_admin' %}{{ url_for('org.profile') }}{% elif current_user.role == 'worker' %}{{ url_for('worker.dashboard') }}{% else %}{{ url_for('main.index') }}{% endif %}{% else %}{{ url_for('main.index') }}{% endif %}"
+        class="brand-link d-flex align-items-center"
+        style="font-size: clamp(1.2rem, 4vw, 1.5rem); font-weight: 800; color: var(--secondary-color); text-decoration: none;">
+        {% if current_user.is_authenticated and current_user.organization and current_user.organization.logo_url %}
+        <img src="{{ url_for('static', filename=current_user.organization.logo_url) }}" alt="Logo"
+          class="me-2 rounded shadow-sm" style="height: 35px; width: 35px; object-fit: cover;">
+        {% else %}
+        <span style="color: var(--primary-color);">Connect</span>Flow
+        {% endif %}
+      </a>
+
+      <!-- Mobile Toggle -->
+      <button class="navbar-toggle border-0 bg-transparent p-2" id="mobileMenuToggle" aria-label="Toggle navigation">
+        <i class="bi bi-list fs-1 text-primary"></i>
+      </button>
+
+      <!-- Navigation Menu -->
+      <div class="navbar-menu" id="navbarMenu">
+        {% if current_user.is_authenticated %}
+        <div class="d-flex flex-column flex-md-row align-items-md-center p-mobile-2 position-relative">
+
+          <!-- User Info - Absolute Center on Desktop -->
+          <div class="navbar-center-brand d-flex flex-column align-items-center mb-3 mb-md-0">
+            {% if current_user.organization %}
+            <div class="fw-bold fs-4 text-dark lh-1">{{ current_user.organization.name }}</div>
+            {% endif %}
+            <div class="text-muted small">{{ current_user.email }}</div>
+          </div>
+
+          <!-- Logout Button - Full Right -->
+          <div class="d-flex gap-2 w-100-mobile ms-auto">
+            {% if current_user.role == 'platform_owner' %}
+            <a href="{{ url_for('admin.logout') }}" class="btn btn-sm btn-outline-danger w-100-mobile"
+              style="border-radius: 20px;">Logout</a>
+            {% elif current_user.role == 'worker' %}
+            <a href="{{ url_for('worker.logout') }}" class="btn btn-sm btn-outline-danger w-100-mobile"
+              style="border-radius: 20px;">Logout</a>
+            {% else %}
+            <a href="{{ url_for('org.logout') }}" class="btn btn-sm btn-outline-danger w-100-mobile"
+              style="border-radius: 20px;">Logout</a>
+            {% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div class="d-flex flex-row gap-3 align-items-center p-mobile-2">
+          <a href="{{ url_for('org.login') }}" class="fw-bold text-decoration-none"
+            style="color: var(--secondary-color);">Login</a>
+          <a href="{{ url_for('org.register') }}" class="btn btn-primary" style="border-radius: 20px;">Get Started</a>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </nav>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const toggle = document.getElementById('mobileMenuToggle');
+      const menu = document.getElementById('navbarMenu');
+      if (toggle && menu) {
+        toggle.addEventListener('click', function () {
+          menu.classList.toggle('show');
+          const icon = toggle.querySelector('i');
+          if (menu.classList.contains('show')) {
+            icon.classList.replace('bi-list', 'bi-x-lg');
+          } else {
+            icon.classList.replace('bi-x-lg', 'bi-list');
+          }
+        });
+      }
+    });
+  </script>
+
+  <div class="main-content container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    {% for category, msg in messages %}
+    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }}">
+      {{msg}}
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+
+  <!-- Optional Footer -->
+  <footer style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.875rem;">
+    Designed & Developed by Harshith D
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="{{ url_for('static', filename='js/validation.js') }}"></script>
+  {% block scripts %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% block title %}{{ module.name }} - Campaigns{% endblock %}
+{% block content %}
+<div class="row align-items-center mb-5">
+    <div class="col text-start">
+        <div class="mb-1">
+            <a href="{{ url_for('worker.manage_groups', mid=module.id) }}"
+                class="text-muted text-decoration-none small text-uppercase fw-bold">
+                <i class="bi bi-chevron-left me-1"></i>Back to Groups
+            </a>
+        </div>
+        <h1 class="mb-0">Campaigns</h1>
+        <p class="text-muted mb-0">Launch specialized communication for <strong>{{ group.name }}</strong> ({{
+            module.name }})
+        </p>
+    </div>
+    <div class="col-auto text-end">
+        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
+            <i class="bi bi-plus-lg me-2"></i> New Campaign
+        </button>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 border-bottom">
+        <h5 class="mb-0 fw-bold text-primary">All Campaigns <span class="badge bg-light text-dark ms-2">{{
+                campaigns|length }}</span></h5>
+    </div>
+    <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+        <table class="table align-middle mb-0 text-nowrap">
+            <thead class="bg-light">
+                <tr>
+                    <th class="text-uppercase small text-muted font-weight-bold ps-4">Campaign Name</th>
+                    <th class="text-uppercase small text-muted font-weight-bold">Type</th>
+                    <th class="text-uppercase small text-muted font-weight-bold">Script</th>
+                    <th class="text-uppercase small text-muted font-weight-bold">Status</th>
+                    <th class="text-uppercase small text-muted font-weight-bold">Created</th>
+                    <th class="text-end text-uppercase small text-muted font-weight-bold pe-4">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in campaigns %}
+                <tr>
+                    <td class="fw-bold ps-4" title="{{ c.name }}">
+                        <div style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {{ c.name }}
+                        </div>
+                    </td>
+                    <td>
+                        {% if c.type == 'whatsapp_text' %}
+                        <span class="badge bg-success text-white"><i class="bi bi-whatsapp me-1"></i> WhatsApp</span>
+                        {% else %}
+                        <span class="badge bg-primary text-white"><i class="bi bi-telephone me-1"></i> Call</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.script_id %}
+                        <span class="badge bg-light text-dark border"><i class="bi bi-file-text me-1"></i> ID: {{
+                            c.script_id }}</span>
+                        {% else %}
+                        <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if c.status == 'draft' %}
+                        <span class="badge bg-secondary text-white">Draft</span>
+                        {% elif c.status == 'running' %}
+                        <span class="badge bg-primary text-white"><span class="spinner-grow spinner-grow-sm me-1"
+                                style="width: 0.5rem; height: 0.5rem;"></span>
+                            Running</span>
+                        {% elif c.status == 'completed' %}
+                        <span class="badge bg-success text-white">Completed</span>
+                        {% else %}
+                        <span class="badge bg-light text-dark">{{ c.status }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-muted small">{{ c.created_at.strftime('%Y-%m-%d') }}</td>
+                    <td class="text-end pe-4">
+                        {% if c.status == 'draft' %}
+                        <form method="post" action="{{ url_for('worker.start_campaign', cid=c.id) }}"
+                            style="display:inline;"
+                            onsubmit="return confirm('Start this campaign? Communications will be queued.');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                            <button class="btn btn-sm btn-primary"><i class="bi bi-play-fill me-1"></i>
+                                Start</button>
+                        </form>
+                        {% else %}
+                        <a href="{{ url_for('worker.campaign_report', cid=c.id) }}"
+                            class="btn btn-sm btn-outline-primary"><i class="bi bi-bar-chart-line me-1"></i> Report</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="bi bi-megaphone display-4 text-muted opacity-25"></i>
+                        </div>
+                        <h5 class="text-muted">No campaigns launched yet</h5>
+                        <p class="text-muted small mb-4">Create your first campaign to start engaging with your list.
+                        </p>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
+                            <i class="bi bi-plus-lg me-2"></i>Create Campaign
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Create Campaign Modal -->
+<div class="modal fade" id="createCampaignModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Campaign</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="max-height: 65vh; overflow-y: auto;">
+                <form id="campaignForm" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <div class="mb-3">
+                        <label class="form-label">Campaign Name</label>
+                        <input name="name" class="form-control" placeholder="e.g. Diwali Promo 2024" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Communication Type</label>
+                        <select name="type" class="form-select" id="campaignTypeSelect">
+                        <option value="whatsapp_text">WhatsApp Message</option>
+                        <option value="call">Call</option>
+                    </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Select Script</label>
+                        <div class="input-group">
+                            <select name="script_id" class="form-select" id="scriptSelect" required>
+                                <option value="">-- Choose Script --</option>
+                                {% for s in scripts %}
+                                <option value="{{ s.id }}" data-type="{{ s.type }}" data-content="{{ s.content }}"
+                                    data-lang="{{ s.language }}">[{{ s.language }}] {{ s.content[:30] }}...</option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" class="btn btn-outline-info" id="btnPreviewCampaignScript">
+                                <i class="bi bi-play-fill"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Ensure the script matches your chosen communication type.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Sender Number (Optional)</label>
+                        <select name="sender_number_id" class="form-select" id="senderNumberSelect">
+                            <option value="">-- Use Platform Default --</option>
+                            {% for n in numbers %}
+                            <option value="{{ n.id }}" data-channel="{{ n.channel_type }}">{{ n.number }} ({{ n.channel_type|title }})</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Select a specific number or use the system default.</div>
+                    </div>
+
+                    <!-- Voice Call Settings removed as requested -->
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="campaignForm" class="btn btn-primary">Create Draft</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const typeSelect   = document.getElementById('campaignTypeSelect');
+    const scriptSelect = document.getElementById('scriptSelect');
+    const senderSelect = document.getElementById('senderNumberSelect');
+
+    if (typeSelect && scriptSelect) {
+        const allScriptOptions = Array.from(scriptSelect.options).slice(1);
+        const allSenderOptions = senderSelect ? Array.from(senderSelect.options).slice(1) : [];
+
+        typeSelect.addEventListener('change', function () {
+            const selectedType = this.value;
+
+            // Filter Scripts
+            scriptSelect.innerHTML = '<option value="">-- Choose Script --</option>';
+            allScriptOptions.forEach(opt => {
+                if (opt.dataset.type === selectedType)
+                    scriptSelect.appendChild(opt.cloneNode(true));
+            });
+
+            // Filter Sender Numbers
+            if (senderSelect) {
+                senderSelect.innerHTML = '<option value="">-- Use Platform Default --</option>';
+                allSenderOptions.forEach(opt => {
+                    const ch = opt.dataset.channel;
+                    if (selectedType === 'call' && ['voice', 'hooman_voice'].includes(ch))
+                        senderSelect.appendChild(opt.cloneNode(true));
+                    else if (selectedType.startsWith('whatsapp') && ch === 'whatsapp')
+                        senderSelect.appendChild(opt.cloneNode(true));
+                });
+            }
+        });
+
+        typeSelect.dispatchEvent(new Event('change'));
+    }
+
+    // Voice Preview for Campaigns
+    const campaignPreviewBtn = document.getElementById('btnPreviewCampaignScript');
+    const audioPlayer = new Audio();
+
+    if (campaignPreviewBtn) {
+        campaignPreviewBtn.addEventListener('click', async function () {
+            const selectedOption = scriptSelect.options[scriptSelect.selectedIndex];
+            if (!selectedOption || !selectedOption.value) {
+                alert('Please select a script first.');
+                return;
+            }
+
+            const text = selectedOption.dataset.content;
+            const lang = selectedOption.dataset.lang;
+
+            const originalHtml = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+            try {
+                const response = await fetch('/worker/preview-voice', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ text: text, language: lang })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    audioPlayer.src = data.audio_url;
+                    audioPlayer.play();
+                } else {
+                    alert('Error generating preview: ' + data.error);
+                }
+            } catch (error) {
+                console.error('Preview error:', error);
+                alert('Failed to play preview.');
+            } finally {
+                this.disabled = false;
+                this.innerHTML = originalHtml;
+            }
+        });
+    }
+});
+
+</script>
+{% endblock %}
+

@@ -1,0 +1,54 @@
+﻿
+FullName                                                                                                         
+--------                                                                                                         
+D:\projects softwares\custemer care1\custemer care\.qodo                                                         
+D:\projects softwares\custemer care1\custemer care\app\core\__pycache__                                          
+D:\projects softwares\custemer care1\custemer care\app\core\__pycache__\decorators.cpython-313.pyc               
+D:\projects softwares\custemer care1\custemer care\app\features\api\__pycache__                                  
+D:\projects softwares\custemer care1\custemer care\app\features\api\__pycache__\routes.cpython-313.pyc           
+D:\projects softwares\custemer care1\custemer care\app\features\api\__pycache__\__init__.cpython-313.pyc         
+D:\projects softwares\custemer care1\custemer care\app\features\public\__pycache__                               
+D:\projects softwares\custemer care1\custemer care\app\features\public\__pycache__\routes.cpython-313.pyc        
+D:\projects softwares\custemer care1\custemer care\app\features\public\__pycache__\__init__.cpython-313.pyc      
+D:\projects softwares\custemer care1\custemer care\app\features\super_admin\__pycache__                          
+D:\projects softwares\custemer care1\custemer care\app\features\super_admin\__pycache__\routes.cpython-313.pyc   
+D:\projects softwares\custemer care1\custemer care\app\features\super_admin\__pycache__\__init__.cpython-313.pyc 
+D:\projects softwares\custemer care1\custemer care\app\features\tenant_admin\__pycache__                         
+D:\projects softwares\custemer care1\custemer care\app\features\tenant_admin\__pycache__\routes.cpython-313.pyc  
+D:\projects softwares\custemer care1\custemer care\app\features\tenant_admin\__pycache__\__init__.cpython-313.pyc
+D:\projects softwares\custemer care1\custemer care\app\features\webhooks\__pycache__                             
+D:\projects softwares\custemer care1\custemer care\app\features\webhooks\__pycache__\routes.cpython-313.pyc      
+D:\projects softwares\custemer care1\custemer care\app\features\webhooks\__pycache__\__init__.cpython-313.pyc    
+D:\projects softwares\custemer care1\custemer care\app\features\workforce\__pycache__                            
+D:\projects softwares\custemer care1\custemer care\app\features\workforce\__pycache__\routes.cpython-313.pyc     
+D:\projects softwares\custemer care1\custemer care\app\features\workforce\__pycache__\__init__.cpython-313.pyc   
+D:\projects softwares\custemer care1\custemer care\app\models\__pycache__                                        
+D:\projects softwares\custemer care1\custemer care\app\models\__pycache__\campaigns.cpython-313.pyc              
+D:\projects softwares\custemer care1\custemer care\app\models\__pycache__\change_requests.cpython-313.pyc        
+D:\projects softwares\custemer care1\custemer care\app\models\__pycache__\modules.cpython-313.pyc                
+D:\projects softwares\custemer care1\custemer care\app\models\__pycache__\organization.cpython-313.pyc           
+D:\projects softwares\custemer care1\custemer care\app\models\__pycache__\platform.cpython-313.pyc               
+D:\projects softwares\custemer care1\custemer care\app\models\__pycache__\scripts.cpython-313.pyc                
+D:\projects softwares\custemer care1\custemer care\app\models\__pycache__\security.cpython-313.pyc               
+D:\projects softwares\custemer care1\custemer care\app\models\__pycache__\worker.cpython-313.pyc                 
+D:\projects softwares\custemer care1\custemer care\app\models\__pycache__\__init__.cpython-313.pyc               
+D:\projects softwares\custemer care1\custemer care\app\security\__pycache__                                      
+D:\projects softwares\custemer care1\custemer care\app\security\__pycache__\auth_protection.cpython-313.pyc      
+D:\projects softwares\custemer care1\custemer care\app\security\__pycache__\mfa.cpython-313.pyc                  
+D:\projects softwares\custemer care1\custemer care\app\security\__pycache__\rate_limit.cpython-313.pyc           
+D:\projects softwares\custemer care1\custemer care\app\security\__pycache__\routes.cpython-313.pyc               
+D:\projects softwares\custemer care1\custemer care\app\security\__pycache__\security_headers.cpython-313.pyc     
+D:\projects softwares\custemer care1\custemer care\app\security\__pycache__\session_manager.cpython-313.pyc      
+D:\projects softwares\custemer care1\custemer care\app\security\__pycache__\suspicious_activity.cpython-313.pyc  
+D:\projects softwares\custemer care1\custemer care\app\__pycache__                                               
+D:\projects softwares\custemer care1\custemer care\app\__pycache__\config.cpython-313.pyc                        
+D:\projects softwares\custemer care1\custemer care\app\__pycache__\extensions.cpython-313.pyc                    
+D:\projects softwares\custemer care1\custemer care\app\__pycache__\__init__.cpython-313.pyc                      
+D:\projects softwares\custemer care1\custemer care\migrations\__pycache__                                        
+D:\projects softwares\custemer care1\custemer care\migrations\__pycache__\env.cpython-313.pyc                    
+D:\projects softwares\custemer care1\custemer care\__pycache__                                                   
+D:\projects softwares\custemer care1\custemer care\__pycache__\app.cpython-313.pyc                               
+D:\projects softwares\custemer care1\custemer care\__pycache__\config.cpython-313.pyc                            
+D:\projects softwares\custemer care1\custemer care\__pycache__\run.cpython-313.pyc                               
+
+

@@ -1,0 +1,864 @@
+{% extends 'base.html' %}
+{% block title %}{{ module.name }} - Details{% endblock %}
+{% block content %}
+
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center gap-3 mb-5">
+    <div>
+        <div class="mb-1">
+            <a href="{{ url_for('worker.manage_groups', mid=module.id) }}"
+                class="text-muted text-decoration-none small text-uppercase fw-bold">
+                <i class="bi bi-chevron-left me-1"></i>Back to Groups
+            </a>
+        </div>
+        <h1 class="mb-0">{% if group %}{{ group.name }}{% else %}{{ module.name }} Configuration{% endif %}</h1>
+        <p class="text-muted mb-0">{% if group %}Group under <strong>{{ module.name }}</strong> module.{% else %}Field
+            structure management.{% endif %}</p>
+    </div>
+    {% if group %}
+    <div class="d-flex gap-3 align-items-center">
+        <button class="btn btn-outline-primary shadow-sm btn-auto-mobile" data-bs-toggle="modal"
+            data-bs-target="#addFieldModal">
+            Manage Fields
+        </button>
+        <button class="btn btn-primary shadow-sm btn-auto-mobile" data-bs-toggle="modal"
+            data-bs-target="#addRecordModal">
+            <i class="bi bi-plus-lg me-2"></i> Add Record
+        </button>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Search Bar -->
+<div class="mb-4 position-relative" style="max-width: 500px;">
+    <div class="d-flex align-items-center bg-white border rounded-pill px-3 py-2 shadow-sm overflow-hidden"
+        id="searchBarGroup">
+        <i class="bi bi-search text-muted me-2 small"></i>
+        <input type="text" id="recordSearchInput" class="form-control border-0 shadow-none p-0"
+            placeholder="Search records..." autocomplete="off"
+            style="font-size: 0.9rem; background-color: transparent; height: auto;">
+        <button class="btn btn-link text-muted p-0 border-0" id="clearSearchBtn" style="display: none;">
+            <i class="bi bi-x-circle-fill"></i>
+        </button>
+    </div>
+
+    <!-- Suggestions Dropdown -->
+    <div id="searchSuggestionsBox" class="position-absolute w-100 bg-white shadow-lg rounded-3 border mt-1"
+        style="display: none; z-index: 1050; max-height: 300px; overflow-y: auto;">
+        <!-- Suggestions will be injected here -->
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Data Records -->
+    <div class="col-12">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-3 border-bottom">
+                <h5 class="mb-0 fw-bold text-primary">Data Records {% if group %}<span
+                        class="badge bg-light text-dark ms-2">{{
+                        group.records|length }}</span>{% endif %}</h5>
+                {% if group %}
+                <div class="d-flex gap-2">
+                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                        data-bs-target="#importDataModal">
+                        <i class="bi bi-upload me-1"></i> Import
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-light border dropdown-toggle" type="button"
+                            data-bs-toggle="dropdown">
+                            <i class="bi bi-download me-1"></i> Export
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item"
+                                    href="{{ url_for('worker.export_data', gid=group.id, format='csv') }}"><i
+                                        class="bi bi-filetype-csv me-2"></i>Export CSV</a></li>
+                            <li><a class="dropdown-item"
+                                    href="{{ url_for('worker.export_data', gid=group.id, format='excel') }}"><i
+                                        class="bi bi-file-earmark-spreadsheet me-2"></i>Export Excel</a></li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0 text-nowrap">
+                    <thead class="bg-light">
+                        <tr>
+                            {% for f in fields %}
+                            <th class="text-uppercase small text-muted font-weight-bold">{{ f.name }}</th>
+                            {% endfor %}
+                            <th class="text-end text-uppercase small text-muted font-weight-bold">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if group %}
+                        {% for r in group.records %}
+                        <tr>
+                            {% for field in fields %}
+                            <td title="{{ r.field_values.get(field.id, '') }}">
+                                <div style="max-width: 200px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                                    {% set val_text = r.field_values.get(field.id, '') %}
+                                    {% if val_text %}
+                                    {% if field.field_type == 'file' %}
+                                    <a href="{{ url_for('static', filename=val_text) }}" target="_blank"
+                                        class="text-decoration-none">
+                                        <i class="bi bi-file-earmark-text me-1"></i> View File
+                                    </a>
+                                    {% else %}
+                                    {{ val_text }}
+                                    {% endif %}
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            {% endfor %}
+                            <td class="text-end">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button"
+                                        data-bs-toggle="dropdown">
+                                        Actions <i class="bi bi-chevron-down ms-1 small"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0">
+                                        <li>
+                                            <a class="dropdown-item" href="#"
+                                                onclick="viewRecord({{r.id}}); return false;">
+                                                <i class="bi bi-eye me-2 text-primary"></i> View Details
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="#"
+                                                onclick="editRecord({{r.id}}); return false;">
+                                                <i class="bi bi-pencil me-2 text-warning"></i> Edit Record
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <form
+                                                action="{{ url_for('worker.delete_record', gid=group.id if group else 0, rid=r.id) }}"
+                                                method="POST"
+                                                onsubmit="return confirm('Are you sure you want to delete this record?');"
+                                                style="display: inline;">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="dropdown-item text-danger">
+                                                    <i class="bi bi-trash me-2"></i> Delete Record
+                                                </button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="{{ fields|length + 2 }}" class="text-center py-5">
+                                <div class="mb-3">
+                                    <i class="bi bi-table display-4 text-muted opacity-25"></i>
+                                </div>
+                                {% if fields %}
+                                <div class="text-muted fw-bold">No records found</div>
+                                <div class="text-muted small mb-3">Click "Add Record" to start adding data.</div>
+                                {% else %}
+                                <div class="text-muted fw-bold mb-2">No data structure defined</div>
+                                <div class="text-muted small mb-3">Define your fields (columns) to start using this
+                                    module.</div>
+                                <button class="btn btn-sm btn-primary" data-bs-toggle="modal"
+                                    data-bs-target="#addFieldModal">
+                                    <i class="bi bi-plus-lg me-1"></i> Add your first Field
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Add Field / Determine Data Modal -->
+<div class="modal fade" id="addFieldModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Determine Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" style="max-height: 70vh; overflow-y: auto;">
+                <!-- Add New Field Form -->
+                <div class="p-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-muted small text-uppercase mb-0" id="fieldFormTitle">Add New Field</h6>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none text-muted"
+                            id="cancelEditBtn" style="display: none;" onclick="cancelEditField()">
+                            Cancel Edit
+                        </button>
+                    </div>
+
+                    <form method="post"
+                        action="{% if group %}{{ url_for('worker.add_group_field', gid=group.id) }}{% else %}{{ url_for('worker.add_field', mid=module.id) }}{% endif %}"
+                        id="fieldForm">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        <div class="mb-3">
+                            <label class="form-label">Field Name</label>
+                            <input name="name" id="fieldNameInput" class="form-control"
+                                placeholder="e.g. Customer Name, Invoice PDF" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Data Type</label>
+                            <select name="field_type" id="fieldTypeInput" class="form-select">
+                                <option value="text">Text (Single Line)</option>
+                                <option value="number">Number</option>
+                                <option value="phone">Phone Number</option>
+                                <option value="email">Email</option>
+                                <option value="date">Date</option>
+                                <option value="file">Document / Image (PDF, JPG)</option>
+                                <option value="language">Language Selector</option>
+                                <option value="calculated">Calculated Field</option>
+                                <option value="boolean">Boolean (Logic Field)</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_unique" id="isUniqueInput"
+                                    value="true">
+                                <label class="form-check-label" for="isUniqueInput">Unique Field (Prevent
+                                    Duplicates)</label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3" id="communicationToggleSection" style="display: none;">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="is_communication" id="isCommunicationInput"
+                                    value="true">
+                                <label class="form-check-label" for="isCommunicationInput">Use for Communication (WhatsApp/Calls)</label>
+                            </div>
+                        </div>
+
+                        <!-- Formula Builder (Calculated Field) -->
+                        <div id="formulaBuilderSection" style="display: none;" class="mb-3 p-3 bg-light rounded border">
+                            <label class="form-label fw-bold">Formula Builder</label>
+                            <textarea name="formula" id="formulaInput" class="form-control mb-2" rows="2"
+                                placeholder="e.g. {mark1} + {mark2}"></textarea>
+                            <div class="small text-muted mb-2">Available Fields:</div>
+                            <div class="d-flex flex-wrap gap-1" id="availableFieldsFormula">
+                                {% for f in fields %}
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="insertPlaceholder('{{f.name}}', 'formulaInput')">{ {{f.name}} }</button>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Logic Builder (Boolean Field) -->
+                        <div id="logicBuilderSection" style="display: none;" class="mb-3 p-3 bg-light rounded border">
+                            <label class="form-label fw-bold">Logic Builder</label>
+                            <div class="mb-2">
+                                <select id="logicOperator" class="form-select form-select-sm mb-2" style="width: auto;">
+                                    <option value="AND">Match ALL (AND)</option>
+                                    <option value="OR">Match ANY (OR)</option>
+                                </select>
+                            </div>
+                            <div id="conditionsList">
+                                <!-- Conditions will be added here -->
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="addCondition()">+
+                                Add Condition</button>
+
+                            <input type="hidden" name="logic" id="logicValue">
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" id="fieldSubmitBtn">Add Field</button>
+                            <button type="button" class="btn btn-primary" onclick="toggleManageFields()">
+                                <i class="bi bi-pencil-square me-2"></i> Edit Fields
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Existing Fields List (Hidden by default) -->
+                <div class="p-3 bg-light" id="manageFieldsSection" style="display: none;">
+                    <h6 class="fw-bold text-muted small text-uppercase mb-3">Manage Fields</h6>
+                    <ul class="list-group shadow-sm">
+                        {% for f in fields %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold">{{ f.name }}</span>
+                                <span class="badge bg-light text-muted border ms-2">{{ f.field_type|capitalize }}</span>
+                                {% if f.meta and f.meta.get('is_communication') %}
+                                <span class="badge bg-success ms-1 small"><i class="bi bi-chat-dots-fill me-1"></i>Comm</span>
+                                {% endif %}
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-light text-primary border-0"
+                                    onclick="editField({{f.id}}, '{{f.name}}', '{{f.field_type}}', {{f.is_unique|lower}}, {{ 'true' if f.meta and f.meta.get('is_communication') else 'false' }})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <form
+                                    action="{% if group %}{{ url_for('worker.delete_group_field', gid=group.id, fid=f.id) }}{% else %}{{ url_for('worker.delete_field', mid=module.id, fid=f.id) }}{% endif %}"
+                                    method="POST"
+                                    onsubmit="return confirm('Delete field {{f.name}}? All data for this field will be lost.');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-sm btn-light text-danger border-0">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                        {% else %}
+                        <li class="list-group-item text-muted small text-center py-3">No fields defined. Add one below.
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <script>
+                    const fieldTypeInput = document.getElementById('fieldTypeInput');
+                    const formulaSection = document.getElementById('formulaBuilderSection');
+                    const logicSection = document.getElementById('logicBuilderSection');
+                    const commSection = document.getElementById('communicationToggleSection');
+
+                    fieldTypeInput.addEventListener('change', function () {
+                        formulaSection.style.display = this.value === 'calculated' ? 'block' : 'none';
+                        logicSection.style.display = this.value === 'boolean' ? 'block' : 'none';
+                        commSection.style.display = this.value === 'phone' ? 'block' : 'none';
+                    });
+
+                    function insertPlaceholder(name, inputId) {
+                        const input = document.getElementById(inputId);
+                        const start = input.selectionStart;
+                        const end = input.selectionEnd;
+                        const text = input.value;
+                        const before = text.substring(0, start);
+                        const after = text.substring(end, text.length);
+                        input.value = before + `{${name}}` + after;
+                        input.focus();
+                        input.selectionStart = input.selectionEnd = start + name.length + 2;
+                    }
+
+                    function addCondition() {
+                        const list = document.getElementById('conditionsList');
+                        const index = list.children.length;
+                        const div = document.createElement('div');
+                        div.className = 'd-flex gap-2 mb-2 align-items-center condition-row';
+                        div.innerHTML = `
+                            <select class="form-select form-select-sm cond-field">
+                                {% for f in fields %}
+                                <option value="{{f.name}}">{{f.name}}</option>
+                                {% endfor %}
+                            </select>
+                            <select class="form-select form-select-sm cond-op" style="width: 80px;">
+                                <option value=">">></option>
+                                <option value="<"><</option>
+                                <option value="==">==</option>
+                                <option value=">=">>=</option>
+                                <option value="<="><=</option>
+                                <option value="contains">Contains</option>
+                            </select>
+                            <input type="text" class="form-control form-control-sm cond-val" placeholder="Value">
+                            <button type="button" class="btn btn-sm text-danger" onclick="this.parentElement.remove()">×</button>
+                        `;
+                        list.appendChild(div);
+                    }
+
+                    // Action checkboxes changed - no message template to show here anymore
+                    // We remove the listener or keep it empty if we want to add other logic later
+
+                    document.getElementById('fieldForm').addEventListener('submit', function (e) {
+                        if (fieldTypeInput.value === 'boolean') {
+                            const logic = {
+                                operator: document.getElementById('logicOperator').value,
+                                conditions: Array.from(document.querySelectorAll('.condition-row')).map(row => ({
+                                    field: row.querySelector('.cond-field').value,
+                                    op: row.querySelector('.cond-op').value,
+                                    value: row.querySelector('.cond-val').value
+                                }))
+                            };
+                            document.getElementById('logicValue').value = JSON.stringify(logic);
+                        }
+                    });
+
+                    function toggleManageFields() {
+                        const section = document.getElementById('manageFieldsSection');
+                        if (section.style.display === 'none') {
+                            section.style.display = 'block';
+                        } else {
+                            section.style.display = 'none';
+                        }
+                    }
+                </script>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    function viewRecord(rid) {
+        const modal = new bootstrap.Modal(document.getElementById('viewRecordModal'));
+        modal.show();
+
+        const content = document.getElementById('viewRecordContent');
+        content.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+
+        fetch(`{{ url_for('worker.get_record', gid=group.id if group else 0, rid=0) }}`.replace('0', rid))
+            .then(r => r.json())
+            .then(data => {
+                let html = '<div class="list-group list-group-flush">';
+
+                // We need field names. Since they are in Jinja variable 'module.fields',
+                // we can reconstruct them here or pass them in data.
+                // Simplest is to iterate module.fields in JS using Jinja loop:
+                const fields = [
+                    {% for f in fields %}
+                { id: {{ f.id }}, name: "{{f.name}}", type: "{{f.field_type}}" },
+    {% endfor %}
+            ];
+
+    fields.forEach(f => {
+        let val = data.values[f.id] || '-';
+        if (f.type === 'file' && val !== '-') {
+            val = `<a href="/static/${val}" target="_blank" class="text-decoration-none"><i class="bi bi-paperclip"></i> View File</a>`;
+        }
+        html += `
+                <div class="list-group-item px-0">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">${f.name}</small>
+                    <div class="mt-1">${val}</div>
+                </div>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+        })
+    }
+
+    function editField(id, name, type, isUnique, isCommunication) {
+        // Change Title
+        document.getElementById('fieldFormTitle').innerText = 'Edit Field';
+        document.getElementById('fieldFormTitle').classList.add('text-primary');
+
+        // Show Cancel Button
+        document.getElementById('cancelEditBtn').style.display = 'block';
+
+        // Fill Inputs
+        document.getElementById('fieldNameInput').value = name;
+        document.getElementById('fieldTypeInput').value = type;
+        document.getElementById('fieldTypeInput').dispatchEvent(new Event('change'));
+        document.getElementById('isUniqueInput').checked = isUnique;
+        document.getElementById('isCommunicationInput').checked = isCommunication || false;
+
+        // Handle Formula/Logic Meta
+        // We'll need to fetch the field metadata to populate the builder
+        // For simplicity, we can pass it as a fourth argument if we update the template loop
+        // OR we can fetch it via API. Let's assume we update the template loop.
+
+        // Change Button Text
+        document.getElementById('fieldSubmitBtn').innerText = 'Update Field';
+        document.getElementById('fieldSubmitBtn').classList.remove('btn-primary');
+        document.getElementById('fieldSubmitBtn').classList.add('btn-warning');
+
+        // Change Form Action
+        const form = document.getElementById('fieldForm');
+        {% if group %}
+        form.action = `{{ url_for('worker.update_group_field', gid=group.id, fid=0) }}`.replace('0', id);
+        {% else %}
+        form.action = `{{ url_for('worker.update_field', mid=module.id, fid=0) }}`.replace('0', id);
+        {% endif %}
+    }
+
+    function cancelEditField() {
+        // Reset Title
+        document.getElementById('fieldFormTitle').innerText = 'Add New Field';
+        document.getElementById('fieldFormTitle').classList.remove('text-primary');
+
+        // Hide Cancel Button
+        document.getElementById('cancelEditBtn').style.display = 'none';
+
+        // Reset Inputs
+        document.getElementById('fieldNameInput').value = '';
+        document.getElementById('fieldTypeInput').value = 'text';
+        document.getElementById('fieldTypeInput').dispatchEvent(new Event('change'));
+        document.getElementById('isUniqueInput').checked = false;
+        document.getElementById('isCommunicationInput').checked = false;
+
+        // Reset Button Text
+        document.getElementById('fieldSubmitBtn').innerText = 'Add Field';
+        document.getElementById('fieldSubmitBtn').classList.add('btn-primary');
+        document.getElementById('fieldSubmitBtn').classList.remove('btn-warning');
+
+        // Reset Form Action
+        const form = document.getElementById('fieldForm');
+        {% if group %}
+        form.action = `{{ url_for('worker.add_group_field', gid=group.id) }}`;
+        {% else %}
+        form.action = `{{ url_for('worker.add_field', mid=module.id) }}`;
+        {% endif %}
+    }
+</script>
+
+<!-- Add RecordModal -->
+<div class="modal fade" id="addRecordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <form method="post" action="{{ url_for('worker.add_record', gid=group.id if group else 0) }}"
+                enctype="multipart/form-data" class="needs-validation">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    {% if not fields %}
+                    <div class="alert alert-warning">Please define fields before adding data.</div>
+                    {% else %}
+                    {% for f in fields %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ f.name }}</label>
+                        {% if f.field_type == 'language' %}
+                        <select name="field_{{f.id}}" class="form-select">
+                            <option value="English">English</option>
+                            <option value="Hindi">Hindi</option>
+                            <option value="Kannada">Kannada</option>
+                            <option value="Tamil">Tamil</option>
+                            <option value="Telugu">Telugu</option>
+                            <option value="Malayalam">Malayalam</option>
+                            <option value="Marathi">Marathi</option>
+                        </select>
+                        {% elif f.field_type == 'dropdown' %}
+                        <!-- Placeholder for generic dropdown options -->
+                        <input name="field_{{f.id}}" class="form-control" placeholder="Enter value...">
+                        {% elif f.field_type == 'file' %}
+                        <input type="file" name="field_{{f.id}}" class="form-control">
+                        <div class="form-text small">Upload PDF, PNG, or JPG</div>
+                        {% elif f.field_type == 'calculated' or f.field_type == 'boolean' %}
+                        <input class="form-control" value="System Calculated" readonly disabled>
+                        <input type="hidden" name="field_{{f.id}}" value="">
+                        {% else %}
+                        <input name="field_{{f.id}}"
+                            type="{{ 'email' if f.field_type=='email' else 'tel' if f.field_type=='phone' else 'number' if f.field_type=='number' else 'date' if f.field_type=='date' else 'text' }}"
+                            data-validate="{{ 'email' if f.field_type=='email' else 'phone' if f.field_type=='phone' else 'numeric' if f.field_type=='number' else '' }}"
+                            {% if f.is_unique %}data-unique-id="{{f.id}}" {% endif %} class="form-control"
+                            placeholder="{{ f.name }}" required>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                    {% endif %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary" {% if not fields %}disabled{% endif %}>Save
+                        Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Import Data Modal -->
+<div class="modal fade" id="importDataModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <form method="post" action="{{ url_for('worker.import_data', gid=group.id if group else 0) }}"
+                enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk Import Data</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Step 1: Download Template</label>
+                        <div class="d-flex gap-3">
+                            <a href="{{ url_for('worker.export_template', gid=group.id if group else 0, format='csv') }}"
+                                class="btn btn-outline-dark flex-fill">
+                                <i class="bi bi-filetype-csv me-2"></i> Download CSV
+                            </a>
+                            <a href="{{ url_for('worker.export_template', gid=group.id if group else 0, format='excel') }}"
+                                class="btn btn-outline-success flex-fill">
+                                <i class="bi bi-file-earmark-excel me-2"></i> Download Excel
+                            </a>
+                        </div>
+                        <div class="form-text mt-2">The template contains all your field headers.</div>
+                    </div>
+
+                    <hr>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Step 2: Upload Files</label>
+                        <input type="file" name="file" class="form-control" accept=".csv, .xlsx, .xls" required>
+                        <div class="form-text">Upload your filled CSV or Excel file here.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary">Import Data</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Record Modal -->
+<div class="modal fade" id="viewRecordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Record Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="viewRecordContent" style="max-height: 60vh; overflow-y: auto;">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="printRecord()">
+                    <i class="bi bi-printer me-2"></i> Print Details
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Record Modal -->
+<div class="modal fade" id="editRecordModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <form id="editRecordForm" method="post" enctype="multipart/form-data" class="needs-validation">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    {% for f in fields %}
+                    <div class="mb-3">
+                        <label class="form-label">{{ f.name }}</label>
+                        {% if f.field_type == 'language' %}
+                        <select name="field_{{f.id}}" class="form-select edit-field" data-fid="{{f.id}}">
+                            <option value="English">English</option>
+                            <option value="Hindi">Hindi</option>
+                            <option value="Kannada">Kannada</option>
+                            <option value="Tamil">Tamil</option>
+                            <option value="Telugu">Telugu</option>
+                            <option value="Malayalam">Malayalam</option>
+                            <option value="Marathi">Marathi</option>
+                        </select>
+                        {% elif f.field_type == 'dropdown' %}
+                        <input name="field_{{f.id}}" class="form-control edit-field" data-fid="{{f.id}}">
+                        {% elif f.field_type == 'file' %}
+                        <input type="file" name="field_{{f.id}}" class="form-control">
+                        <div class="form-text small">Upload new file to replace existing one.</div>
+                        {% elif f.field_type == 'calculated' or f.field_type == 'boolean' %}
+                        <input class="form-control edit-field" data-fid="{{f.id}}" readonly disabled>
+                        <input type="hidden" name="field_{{f.id}}" class="edit-field-hidden" data-fid="{{f.id}}">
+                        {% else %}
+                        <input name="field_{{f.id}}" class="form-control edit-field" data-fid="{{f.id}}"
+                            type="{{ 'email' if f.field_type=='email' else 'tel' if f.field_type=='phone' else 'number' if f.field_type=='number' else 'date' if f.field_type=='date' else 'text' }}"
+                            data-validate="{{ 'email' if f.field_type=='email' else 'phone' if f.field_type=='phone' else 'numeric' if f.field_type=='number' else '' }}"
+                            {% if f.is_unique %}data-unique-id="{{f.id}}" {% endif %} required>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function viewRecord(rid) {
+        const modal = new bootstrap.Modal(document.getElementById('viewRecordModal'));
+        modal.show();
+
+        const content = document.getElementById('viewRecordContent');
+        content.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+
+        fetch(`{{ url_for('worker.get_record', gid=group.id if group else 0, rid=0) }}`.replace('0', rid))
+            .then(r => r.json())
+            .then(data => {
+                let html = '<div class="list-group list-group-flush">';
+
+                // We need field names. Since they are in Jinja variable 'module.fields',
+                // we can reconstruct them here or pass them in data.
+                // Simplest is to iterate module.fields in JS using Jinja loop:
+                const fields = [
+                    {% for f in fields %}
+                { id: {{ f.id }}, name: "{{f.name}}", type: "{{f.field_type}}" },
+    {% endfor %}
+            ];
+
+    fields.forEach(f => {
+        let val = data.values[f.id] || '-';
+        if (f.type === 'file' && val !== '-') {
+            val = `<a href="/static/${val}" target="_blank" class="text-decoration-none"><i class="bi bi-paperclip"></i> View File</a>`;
+        }
+        html += `
+                <div class="list-group-item px-0">
+                    <small class="text-muted text-uppercase fw-bold" style="font-size: 0.75rem;">${f.name}</small>
+                    <div class="mt-1">${val}</div>
+                </div>`;
+    });
+    html += '</div>';
+    content.innerHTML = html;
+        })
+        .catch (e => {
+        content.innerHTML = '<div class="alert alert-danger">Error loading data</div>';
+    });
+}
+
+    function editRecord(rid) {
+        const modal = new bootstrap.Modal(document.getElementById('editRecordModal'));
+        modal.show();
+
+        // Set Form Action
+        const form = document.getElementById('editRecordForm');
+        form.action = `{{ url_for('worker.update_record', gid=group.id if group else 0, rid=0) }}`.replace('0', rid);
+        form.reset();
+
+        fetch(`{{ url_for('worker.get_record', gid=group.id if group else 0, rid=0) }}`.replace('0', rid))
+            .then(r => r.json())
+            .then(data => {
+                // Populate inputs
+                document.querySelectorAll('.edit-field').forEach(input => {
+                    input.setAttribute('data-record-id', rid); // For uniqueness check
+                    const fid = input.dataset.fid;
+                    if (data.values[fid]) {
+                        input.value = data.values[fid];
+                    }
+                });
+            });
+    }
+
+    function printRecord() {
+        const content = document.getElementById('viewRecordContent').innerHTML;
+        const win = window.open('', '', 'height=600,width=800');
+        win.document.write('<html><head><title>Print Record</title>');
+        // Add basic styles
+        win.document.write('<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">');
+        win.document.write('</head><body class="p-4">');
+        win.document.write('<h4>Record Details</h4>');
+        win.document.write(content);
+        win.document.write('</body></html>');
+        win.document.close();
+        win.focus();
+        setTimeout(() => { win.print(); }, 500); // Wait for styles
+    }
+
+    // Real-time Record Search with Suggestions
+    const searchInput = document.getElementById('recordSearchInput');
+    const suggestionsBox = document.getElementById('searchSuggestionsBox');
+    const clearBtn = document.getElementById('clearSearchBtn');
+
+    searchInput.addEventListener('input', function () {
+        const query = this.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('tbody tr');
+        let visibleCount = 0;
+        let suggestionsHTML = '';
+
+        // Toggle clear button
+        clearBtn.style.display = query !== '' ? 'block' : 'none';
+
+        if (query === '') {
+            suggestionsBox.style.display = 'none';
+            rows.forEach(row => {
+                if (!row.querySelector('td[colspan]')) row.style.display = '';
+            });
+            updateBadge("{% if group %}{{ group.records|length }}{% else %}0{% endif %}");
+            return;
+        }
+
+        let matches = [];
+        rows.forEach(row => {
+            if (row.querySelector('td[colspan]')) return;
+
+            const cells = Array.from(row.querySelectorAll('td')).slice(0, -1); // Exclude Actions
+            const textContent = cells.map(c => c.textContent.trim()).join(' ');
+            const isMatch = textContent.toLowerCase().includes(query);
+
+            if (isMatch) {
+                row.style.display = '';
+                visibleCount++;
+
+                // Collect match snippet for suggestions
+                const firstVal = cells[0].textContent.trim();
+                const secondVal = cells[1] ? cells[1].textContent.trim() : '';
+                matches.push({
+                    title: firstVal,
+                    subtitle: secondVal,
+                    element: row
+                });
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        // Populate suggestions
+        if (matches.length > 0) {
+            suggestionsBox.style.display = 'block';
+            matches.slice(0, 5).forEach(m => {
+                suggestionsHTML += `
+                    <div class="p-2 px-3 suggestion-item d-flex align-items-center cursor-pointer border-bottom-0" 
+                         onclick="selectSuggestion('${m.title}')"
+                         style="cursor: pointer; transition: background 0.2s;">
+                        <i class="bi bi-clock-history text-muted me-3"></i>
+                        <div>
+                            <div class="fw-bold small">${m.title}</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">${m.subtitle}</div>
+                        </div>
+                    </div>`;
+            });
+            suggestionsBox.innerHTML = suggestionsHTML;
+        } else {
+            suggestionsBox.style.display = 'none';
+        }
+
+        updateBadge(visibleCount);
+    });
+
+    function selectSuggestion(val) {
+        searchInput.value = val;
+        // Trigger input event to filter table
+        searchInput.dispatchEvent(new Event('input'));
+        suggestionsBox.style.display = 'none';
+    }
+
+    function updateBadge(count) {
+        const badge = document.querySelector('.card-header .badge');
+        if (badge) badge.textContent = count;
+    }
+
+    clearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input'));
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+            suggestionsBox.style.display = 'none';
+        }
+    });
+
+    // Simple hover effect for suggestions
+    document.addEventListener('mouseover', (e) => {
+        if (e.target.closest('.suggestion-item')) {
+            e.target.closest('.suggestion-item').style.backgroundColor = '#f8f9fa';
+        }
+    });
+    document.addEventListener('mouseout', (e) => {
+        if (e.target.closest('.suggestion-item')) {
+            e.target.closest('.suggestion-item').style.backgroundColor = 'transparent';
+        }
+    });
+</script>
+{% endblock %}

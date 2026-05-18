@@ -1,0 +1,173 @@
+{% extends 'base.html' %}
+{% block title %}Manage Subscription Plans{% endblock %}
+{% block content %}
+<div class="org-detail-container animate-in">
+    <!-- Breadcrumb Row -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ul class="breadcrumb-premium d-flex align-items-center mb-0 p-0">
+                    <li class="breadcrumb-item-premium">
+                        <a href="{{ url_for('super_admin.dashboard') }}">
+                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50"><i
+                            class="bi bi-chevron-right small"></i></li>
+                    <li class="breadcrumb-item-premium active fw-bold text-dark">
+                        Plan Settings
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Add/Edit Plan Form -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm p-4 sticky-top" style="top: 20px;">
+                <h3 class="h5 fw-bold mb-4 text-primary"><i class="bi bi-plus-circle me-2"></i> Configure Plan</h3>
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="plan_id" id="plan_id">
+
+                    <div class="mb-3">
+                        <label class="detail-label">Plan Name</label>
+                        <input type="text" name="name" id="name" class="form-control" placeholder="e.g. Pro Monthly"
+                            required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="detail-label">Price (INR)</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-0 text-muted">₹</span>
+                            <input type="number" step="0.01" name="price" id="price" class="form-control"
+                                placeholder="0.00" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="detail-label">Billing Interval</label>
+                        <select name="billing_interval" id="billing_interval" class="form-select">
+                            <option value="monthly">Monthly</option>
+                            <option value="yearly">Yearly</option>
+                            <option value="one-time">One-time</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="detail-label">Description</label>
+                        <textarea name="description" id="description" class="form-control" rows="2"
+                            placeholder="Brief tagline..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="detail-label">Features (Comma separated)</label>
+                        <textarea name="features" id="features" class="form-control" rows="3"
+                            placeholder="Feature 1, Feature 2, ..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
+                        <i class="bi bi-save me-2"></i> Save Plan
+                    </button>
+                    <button type="button" onclick="resetForm()" class="btn btn-light w-100 fw-bold mt-2 btn-sm">Clear
+                        Form</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Active Plans List -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                    <h3 class="h5 fw-bold mb-0 text-primary"><i class="bi bi-stack me-2"></i> Active Plans</h3>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3">{{ plans|length }} Tiers</span>
+                </div>
+
+                <div class="row g-3">
+                    {% for plan in plans %}
+                    <div class="col-md-6 col-xl-4">
+                        <div class="stats-card-premium p-4 h-100 position-relative 
+                            {% if 'pro' in plan.name|lower %}plan-card-pro
+                            {% elif 'enterprise' in plan.name|lower %}plan-card-enterprise
+                            {% else %}plan-card-basic{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div class="stats-icon-circle bg-primary-subtle text-primary">
+                                    <i class="bi bi-gem"></i>
+                                </div>
+                                <div class="dropdown">
+                                    <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                                        <li><a class="dropdown-item" href="javascript:void(0)"
+                                                onclick='editPlan({{ plan.to_dict()|tojson }})'><i
+                                                    class="bi bi-pencil me-2"></i>Edit</a></li>
+                                        <li>
+                                            <hr class="dropdown-divider">
+                                        </li>
+                                        <li>
+                                            <form action="{{ url_for('super_admin.delete_plan', plan_id=plan.id) }}"
+                                                method="POST" onsubmit="return confirm('Delete this plan?')">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                <button type="submit" class="dropdown-item text-danger"><i
+                                                        class="bi bi-trash me-2"></i>Delete</button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <h4 class="h5 fw-bold mb-1">{{ plan.name }}</h4>
+                            <div class="display-6 fw-bold text-dark mb-0">₹{{ "%.2f"|format(plan.price) }}</div>
+                            <div class="text-muted small text-uppercase fw-bold mb-3">/ {{ plan.billing_interval }}
+                            </div>
+
+                            <p class="small text-muted mb-3">{{ plan.description or 'No description provided.' }}</p>
+
+                            <div class="plan-features">
+                                <label class="detail-label x-small">Included Features:</label>
+                                {% for feat in plan.features %}
+                                <div class="small fw-semibold text-dark mb-1"><i
+                                        class="bi bi-check2 text-success me-2"></i>{{ feat }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    {% if not plans %}
+                    <div class="col-12 text-center py-5">
+                        <i class="bi bi-clipboard-x display-1 text-muted opacity-25"></i>
+                        <p class="text-muted mt-3">No subscription plans created yet.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function editPlan(plan) {
+        document.getElementById('plan_id').value = plan.id;
+        document.getElementById('name').value = plan.name;
+        document.getElementById('price').value = plan.price;
+        document.getElementById('billing_interval').value = plan.billing_interval;
+        document.getElementById('description').value = plan.description || '';
+        document.getElementById('features').value = plan.features ? plan.features.join(', ') : '';
+
+        // Scroll to form
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function resetForm() {
+        document.getElementById('plan_id').value = '';
+        document.getElementById('name').value = '';
+        document.getElementById('price').value = '';
+        document.getElementById('billing_interval').value = 'monthly';
+        document.getElementById('description').value = '';
+        document.getElementById('features').value = '';
+    }
+</script>
+{% endblock %}

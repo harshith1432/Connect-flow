@@ -1,0 +1,231 @@
+{% extends 'base_auth_premium.html' %}
+
+{% block title %}Verify Secure Code | ConnectFlow{% endblock %}
+
+{% block head_extra %}
+<style>
+    .otp-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    .otp-inputs {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin: 1.5rem 0;
+    }
+    .otp-field {
+        width: 3.5rem;
+        height: 4rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+        color: #ffffff;
+        font-size: 1.75rem;
+        font-weight: 700;
+        text-align: center;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        font-family: 'Outfit', sans-serif;
+    }
+    .otp-field:focus {
+        border-color: #45f3ff;
+        background: rgba(69, 243, 255, 0.05);
+        box-shadow: 0 0 20px rgba(69, 243, 255, 0.2);
+        outline: none;
+    }
+    .resend-container {
+        text-align: center;
+        margin-top: 1.5rem;
+        font-size: 0.9rem;
+        color: #8892b0;
+    }
+    .resend-btn {
+        color: #45f3ff;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        padding: 0;
+        transition: color 0.2s;
+    }
+    .resend-btn:hover {
+        color: #ffffff;
+        text-decoration: underline;
+    }
+    .resend-btn:disabled {
+        color: #4b5563;
+        cursor: not-allowed;
+        text-decoration: none;
+    }
+    .hidden-input {
+        position: absolute;
+        opacity: 0;
+        z-index: -1;
+    }
+</style>
+{% endblock %}
+
+{% block hero_content %}
+<h2>Polymorphic Security.</h2>
+<p class="tagline">Protecting administrative, operational, and worker roles through active cryptographic identity checking.</p>
+{% endblock %}
+
+{% block auth_header %}
+<h3>Verify Your Identity</h3>
+<p>
+    {% if mfa_method == 'totp' %}
+        Enter the 6-digit code from your authenticator application.
+    {% elif mfa_method == 'sms' %}
+        We have sent a verification code to your phone ending in <strong>{{ masked_phone }}</strong>.
+    {% else %}
+        We have sent a verification code to your email <strong>{{ masked_email }}</strong>.
+    {% endif %}
+</p>
+{% endblock %}
+
+{% block content %}
+<form method="POST" action="{{ url_for('security.verify_otp') }}" id="otp-form" class="otp-container">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    
+    <!-- Hidden input to hold the actual complete code -->
+    <input type="text" id="otp_code" name="otp_code" maxlength="6" pattern="[A-Z0-9]{6}" required autocomplete="off" class="hidden-input">
+    
+    <div class="otp-inputs">
+        <input type="text" class="otp-field" maxlength="1" pattern="[A-Z0-9]" inputmode="text" required>
+        <input type="text" class="otp-field" maxlength="1" pattern="[A-Z0-9]" inputmode="text" required disabled>
+        <input type="text" class="otp-field" maxlength="1" pattern="[A-Z0-9]" inputmode="text" required disabled>
+        <input type="text" class="otp-field" maxlength="1" pattern="[A-Z0-9]" inputmode="text" required disabled>
+        <input type="text" class="otp-field" maxlength="1" pattern="[A-Z0-9]" inputmode="text" required disabled>
+        <input type="text" class="otp-field" maxlength="1" pattern="[A-Z0-9]" inputmode="text" required disabled>
+    </div>
+    
+    <button type="submit" class="premium-btn" style="width: 100%;">
+        <span class="btn-text">Complete Secure Login <i class="bi bi-shield-check"></i></span>
+    </button>
+    
+    {% if mfa_method != 'totp' %}
+    <div class="resend-container">
+        Didn't receive the code? 
+        <button type="button" id="resend-btn" class="resend-btn" onclick="triggerResend()">Resend Code</button>
+        <span id="cooldown-timer" style="display: none;">(Resend in <span id="seconds">60</span>s)</span>
+    </div>
+    {% endif %}
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const fields = document.querySelectorAll(".otp-field");
+        const hiddenInput = document.getElementById("otp_code");
+        const form = document.getElementById("otp-form");
+
+        // Focus first field
+        fields[0].focus();
+
+        fields.forEach((field, index) => {
+            field.addEventListener("input", function(e) {
+                // Keep only alphanumeric characters and uppercase
+                let val = field.value.toUpperCase();
+                field.value = val;
+
+                if (val && index < fields.length - 1) {
+                    fields[index + 1].disabled = false;
+                    fields[index + 1].focus();
+                }
+
+                updateHiddenValue();
+            });
+
+            field.addEventListener("keydown", function(e) {
+                if (e.key === "Backspace") {
+                    if (!field.value && index > 0) {
+                        fields[index].disabled = true;
+                        fields[index - 1].focus();
+                        fields[index - 1].value = "";
+                    } else {
+                        field.value = "";
+                    }
+                    updateHiddenValue();
+                }
+            });
+
+            // Handle paste event
+            field.addEventListener("paste", function(e) {
+                e.preventDefault();
+                let pasteData = (e.clipboardData || window.clipboardData).getData("text").trim().toUpperCase();
+                if (pasteData.length === 6) {
+                    hiddenInput.value = pasteData;
+                    fields.forEach((f, i) => {
+                        f.disabled = false;
+                        f.value = pasteData[i];
+                    });
+                    fields[5].focus();
+                }
+            });
+        });
+
+        function updateHiddenValue() {
+            let combined = "";
+            fields.forEach(f => {
+                combined += f.value;
+            });
+            hiddenInput.value = combined;
+        }
+
+        // Form validation
+        form.addEventListener("submit", function(e) {
+            updateHiddenValue();
+            if (hiddenInput.value.length !== 6) {
+                e.preventDefault();
+                alert("Please enter all 6 characters.");
+            }
+        });
+    });
+
+    function triggerResend() {
+        const resendBtn = document.getElementById("resend-btn");
+        const timerSpan = document.getElementById("cooldown-timer");
+        const secondsSpan = document.getElementById("seconds");
+        const csrfToken = "{{ csrf_token() }}";
+
+        resendBtn.disabled = true;
+        timerSpan.style.display = "inline";
+
+        // Ajax post request to resend-otp
+        fetch("{{ url_for('security.resend_otp') }}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert("A fresh security code has been sent.");
+            } else {
+                alert("Failed to resend: " + data.message);
+            }
+        })
+        .catch(err => {
+            console.error("Resend error:", err);
+            alert("Error sending request. Please try again.");
+        });
+
+        let cooldown = 60;
+        secondsSpan.innerText = cooldown;
+        const interval = setInterval(() => {
+            cooldown--;
+            secondsSpan.innerText = cooldown;
+            if (cooldown <= 0) {
+                clearInterval(interval);
+                resendBtn.disabled = false;
+                timerSpan.style.display = "none";
+            }
+        }, 1000);
+    }
+</script>
+{% endblock %}

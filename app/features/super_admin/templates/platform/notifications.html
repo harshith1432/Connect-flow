@@ -1,0 +1,237 @@
+{% extends 'base.html' %}
+{% block title %}Activity Feed{% endblock %}
+{% block content %}
+<div class="mb-4">
+    <div class="d-flex justify-between items-center">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ul class="breadcrumb-premium d-flex align-items-center mb-0 p-0">
+                    <li class="breadcrumb-item-premium">
+                        <a href="{{ url_for('super_admin.dashboard') }}">
+                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50">
+                        <i class="bi bi-chevron-right small"></i>
+                    </li>
+                    <li class="breadcrumb-item-premium active fw-bold text-dark">
+                        Notifications
+                    </li>
+                </ul>
+            </nav>
+            <h1 class="mt-2">Activity Feed</h1>
+            <p style="color: var(--text-muted);">Real-time updates across the platform</p>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-body p-0">
+                {% if notifications %}
+                <div class="notification-feed">
+                    {% for n in notifications %}
+                    <a href="{{ n.link if n.link else '#' }}"
+                        class="notification-item d-flex align-items-center p-3 text-decoration-none {% if not n.is_read %}unread{% endif %}"
+                        style="border-bottom: 1px solid #f1f5f9; transition: background-color 0.2s;">
+
+                        <!-- Organization Avatar -->
+                        <div class="notification-avatar me-3">
+                            {% if n.organization and n.organization.logo_url %}
+                            <img src="{{ url_for('static', filename=n.organization.logo_url) }}"
+                                alt="{{ n.organization.name }}" class="rounded-circle"
+                                style="width: 44px; height: 44px; object-fit: cover; border: 2px solid #f1f5f9;">
+                            {% else %}
+                            <div class="avatar-placeholder rounded-circle d-flex align-items-center justify-content-center"
+                                style="width: 44px; height: 44px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; font-weight: 700; font-size: 1.1rem; border: 2px solid #f1f5f9;">
+                                {{ n.organization.name[0]|upper if n.organization else 'P' }}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Notification Content -->
+                        <div class="flex-grow-1" style="min-width: 0;">
+                            <div class="notification-text">
+                                {% if n.organization %}
+                                <span class="fw-bold text-dark">{{ n.organization.name }}</span>
+                                {% endif %}
+
+                                <span class="text-secondary">
+                                    {% if n.type == 'number_request' %}
+                                    requested a new <strong>{{ n.message.split('requested a')[1].split('number')[0] if
+                                        'requested a' in n.message else 'communication' }}</strong> number
+                                    {% elif n.type == 'profile_change' %}
+                                    requested to change <strong>{{ n.title.replace('Profile Change:', '').strip()
+                                        }}</strong>
+                                    {% elif n.type == 'subscription' %}
+                                    {{ n.message.lower() }}
+                                    {% elif n.type == 'worker_added' %}
+                                    added a new worker
+                                    {% elif n.type == 'campaign_started' %}
+                                    started a new campaign
+                                    {% else %}
+                                    {{ n.message }}
+                                    {% endif %}
+                                </span>
+
+                                <span class="notification-time text-muted ms-2" style="font-size: 0.85rem;">
+                                    {{ n.created_at.strftime('%d %b') }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Activity Icon -->
+                        <div class="notification-icon ms-3">
+                            {% if n.type == 'number_request' %}
+                            <div class="icon-circle bg-primary-subtle text-primary">
+                                <i class="bi bi-telephone-plus-fill"></i>
+                            </div>
+                            {% elif n.type == 'profile_change' %}
+                            <div class="icon-circle bg-warning-subtle text-warning">
+                                <i class="bi bi-pencil-fill"></i>
+                            </div>
+                            {% elif n.type == 'subscription' %}
+                            <div class="icon-circle bg-success-subtle text-success">
+                                <i class="bi bi-gem"></i>
+                            </div>
+                            {% elif n.type == 'worker_added' %}
+                            <div class="icon-circle bg-info-subtle text-info">
+                                <i class="bi bi-person-plus-fill"></i>
+                            </div>
+                            {% elif n.type == 'campaign_started' %}
+                            <div class="icon-circle bg-purple-subtle text-purple">
+                                <i class="bi bi-megaphone-fill"></i>
+                            </div>
+                            {% elif n.type == 'alert' %}
+                            <div class="icon-circle bg-danger-subtle text-danger">
+                                <i class="bi bi-exclamation-triangle-fill"></i>
+                            </div>
+                            {% else %}
+                            <div class="icon-circle bg-secondary-subtle text-secondary">
+                                <i class="bi bi-bell-fill"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Unread Indicator -->
+                        {% if not n.is_read %}
+                        <div class="unread-dot ms-2"
+                            style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%;"></div>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center p-5 text-muted">
+                    <div class="mb-3 opacity-50">
+                        <i class="bi bi-bell-slash" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="fw-bold">No notifications yet</h5>
+                    <p>We'll notify you when organizations perform activities.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Premium Breadcrumb Styles */
+    .breadcrumb-premium {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 0.9rem;
+    }
+
+    .breadcrumb-item-premium a {
+        color: #94a3b8;
+        text-decoration: none;
+        transition: color 0.2s;
+        font-weight: 500;
+    }
+
+    .breadcrumb-item-premium a:hover {
+        color: #6c5ce7;
+    }
+
+    .breadcrumb-item-premium.active {
+        color: #475569;
+        font-weight: 600;
+    }
+
+    .breadcrumb-spacer-premium {
+        color: #cbd5e1;
+        font-size: 0.75rem;
+    }
+
+    /* Instagram-Style Notification Feed */
+    .notification-feed {
+        max-height: 70vh;
+        overflow-y: auto;
+    }
+
+    .notification-item {
+        cursor: pointer;
+    }
+
+    .notification-item:hover {
+        background-color: #f8fafc !important;
+    }
+
+    .notification-item.unread {
+        background-color: #eff6ff;
+    }
+
+    .notification-item:last-child {
+        border-bottom: none !important;
+    }
+
+    .notification-text {
+        line-height: 1.5;
+        font-size: 0.95rem;
+    }
+
+    .notification-time {
+        white-space: nowrap;
+    }
+
+    .icon-circle {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.9rem;
+    }
+
+    .bg-purple-subtle {
+        background-color: #f3e8ff;
+    }
+
+    .text-purple {
+        color: #9333ea;
+    }
+
+    /* Scrollbar Styling */
+    .notification-feed::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .notification-feed::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+    }
+
+    .notification-feed::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+
+    .notification-feed::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+</style>
+{% endblock %}

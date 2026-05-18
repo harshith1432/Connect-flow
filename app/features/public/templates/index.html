@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConnectFlow | Enterprise OS for Operations</title>
+    <meta name="description" content="Scale your communication infrastructure with precision. The unified CRM and Automation platform for high-volume voice operations.">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar" id="mainNav">
+        <div class="container nav-content">
+            <a href="/" class="logo">
+                Connect<span>Flow</span>
+            </a>
+            
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#solutions">Solutions</a></li>
+                <li><a href="#workflow">Workflow</a></li>
+                <li><a href="#security">Security</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+            </ul>
+            
+            <div class="nav-auth">
+                {% if current_user.is_authenticated %}
+                    {% if current_user.role == 'platform_owner' %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="btn-black">Go to Dashboard</a>
+                    {% elif current_user.role == 'worker' %}
+                        <a href="{{ url_for('worker.dashboard') }}" class="btn-black">Worker Workspace</a>
+                    {% else %}
+                        <a href="{{ url_for('org.dashboard') }}" class="btn-black">Manager Dashboard</a>
+                    {% endif %}
+                {% else %}
+                    <button class="btn-outline" id="loginTrigger">Login</button>
+                    <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container hero-grid">
+            <div class="hero-content reveal">
+                <span class="hero-label">ENTERPRISE OS FOR OPERATIONS</span>
+                <h1>Scale your communication infrastructure with precision.</h1>
+                <p>The unified CRM and Automation platform for high-volume voice operations, WhatsApp orchestration, and workforce management. Engineered for organizations that demand reliability.</p>
+                
+                <div class="hero-ctas">
+                    <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
+                    <a href="#demo" class="btn-outline">Book Enterprise Demo</a>
+                </div>
+            </div>
+            
+            <div class="hero-visual reveal" style="animation-delay: 0.2s;">
+                <div class="hero-image-container">
+                    <img src="{{ url_for('static', filename='dashboard_mockup.png') }}" alt="ConnectFlow Dashboard Preview">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Section -->
+    <section class="trust">
+        <div class="container">
+            <p>Trusted by growing enterprises</p>
+            <div class="logo-grid">
+                <div class="logo-placeholder">VELOCITY</div>
+                <div class="logo-placeholder">NEXUS</div>
+                <div class="logo-placeholder">STRATA</div>
+                <div class="logo-placeholder">QUANTUM</div>
+                <div class="logo-placeholder">ZENITH</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Feature Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Engineered for Performance</h2>
+                <p>Everything you need to orchestrate complex operations at scale without the technical overhead.</p>
+            </div>
+            
+            <div class="feature-grid">
+                <div class="feature-card reveal" style="animation-delay: 0.1s;">
+                    <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
+                    <h3>Dynamic Data Modules</h3>
+                    <p>Create custom data structures for Leads, Attendance, or Surveys. Build complex schemas without writing a single line of code.</p>
+                </div>
+                
+                <div class="feature-card reveal" style="animation-delay: 0.2s;">
+                    <div class="feature-icon"><i class="bi bi-megaphone"></i></div>
+                    <h3>Automated Campaigns</h3>
+                    <p>Run high-volume voice and WhatsApp campaigns with intelligent scheduling and personalized script injection.</p>
+                </div>
+                
+                <div class="feature-card reveal" style="animation-delay: 0.3s;">
+                    <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
+                    <h3>Secure Role Management</h3>
+                    <p>Granular permissions and enterprise-grade security ensure your data remains protected and compliant.</p>
+                </div>
+                
+                <div class="feature-card reveal" style="animation-delay: 0.4s;">
+                    <div class="feature-icon"><i class="bi bi-whatsapp"></i></div>
+                    <h3>WhatsApp Automation</h3>
+                    <p>Direct API integration for reliable message delivery and automated conversation workflows at scale.</p>
+                </div>
+                
+                <div class="feature-card reveal" style="animation-delay: 0.5s;">
+                    <div class="feature-icon"><i class="bi bi-people"></i></div>
+                    <h3>Worker Workflows</h3>
+                    <p>Efficiently manage distributed teams with specialized worker workspaces and real-time performance tracking.</p>
+                </div>
+                
+                <div class="feature-card reveal" style="animation-delay: 0.6s;">
+                    <div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                    <h3>Real-time Analytics</h3>
+                    <p>Live dashboards and deep-dive reporting to monitor campaign health and operational efficiency.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Choose Us / Solutions -->
+    <section class="why-us" id="solutions">
+        <div class="container">
+            <div class="split-section">
+                <div class="split-content reveal">
+                    <h2>Built for organizations that demand precision.</h2>
+                    
+                    <div class="why-item">
+                        <div class="why-icon"><i class="bi bi-check"></i></div>
+                        <div class="why-text">
+                            <h4>Enterprise Reliability</h4>
+                            <p>99.9% uptime SLA for your mission-critical communication infrastructure.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="why-item">
+                        <div class="why-icon"><i class="bi bi-check"></i></div>
+                        <div class="why-text">
+                            <h4>Seamless Integration</h4>
+                            <p>Connect your existing data sources and workflows via our robust API ecosystem.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="why-item">
+                        <div class="why-icon"><i class="bi bi-check"></i></div>
+                        <div class="why-text">
+                            <h4>Global Scale</h4>
+                            <p>Deploy campaigns across multiple regions and languages with a single platform.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="split-visual reveal">
+                    <div class="hero-image-container" style="transform: perspective(1000px) rotateY(5deg) rotateX(2deg);">
+                         <img src="{{ url_for('main.static', filename='analytics_preview.png') }}" alt="Enterprise Analytics">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Workflow Section -->
+    <section class="workflow" id="workflow">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Operational Workflow</h2>
+                <p>How ConnectFlow orchestrates your communication infrastructure from start to finish.</p>
+            </div>
+            
+            <div class="workflow-steps reveal">
+                <div class="workflow-step">
+                    <div class="step-number">1</div>
+                    <h4>Connect Data</h4>
+                    <p>Sync your existing CRM or import custom data modules seamlessly.</p>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">2</div>
+                    <h4>Configure Logic</h4>
+                    <p>Define automated triggers and sequence rules for your operations.</p>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">3</div>
+                    <h4>Execute At Scale</h4>
+                    <p>Launch high-volume voice and WhatsApp campaigns globally.</p>
+                </div>
+                <div class="workflow-step">
+                    <div class="step-number">4</div>
+                    <h4>Optimize Performance</h4>
+                    <p>Analyze real-time data to refine and improve operational efficiency.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Security Section -->
+    <section class="security" id="security">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Enterprise-Grade Security</h2>
+                <p>Your data is our priority. Engineered with a security-first mindset for organizations that demand total compliance.</p>
+            </div>
+            
+            <div class="security-grid">
+                <div class="security-item reveal" style="animation-delay: 0.1s;">
+                    <div class="security-icon"><i class="bi bi-shield-lock-fill"></i></div>
+                    <div class="security-text">
+                        <h4>End-to-End Encryption</h4>
+                        <p>All communication data is encrypted at rest and in transit using industry-standard AES-256 encryption.</p>
+                    </div>
+                </div>
+                <div class="security-item reveal" style="animation-delay: 0.2s;">
+                    <div class="security-icon"><i class="bi bi-person-check-fill"></i></div>
+                    <div class="security-text">
+                        <h4>Granular RBAC</h4>
+                        <p>Define precise roles and permissions to ensure team members only access the data they need.</p>
+                    </div>
+                </div>
+                <div class="security-item reveal" style="animation-delay: 0.3s;">
+                    <div class="security-icon"><i class="bi bi-journal-check"></i></div>
+                    <div class="security-text">
+                        <h4>Comprehensive Auditing</h4>
+                        <p>Detailed logs of every action taken within the platform for full transparency and compliance reporting.</p>
+                    </div>
+                </div>
+                <div class="security-item reveal" style="animation-delay: 0.4s;">
+                    <div class="security-icon"><i class="bi bi-cloud-check-fill"></i></div>
+                    <div class="security-text">
+                        <h4>Infrastructure Resilience</h4>
+                        <p>Deployed on high-availability cloud infrastructure with 99.9% uptime SLA and multi-region redundancy.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="pricing" id="pricing">
+        <div class="container">
+            <div class="section-header reveal">
+                <h2>Simple, Scalable Pricing</h2>
+                <p>Choose the plan that fits your operational needs. Transparent pricing for teams of all sizes.</p>
+            </div>
+            
+            <div class="pricing-grid">
+                <div class="pricing-card reveal" style="animation-delay: 0.1s;">
+                    <h3>Starter</h3>
+                    <p>Perfect for small teams.</p>
+                    <div class="price">$49<span>/mo</span></div>
+                    <ul class="pricing-features">
+                        <li><i class="bi bi-check2"></i> Up to 5 Data Modules</li>
+                        <li><i class="bi bi-check2"></i> 5,000 Messages/mo</li>
+                        <li><i class="bi bi-check2"></i> Basic Analytics</li>
+                        <li><i class="bi bi-check2"></i> Email Support</li>
+                    </ul>
+                    <a href="{{ url_for('org.register') }}" class="btn-outline">Get Started</a>
+                </div>
+                
+                <div class="pricing-card featured reveal" style="animation-delay: 0.2s;">
+                    <h3>Growth</h3>
+                    <p>Best for scaling operations.</p>
+                    <div class="price">$199<span>/mo</span></div>
+                    <ul class="pricing-features">
+                        <li><i class="bi bi-check2"></i> Unlimited Data Modules</li>
+                        <li><i class="bi bi-check2"></i> 50,000 Messages/mo</li>
+                        <li><i class="bi bi-check2"></i> Advanced Analytics</li>
+                        <li><i class="bi bi-check2"></i> Priority Support</li>
+                    </ul>
+                    <a href="{{ url_for('org.register') }}" class="btn-black">Start Scaling</a>
+                </div>
+                
+                <div class="pricing-card reveal" style="animation-delay: 0.3s;">
+                    <h3>Enterprise</h3>
+                    <p>For large scale organizations.</p>
+                    <div class="price">Custom</div>
+                    <ul class="pricing-features">
+                        <li><i class="bi bi-check2"></i> Dedicated Infrastructure</li>
+                        <li><i class="bi bi-check2"></i> Unlimited Messages</li>
+                        <li><i class="bi bi-check2"></i> Custom Integrations</li>
+                        <li><i class="bi bi-check2"></i> 24/7 Account Manager</li>
+                    </ul>
+                    <a href="#contact" class="btn-outline">Talk to Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <a href="/" class="logo">Connect<span>Flow</span></a>
+                    <p>The enterprise OS for high-performance operations and communication orchestration.</p>
+                </div>
+                
+                <div class="footer-column">
+                    <h5>Product</h5>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#solutions">Solutions</a></li>
+                        <li><a href="#pricing">Pricing</a></li>
+                        <li><a href="#updates">Changelog</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h5>Company</h5>
+                    <ul>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="#careers">Careers</a></li>
+                        <li><a href="#blog">Blog</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h5>Resources</h5>
+                    <ul>
+                        <li><a href="#docs">Documentation</a></li>
+                        <li><a href="#api">API Reference</a></li>
+                        <li><a href="#status">System Status</a></li>
+                        <li><a href="#help">Help Center</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-column">
+                    <h5>Legal</h5>
+                    <ul>
+                        <li><a href="{{ url_for('main.privacy_policy') }}">Privacy</a></li>
+                        <li><a href="{{ url_for('main.terms_of_service') }}">Terms</a></li>
+                        <li><a href="{{ url_for('main.dpa') }}">DPA</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2026 ConnectFlow. All rights reserved.</p>
+                <div class="social-links">
+                    <a href="#"><i class="bi bi-twitter-x"></i></a>
+                    <a href="#"><i class="bi bi-linkedin"></i></a>
+                    <a href="#"><i class="bi bi-github"></i></a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Login Selection Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-card reveal">
+            <button class="modal-close" id="modalClose">&times;</button>
+            <h3>Welcome Back</h3>
+            <p>Select your portal to continue</p>
+            
+            <div class="login-options">
+                <a href="{{ url_for('org.login') }}" class="login-option">
+                    <div class="option-icon"><i class="bi bi-building"></i></div>
+                    <div class="option-text">
+                        <h5>Organization Portal</h5>
+                        <p>For managers and admins</p>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto"></i>
+                </a>
+                
+                <a href="{{ url_for('worker.login') }}" class="login-option">
+                    <div class="option-icon"><i class="bi bi-person-badge"></i></div>
+                    <div class="option-text">
+                        <h5>Worker Workspace</h5>
+                        <p>For operations and tasks</p>
+                    </div>
+                    <i class="bi bi-chevron-right ms-auto"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', function() {
+            const nav = document.getElementById('mainNav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Modal Logic
+        const loginTrigger = document.getElementById('loginTrigger');
+        const loginModal = document.getElementById('loginModal');
+        const modalClose = document.getElementById('modalClose');
+
+        if (loginTrigger) {
+            loginTrigger.addEventListener('click', () => {
+                loginModal.classList.add('active');
+                document.body.style.overflow = 'hidden';
+            });
+        }
+
+        if (modalClose) {
+            modalClose.addEventListener('click', () => {
+                loginModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            });
+        }
+
+        loginModal.addEventListener('click', (e) => {
+            if (e.target === loginModal) {
+                loginModal.classList.remove('active');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        // Simple Intersection Observer for reveal animations
+        const observerOptions = {
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    </script>
+    
+    <style>
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .social-links {
+            display: flex;
+            gap: 1.5rem;
+        }
+        
+        .social-links a {
+            color: var(--grey-400);
+            font-size: 1.2rem;
+        }
+        
+        .social-links a:hover {
+            color: var(--black);
+        }
+    </style>
+</body>
+</html>

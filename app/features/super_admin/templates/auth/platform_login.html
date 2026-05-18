@@ -1,0 +1,45 @@
+{% extends "base_auth_premium.html" %}
+
+{% block title %}Platform Admin Login | ConnectFlow{% endblock %}
+
+{% block hero_content %}
+<h2>Platform Control.</h2>
+<p class="tagline">Manage organizations and oversee the entire SaaS ecosystem with enterprise-grade security.</p>
+{% endblock %}
+
+{% block auth_header %}
+<h1>Admin Login</h1>
+<p>Secure platform access. Enter your administrator credentials.</p>
+{% endblock %}
+
+{% block content %}
+<form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+    <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <div class="input-container">
+            <i class="bi bi-envelope"></i>
+            <input name="email" type="email" class="premium-input" placeholder="admin@platform.com" required autocomplete="email" />
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-container">
+            <i class="bi bi-shield-lock"></i>
+            <input type="password" name="password" class="premium-input" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+    </div>
+
+    <button type="submit" class="btn-premium-dark">
+        Sign In to Platform <i class="bi bi-chevron-right"></i>
+    </button>
+
+    <div class="auth-footer-links" style="margin-top: 1.5rem;">
+        <a href="{{ url_for('main.index') }}">
+            <i class="bi bi-house"></i> Back to Home
+        </a>
+    </div>
+</form>
+{% endblock %}

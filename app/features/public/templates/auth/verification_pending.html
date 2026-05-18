@@ -1,0 +1,60 @@
+{% extends 'base_auth.html' %}
+{% block title %}Verification Pending - ConnectFlow{% endblock %}
+{% block content %}
+<div class="verification-pending-container d-flex align-items-center justify-content-center py-5"
+    style="min-height: 100vh; background: #f4f7fe;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-7 text-center">
+                <div class="card border-0 shadow-lg p-5 rounded-4 overflow-hidden position-relative">
+                    <div class="mb-4">
+                        <div class="display-1 text-warning"><i class="bi bi-shield-lock"></i></div>
+                    </div>
+                    <h2 class="fw-bold mb-3">Your Account is Awaiting Verification</h2>
+                    <p class="text-muted fs-5 mb-4 px-md-5">
+                        Hello! We've received your registration, but your profile needs to be manually verified by the
+                        <strong>Over team </strong> before you can access the dashboard.
+                    </p>
+
+                    <div class="row g-3 mb-5 text-start justify-content-center">
+                        <div class="col-md-5">
+                            <div class="p-3 bg-light rounded-3 d-flex align-items-center">
+                                <i class="bi bi-shield-check text-success fs-3 me-3"></i>
+                                <div>
+                                    <div class="fw-bold small">Profile Review</div>
+                                    <div class="text-muted small">Checking your credentials...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="p-3 bg-light rounded-3 d-flex align-items-center">
+                                <i class="bi bi-envelope-check text-primary fs-3 me-3"></i>
+                                <div>
+                                    <div class="fw-bold small">Activation Mail</div>
+                                    <div class="text-muted small">Sent once verified.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning border-0 rounded-3 mb-4 small">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Verification typically takes <strong>24-48 hours</strong>. Thank you for your patience while we
+                        keep the platform secure!
+                    </div>
+
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="mailto:{{ config.SUPPORT_EMAIL or 'support@platform.com' }}"
+                            class="btn btn-outline-secondary px-4 py-2 rounded-pill fw-bold">
+                            Contact Support
+                        </a>
+                        <a href="{{ url_for('org.logout') }}" class="btn btn-primary px-4 py-2 rounded-pill fw-bold">
+                            Logout & Re-check
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
