@@ -1,5 +1,0 @@
-@import url('/static/css/base.css');
-
-/* Dashboard-specific overrides */
-.platform-header{padding:16px;background:transparent}
-.dashboard-grid .card{flex:1}
