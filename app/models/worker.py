@@ -17,6 +17,8 @@ class OrganizationUser(UserMixin, db.Model):
     role = db.Column(db.String(50), default=Role.worker.value)
     designation = db.Column(db.String(100))  # Job title / Role name
     phone = db.Column(db.String(50))
+    profile_photo = db.Column(db.String(500))
+    preferences = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Real-time Activity Tracking
@@ -24,6 +26,7 @@ class OrganizationUser(UserMixin, db.Model):
     login_count = db.Column(db.Integer, default=0)
     performance_score = db.Column(db.Float, default=0.0)
     status_active = db.Column(db.Boolean, default=True)
+    onboarding_completed = db.Column(db.Boolean, default=False, server_default="false")
 
     # Ensure (email, organization_id) is unique, not just email
     __table_args__ = (

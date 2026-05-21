@@ -1,19 +1,54 @@
 {% extends 'base_org_premium.html' %}
 
 {% block title %}ConnectFlow | Executive Dashboard{% endblock %}
-{% block page_title %}Organization Overview{% endblock %}
+{% block page_title %}Executive Dashboard{% endblock %}
 
 {% block content %}
 
+<!-- Professional Welcome Banner -->
+<div class="premium-panel mb-4 text-white" style="background: linear-gradient(135deg, #111827 0%, #1f2937 100%); border: none; padding: 2.5rem; position: relative; overflow: hidden; border-radius: 24px; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);">
+    <!-- Abstract subtle background glow -->
+    <div style="position: absolute; top: -50%; right: -20%; width: 300px; height: 300px; background: rgba(255, 255, 255, 0.03); border-radius: 50%; filter: blur(50px);"></div>
+    
+    <div class="row align-items-center position-relative">
+        <div class="col-lg-8 mb-3 mb-lg-0">
+            <span style="background: rgba(255, 255, 255, 0.1); padding: 0.35rem 1rem; border-radius: 100px; font-size: 0.75rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;">EXECUTIVE CONTROL PANEL</span>
+            <h2 class="mt-3 text-white" style="font-size: 2.25rem; font-weight: 800; font-family: var(--font-heading);">
+                Welcome Back, {{ current_user.organization.name }} 👋
+            </h2>
+            <p class="text-white-50 mb-0 mt-2" style="font-size: 0.95rem; opacity: 0.85; font-weight: 500;">
+                All communication channels and workflows are operating at peak efficiency. Here is your operational summary for today.
+            </p>
+        </div>
+        <div class="col-lg-4 text-lg-end">
+            <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                <a href="{{ url_for('org.campaigns_dashboard') }}" class="btn btn-light d-flex align-items-center gap-2" style="padding: 0.625rem 1.25rem; border-radius: 12px; font-weight: 700; font-size: 0.875rem; background: var(--white); color: var(--black); border: none; transition: var(--transition-base);">
+                    <i class="bi bi-megaphone-fill"></i> Launch Campaign
+                </a>
+                <a href="{{ url_for('org.communication_settings') }}" class="btn btn-outline-light d-flex align-items-center gap-2" style="padding: 0.625rem 1.25rem; border-radius: 12px; font-weight: 700; font-size: 0.875rem; background: rgba(255, 255, 255, 0.08); color: var(--white); border: 1px solid rgba(255, 255, 255, 0.2); transition: var(--transition-base);">
+                    <i class="bi bi-gear-fill"></i> Configure Channels
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Subscription Banners -->
 {% if not subscription %}
-<div class="premium-panel mb-4" style="background: var(--grey-900); color: var(--white);">
-    <div class="d-flex align-items-center justify-content-between">
-        <div>
-            <h3 style="color: var(--white);">Subscription Required</h3>
-            <p style="color: var(--grey-400);">Activate your enterprise plan to start managing your workforce and communications.</p>
+<div class="premium-panel mb-4" style="background: #fffbeb; border: 1px solid #fef3c7; border-radius: 20px; padding: 1.5rem;">
+    <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3">
+        <div class="d-flex gap-3 align-items-start">
+            <div style="background: #fef3c7; color: #d97706; width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+            </div>
+            <div>
+                <h4 style="font-size: 1.1rem; margin-bottom: 0.25rem; color: #92400e;">Premium Subscription Required</h4>
+                <p style="color: #b45309; font-size: 0.875rem; margin: 0; font-weight: 500;">Activate your enterprise plan to unlock full automated campaigns, reports, custom numbers, and AI services.</p>
+            </div>
         </div>
-        <a href="{{ url_for('org.browse_plans') }}" class="btn-black" style="background: var(--white); color: var(--black) !important; padding: 0.75rem 1.5rem; border-radius: 10px; font-weight: 600;">Upgrade to Premium</a>
+        <a href="{{ url_for('org.browse_plans') }}" class="btn-black" style="background: #d97706; color: var(--white) !important; padding: 0.625rem 1.25rem; border-radius: 10px; font-weight: 700; font-size: 0.85rem; border: none; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; transition: var(--transition-base);">
+            Upgrade to Premium <i class="bi bi-arrow-right"></i>
+        </a>
     </div>
 </div>
 {% endif %}
@@ -23,13 +58,13 @@
     <!-- Active Workers -->
     <div class="kpi-card">
         <div class="kpi-header">
-            <div class="kpi-label">Active Workers</div>
-            <div class="kpi-icon"><i class="bi bi-people"></i></div>
+            <div class="kpi-label">Active Workforce</div>
+            <div class="kpi-icon" style="background: var(--grey-50); color: var(--black);"><i class="bi bi-people-fill"></i></div>
         </div>
         <div class="kpi-value">{{ worker_count }}</div>
         <div class="kpi-trend">
             <span class="trend-up"><i class="bi bi-arrow-up-short"></i> 12.5%</span>
-            <span style="color: var(--grey-400); font-weight: 500;">vs last month</span>
+            <span style="color: var(--grey-400); font-weight: 600; font-size: 0.75rem;">vs last month</span>
         </div>
         <div id="sparkline1" style="min-height: 40px; margin-top: 1rem;"></div>
     </div>
@@ -38,12 +73,12 @@
     <div class="kpi-card">
         <div class="kpi-header">
             <div class="kpi-label">Messages Sent</div>
-            <div class="kpi-icon"><i class="bi bi-chat-left-text"></i></div>
+            <div class="kpi-icon" style="background: var(--grey-50); color: var(--black);"><i class="bi bi-chat-left-dots-fill"></i></div>
         </div>
         <div class="kpi-value">{{ total_messages }}</div>
         <div class="kpi-trend">
             <span class="trend-up"><i class="bi bi-arrow-up-short"></i> 8.2%</span>
-            <span style="color: var(--grey-400); font-weight: 500;">vs yesterday</span>
+            <span style="color: var(--grey-400); font-weight: 600; font-size: 0.75rem;">vs yesterday</span>
         </div>
         <div id="sparkline2" style="min-height: 40px; margin-top: 1rem;"></div>
     </div>
@@ -52,12 +87,12 @@
     <div class="kpi-card">
         <div class="kpi-header">
             <div class="kpi-label">Calls Completed</div>
-            <div class="kpi-icon"><i class="bi bi-telephone"></i></div>
+            <div class="kpi-icon" style="background: var(--grey-50); color: var(--black);"><i class="bi bi-telephone-fill"></i></div>
         </div>
         <div class="kpi-value">{{ total_calls }}</div>
         <div class="kpi-trend">
-            <span class="trend-down"><i class="bi bi-arrow-down-short"></i> 2.4%</span>
-            <span style="color: var(--grey-400); font-weight: 500;">vs yesterday</span>
+            <span class="trend-down" style="color: var(--grey-500);"><i class="bi bi-dash-lg"></i> Stable</span>
+            <span style="color: var(--grey-400); font-weight: 600; font-size: 0.75rem;">vs yesterday</span>
         </div>
         <div id="sparkline3" style="min-height: 40px; margin-top: 1rem;"></div>
     </div>
@@ -65,13 +100,13 @@
     <!-- Conversion Rate / Success Rate -->
     <div class="kpi-card">
         <div class="kpi-header">
-            <div class="kpi-label">Success Rate</div>
-            <div class="kpi-icon"><i class="bi bi-check2-circle"></i></div>
+            <div class="kpi-label">Platform Success Rate</div>
+            <div class="kpi-icon" style="background: var(--grey-50); color: var(--black);"><i class="bi bi-patch-check-fill"></i></div>
         </div>
-        <div class="kpi-value">94.2%</div>
+        <div class="kpi-value">{{ success_rate }}%</div>
         <div class="kpi-trend">
             <span class="trend-up"><i class="bi bi-arrow-up-short"></i> 0.5%</span>
-            <span style="color: var(--grey-400); font-weight: 500;">Stable</span>
+            <span style="color: var(--grey-400); font-weight: 600; font-size: 0.75rem;">Optimal performance</span>
         </div>
         <div id="sparkline4" style="min-height: 40px; margin-top: 1rem;"></div>
     </div>
@@ -82,13 +117,15 @@
     <div class="premium-panel">
         <div class="panel-header">
             <div class="panel-title">
-                <h3>Performance Overview</h3>
-                <p>Communication trends across all modules</p>
+                <h3>Communication Performance</h3>
+                <p>Volume flow across message and voice channels</p>
             </div>
             <div class="panel-actions">
-                <select class="form-select-premium" style="padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--grey-200); font-size: 0.815rem; font-weight: 600;">
-                    <option>Last 7 Days</option>
-                    <option>Last 30 Days</option>
+                <select id="chartRangeSelect" class="form-select" style="padding: 0.5rem 1.5rem 0.5rem 1rem; border-radius: 10px; border: 1px solid var(--grey-200); font-size: 0.815rem; font-weight: 700; background-color: var(--white); cursor: pointer;" onchange="loadChartData(this.value)">
+                    <option value="today">Today</option>
+                    <option value="last_24h">Last 24 Hours</option>
+                    <option value="last_7d" selected>Last 7 Days</option>
+                    <option value="last_30d">Last 30 Days</option>
                 </select>
             </div>
         </div>
@@ -99,25 +136,25 @@
     <div class="premium-panel">
         <div class="panel-header">
             <div class="panel-title">
-                <h3>Channel Distribution</h3>
-                <p>Engagement by medium</p>
+                <h3>Channel Delivery</h3>
+                <p>Engagement split by medium</p>
             </div>
         </div>
         <div id="donutChart" style="min-height: 250px;"></div>
         <div class="mt-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <span style="font-size: 0.875rem; color: var(--grey-600);"><i class="bi bi-whatsapp me-2"></i> WhatsApp</span>
-                <span style="font-weight: 700;">65%</span>
+                <span style="font-size: 0.875rem; color: var(--grey-600); font-weight: 600;"><i class="bi bi-whatsapp me-2 text-success"></i> WhatsApp</span>
+                <span style="font-weight: 800; font-family: var(--font-heading);">65%</span>
             </div>
-            <div class="progress" style="height: 6px; border-radius: 10px; background: var(--grey-100); margin-bottom: 1rem;">
+            <div class="progress" style="height: 6px; border-radius: 10px; background: var(--grey-100); margin-bottom: 1.25rem;">
                 <div class="progress-bar" style="width: 65%; background: var(--black); border-radius: 10px;"></div>
             </div>
             <div class="d-flex justify-content-between align-items-center mb-2">
-                <span style="font-size: 0.875rem; color: var(--grey-600);"><i class="bi bi-telephone me-2"></i> Voice</span>
-                <span style="font-weight: 700;">25%</span>
+                <span style="font-size: 0.875rem; color: var(--grey-600); font-weight: 600;"><i class="bi bi-telephone-fill me-2 text-primary"></i> Voice Calls</span>
+                <span style="font-weight: 800; font-family: var(--font-heading);">25%</span>
             </div>
-            <div class="progress" style="height: 6px; border-radius: 10px; background: var(--grey-100); margin-bottom: 1rem;">
-                <div class="progress-bar" style="width: 25%; background: var(--grey-600); border-radius: 10px;"></div>
+            <div class="progress" style="height: 6px; border-radius: 10px; background: var(--grey-100); margin-bottom: 1.25rem;">
+                <div class="progress-bar" style="width: 25%; background: var(--grey-500); border-radius: 10px;"></div>
             </div>
         </div>
     </div>
@@ -125,96 +162,114 @@
 
 <div class="chart-row" style="grid-template-columns: 1fr;">
     <!-- Recent Activities (Full Width for Live Audit focus) -->
-    <div class="premium-panel" style="flex: 2;">
+    <div class="premium-panel">
         <div class="panel-header">
             <div class="panel-title">
                 <div class="d-flex align-items-center gap-2">
-                    <div style="width: 8px; height: 8px; background: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981;"></div>
-                    <h3 style="margin: 0;">Live Organizational Audit</h3>
+                    <div style="width: 10px; height: 10px; background: #10b981; border-radius: 50%; box-shadow: 0 0 10px #10b981; animation: pulse-green 2s infinite;"></div>
+                    <h3 style="margin: 0; font-family: var(--font-heading); font-weight: 800;">Live Audit Stream</h3>
                 </div>
-                <p>Real-time event stream across all departments</p>
+                <p>Real-time updates and change requests logged from your workforce</p>
             </div>
             <div class="panel-actions">
-                <span class="status-badge status-completed" style="font-size: 0.75rem; background: var(--grey-50); color: var(--grey-600); border: 1px solid var(--grey-100);">
-                    <i class="bi bi-arrow-repeat me-1"></i> Auto-Sync Active
+                <span class="status-badge" style="font-size: 0.75rem; background: rgba(16, 185, 129, 0.08); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.15); padding: 0.4rem 0.8rem; display: inline-flex; align-items: center; gap: 0.4rem; border-radius: 100px; font-weight: 700;">
+                    <i class="bi bi-arrow-repeat spin" style="display: inline-block;"></i> Live Syncing
                 </span>
             </div>
         </div>
-        <div class="activity-feed" style="max-height: 400px; overflow-y: auto; padding-right: 1rem;">
+        
+        <div class="activity-feed-timeline" style="max-height: 480px; overflow-y: auto; padding-right: 0.5rem; position: relative;">
             <!-- Dynamic Content via JS -->
-            <div style="text-align: center; padding: 3rem 0; color: var(--grey-400);">
-                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
-                Initialising real-time audit stream...
+            <div class="loading-stream" style="text-align: center; padding: 4rem 0; color: var(--grey-400);">
+                <div class="spinner-border spinner-border-sm me-2 text-dark" role="status"></div>
+                Connecting to event stream...
             </div>
-            <div class="text-center mt-3">
-                <a href="{{ url_for('org.reports_dashboard') }}" class="view-all-link">View Full Audit Logs <i class="bi bi-chevron-right"></i></a>
+            <div class="text-center mt-4 timeline-footer-action">
+                <a href="{{ url_for('org.reports_dashboard') }}" class="view-all-link" style="border: 1px solid var(--grey-200); background: var(--white); font-weight: 700;">View Full Audit Logs <i class="bi bi-chevron-right"></i></a>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Team Performance & Module Oversight -->
-<div class="row g-4">
+<div class="row g-4 mt-1">
     <div class="col-12">
         <div class="premium-panel">
             <div class="panel-header">
                 <div class="panel-title">
                     <h3>Module Oversight</h3>
-                    <p>Current operational modules within organization</p>
+                    <p>Current operational data structures and schema models</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <a href="{{ url_for('org.manage_modules') }}" class="btn-black" style="background: var(--black); color: var(--white) !important; padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.815rem; font-weight: 600;">Manage Module</a>
+                    <a href="{{ url_for('org.manage_modules') }}" class="btn-black" style="padding: 0.5rem 1rem; border-radius: 8px; font-size: 0.815rem; font-weight: 700; text-decoration: none;">Manage Schema</a>
                 </div>
             </div>
+            
             <div class="table-responsive">
                 <table class="activity-table">
                     <thead>
-                        <tr>
-                            <th>Module Name</th>
-                            <th>Status</th>
-                            <th>Records</th>
-                            <th>Campaigns</th>
-                            <th>Creation Date</th>
-                            <th>Actions</th>
+                        <tr style="border-bottom: 2px solid var(--grey-100);">
+                            <th style="padding: 1.25rem 1rem;">Module Name</th>
+                            <th style="padding: 1.25rem 1rem;">Status</th>
+                            <th style="padding: 1.25rem 1rem;">Records</th>
+                            <th style="padding: 1.25rem 1rem;">Linked Campaigns</th>
+                            <th style="padding: 1.25rem 1rem;">Created At</th>
+                            <th style="padding: 1.25rem 1rem; text-align: right;">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {% for m in modules %}
-                        <tr>
-                            <td class="fw-bold" style="cursor: pointer; color: var(--black);" onclick="window.location.href='{{ url_for('org.module_detail', mid=m.id) }}'">
-                                {{ m.name }}
-                            </td>
-                            <td><span class="status-badge status-completed">{{ m.status }}</span></td>
-                            <td>{{ m.records }}</td>
-                            <td>{{ m.campaigns }}</td>
-                            <td class="text-muted">{{ m.created_at }}</td>
-                            <td>
-                                <div class="dropdown">
-                                    <button class="btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 32px; height: 32px; border-radius: 10px;">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow-premium border-0" style="min-width: 180px;">
-                                        <li>
-                                            <a class="dropdown-item" href="{{ url_for('org.module_detail', mid=m.id) }}">
-                                                <i class="bi bi-eye"></i> View Complete Report
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" href="{{ url_for('org.module_detail', mid=m.id) }}">
-                                                <i class="bi bi-gear"></i> Module Settings
-                                            </a>
-                                        </li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <a class="dropdown-item text-danger" href="#">
-                                                <i class="bi bi-trash"></i> Delete Module
-                                            </a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
+                        {% if modules %}
+                            {% for m in modules %}
+                            <tr style="transition: var(--transition-base);">
+                                <td class="fw-bold" style="cursor: pointer; color: var(--black); padding: 1.25rem 1rem; font-size: 0.95rem;" onclick="window.location.href='{{ url_for('org.module_detail', mid=m.id) }}'">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i class="bi bi-folder2-open text-muted fs-5"></i>
+                                        <span>{{ m.name }}</span>
+                                    </div>
+                                </td>
+                                <td style="padding: 1.25rem 1rem;">
+                                    <span class="status-badge" style="background: #ecfdf5; color: #047857; font-weight: 700; border: 1px solid #d1fae5; font-size: 0.75rem; padding: 0.3rem 0.65rem;">Active</span>
+                                </td>
+                                <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--grey-800);">{{ m.records }}</td>
+                                <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--grey-800);">{{ m.campaigns }}</td>
+                                <td class="text-muted" style="padding: 1.25rem 1rem;">{{ m.created_at }}</td>
+                                <td style="padding: 1.25rem 1rem; text-align: right;">
+                                    <div class="dropdown" style="display: inline-block;">
+                                        <button class="btn-icon" type="button" data-bs-toggle="dropdown" aria-expanded="false" style="width: 32px; height: 32px; border-radius: 8px;">
+                                            <i class="bi bi-three-dots-vertical"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3" style="min-width: 180px; padding: 0.5rem 0;">
+                                            <li>
+                                                <a class="dropdown-item py-2 px-3 fw-medium" href="{{ url_for('org.module_detail', mid=m.id) }}" style="font-size: 0.85rem; color: var(--grey-800);">
+                                                    <i class="bi bi-eye me-2 text-muted"></i> View Detail Report
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item py-2 px-3 fw-medium" href="{{ url_for('org.module_detail', mid=m.id) }}" style="font-size: 0.85rem; color: var(--grey-800);">
+                                                    <i class="bi bi-gear me-2 text-muted"></i> Schema Settings
+                                                </a>
+                                            </li>
+                                            <li><hr class="dropdown-divider" style="margin: 0.25rem 0; border-color: var(--grey-100);"></li>
+                                            <li>
+                                                <a class="dropdown-item py-2 px-3 fw-bold text-danger" href="#" onclick="if(confirm('Are you sure you want to delete this module? This cannot be undone.')){ deleteModule({{ m.id }}); }" style="font-size: 0.85rem;">
+                                                    <i class="bi bi-trash3 me-2"></i> Delete Module
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="bi bi-folder-x fs-1 d-block mb-3 text-grey-300"></i>
+                                    <span class="fw-semibold">No operational modules created yet.</span>
+                                    <p class="small text-muted mt-1">Modules hold your records, client entries, and database schemas.</p>
+                                    <a href="{{ url_for('org.manage_modules') }}" class="btn btn-dark btn-sm mt-3 fw-bold rounded-3">Create First Module</a>
+                                </td>
+                            </tr>
+                        {% endif %}
                     </tbody>
                 </table>
             </div>
@@ -222,83 +277,251 @@
     </div>
 </div>
 
-{% endblock %}
+<style>
+@keyframes pulse-green {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.spin {
+    animation: spinner-spin 2s linear infinite;
+}
+@keyframes spinner-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+.activity-table tbody tr:hover {
+    background-color: var(--grey-50);
+}
 
-{% block extra_modals %}
-<!-- Module Intelligence Modal -->
-<div id="moduleReportModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
-    <div class="premium-panel" style="width: 100%; max-width: 650px; padding: 2.5rem; border-radius: 24px;">
-        <div class="panel-header mb-4">
-            <div class="panel-title">
-                <h3 id="m_modal_name" style="font-size: 1.5rem; margin-bottom: 0.25rem;">Module Report</h3>
-                <p>Real-time operational performance data</p>
-            </div>
-            <button onclick="hideModuleReport()" style="background: none; border: none; font-size: 1.75rem; color: var(--grey-400); cursor: pointer; transition: color 0.2s;">&times;</button>
-        </div>
-        
-        <div class="row g-4 mb-4">
-            <div class="col-6 col-md-3">
-                <div style="background: var(--grey-50); padding: 1.25rem; border-radius: 16px; text-align: center;">
-                    <div style="font-size: 0.75rem; color: var(--grey-500); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Campaigns</div>
-                    <div id="m_modal_campaigns" style="font-size: 1.5rem; font-weight: 800; color: var(--black);">0</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div style="background: var(--grey-50); padding: 1.25rem; border-radius: 16px; text-align: center;">
-                    <div style="font-size: 0.75rem; color: var(--grey-500); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Records</div>
-                    <div id="m_modal_records" style="font-size: 1.5rem; font-weight: 800; color: var(--black);">0</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div style="background: var(--grey-50); padding: 1.25rem; border-radius: 16px; text-align: center;">
-                    <div style="font-size: 0.75rem; color: var(--grey-500); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Total Calls</div>
-                    <div id="m_modal_calls" style="font-size: 1.5rem; font-weight: 800; color: var(--black);">0</div>
-                </div>
-            </div>
-            <div class="col-6 col-md-3">
-                <div style="background: var(--grey-50); padding: 1.25rem; border-radius: 16px; text-align: center;">
-                    <div style="font-size: 0.75rem; color: var(--grey-500); font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">Messages</div>
-                    <div id="m_modal_messages" style="font-size: 1.5rem; font-weight: 800; color: var(--black);">0</div>
-                </div>
-            </div>
-        </div>
+/* Premium Audit Timeline Styling */
+.activity-feed-timeline {
+    position: relative;
+    max-height: 480px;
+    overflow-y: auto;
+    padding: 0.5rem 0.25rem;
+    scrollbar-width: thin;
+}
+.activity-feed-timeline::-webkit-scrollbar {
+    width: 6px;
+}
+.activity-feed-timeline::-webkit-scrollbar-track {
+    background: transparent;
+}
+.activity-feed-timeline::-webkit-scrollbar-thumb {
+    background: var(--grey-200);
+    border-radius: 3px;
+}
+.activity-timeline-item {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+    padding: 0.6rem 0.75rem;
+    border-radius: 12px;
+    background: var(--white);
+    border: 1px solid transparent;
+    transition: var(--transition-base);
+    position: relative;
+    margin-bottom: 0.2rem;
+    animation: slideInFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.activity-timeline-item:hover {
+    background: var(--grey-50);
+    border-color: var(--grey-100);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+.activity-timeline-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: stretch;
+    flex-shrink: 0;
+    width: 28px;
+    position: relative;
+}
+.activity-timeline-dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    flex-shrink: 0;
+    transition: var(--transition-base);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.activity-timeline-item:hover .activity-timeline-dot {
+    transform: scale(1.1);
+}
+.activity-timeline-line {
+    width: 2px;
+    flex-grow: 1;
+    background: var(--grey-200);
+    margin-top: 8px;
+    margin-bottom: -24px; /* overlapping next item connector */
+    z-index: 1;
+    opacity: 0.7;
+}
+.activity-timeline-item:last-of-type .activity-timeline-line {
+    display: none;
+}
+.activity-timeline-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.activity-timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+.activity-timeline-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--black);
+    margin: 0;
+    font-family: var(--font-heading);
+}
+.activity-timeline-time {
+    font-size: 0.7rem;
+    color: var(--grey-400);
+    font-weight: 600;
+}
+.activity-timeline-details {
+    font-size: 0.75rem;
+    color: var(--grey-600);
+    margin: 0;
+    line-height: 1.4;
+}
+.activity-timeline-footer {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.4rem;
+}
+.activity-user-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    background: var(--grey-100);
+    color: var(--grey-700);
+    border-radius: 8px;
+    font-size: 0.725rem;
+    font-weight: 600;
+    font-family: var(--font-body);
+}
+.activity-user-badge.system {
+    background: #f1f5f9;
+    color: #475569;
+}
+code.ip-code {
+    background: var(--grey-100);
+    color: var(--grey-800);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 0.775rem;
+    font-weight: 600;
+}
+.details-highlight {
+    font-weight: 600;
+    color: var(--black);
+}
 
-        <div style="background: var(--black); color: var(--white); padding: 1.5rem; border-radius: 20px; margin-bottom: 1.5rem;">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <div style="font-size: 0.75rem; opacity: 0.7; font-weight: 600;">MODULE CREATOR</div>
-                    <div id="m_modal_creator" style="font-size: 1.125rem; font-weight: 700;">System Administrator</div>
-                </div>
-                <div class="text-end">
-                    <div style="font-size: 0.75rem; opacity: 0.7; font-weight: 600;">CREATION DATE</div>
-                    <div id="m_modal_date" style="font-size: 1.125rem; font-weight: 700;">2024-05-15</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="d-flex justify-content-end">
-            <button onclick="hideModuleReport()" class="btn-black" style="padding: 0.75rem 2rem;">Close Intelligence Report</button>
-        </div>
-    </div>
-</div>
+@keyframes slideInFade {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+</style>
 {% endblock %}
 
 {% block scripts %}
 <script>
+    // ===================================================
+    // DYNAMIC PERFORMANCE CHART
+    // ===================================================
     const chartOptions = {
-        chart: { type: 'line', height: 350, toolbar: { show: false }, zoom: { enabled: false }, fontFamily: 'Inter, sans-serif' },
-        stroke: { curve: 'smooth', width: 3, colors: ['#000000', '#6b7280'] },
+        chart: { 
+            type: 'area', 
+            height: 350, 
+            toolbar: { show: false }, 
+            zoom: { enabled: false }, 
+            fontFamily: 'Inter, sans-serif',
+            animations: { enabled: true, easing: 'easeinout', speed: 600 }
+        },
+        stroke: { curve: 'smooth', width: 2 },
+        fill: {
+            type: 'gradient',
+            gradient: {
+                shadeIntensity: 1,
+                opacityFrom: 0.15,
+                opacityTo: 0.01,
+                stops: [0, 90, 100]
+            }
+        },
         series: [
-            { name: 'Messages', data: [31, 40, 28, 51, 42, 109, 100] },
-            { name: 'Calls', data: [11, 32, 45, 32, 34, 52, 41] }
+            { name: 'Messages Sent', data: [] },
+            { name: 'Calls Completed', data: [] }
         ],
-        xaxis: { categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], axisBorder: { show: false }, axisTicks: { show: false } },
-        yaxis: { labels: { style: { colors: '#6b7280' } } },
+        xaxis: { 
+            categories: [], 
+            axisBorder: { show: false }, 
+            axisTicks: { show: false },
+            labels: { style: { colors: '#6b7280', fontSize: '11px', fontWeight: 600 } }
+        },
+        yaxis: { 
+            labels: { style: { colors: '#6b7280', fontSize: '11px', fontWeight: 600 } }, 
+            min: 0 
+        },
+        colors: ['#000000', '#6b7280'],
         grid: { borderColor: '#f3f4f6', strokeDashArray: 4 },
-        legend: { position: 'top', horizontalAlign: 'right' },
-        markers: { size: 0, hover: { size: 5 } }
+        legend: { position: 'top', horizontalAlign: 'right', fontWeight: 700, fontSize: '12px' },
+        markers: { size: 4, colors: ['#ffffff'], strokeColors: ['#000000', '#6b7280'], strokeWidth: 2, hover: { size: 6 } },
+        noData: { text: 'Compiling metrics...', style: { color: '#6b7280', fontFamily: 'Inter' } }
     };
-    new ApexCharts(document.querySelector("#mainChart"), chartOptions).render();
+    const mainChart = new ApexCharts(document.querySelector("#mainChart"), chartOptions);
+    mainChart.render();
+
+    function loadChartData(range) {
+        const select = document.getElementById('chartRangeSelect');
+        if (select) select.disabled = true;
+
+        fetch(`{{ url_for('org.get_chart_data') }}?range=${range}`)
+            .then(r => r.json())
+            .then(data => {
+                mainChart.updateOptions({
+                    xaxis: { categories: data.categories },
+                    series: [
+                        { name: 'Messages Sent', data: data.messages },
+                        { name: 'Calls Completed', data: data.calls }
+                    ]
+                });
+            })
+            .catch(err => console.error('Chart fetch error:', err))
+            .finally(() => {
+                if (select) select.disabled = false;
+            });
+    }
+
+    // Load default chart range
+    loadChartData('last_7d');
+    
+    // Auto-refresh every 30 seconds
+    setInterval(() => {
+        const range = document.getElementById('chartRangeSelect')?.value || 'last_7d';
+        loadChartData(range);
+    }, 30000);
 
     const donutOptions = {
         chart: { type: 'donut', height: 250, fontFamily: 'Inter, sans-serif' },
@@ -306,35 +529,68 @@
         labels: ['WhatsApp', 'Voice', 'SMS'],
         colors: ['#000000', '#6b7280', '#e5e7eb'],
         legend: { show: false },
-        plotOptions: { pie: { donut: { size: '75%', labels: { show: true, total: { show: true, label: 'Total', formatter: () => '100%' } } } } },
+        plotOptions: { 
+            pie: { 
+                donut: { 
+                    size: '80%', 
+                    labels: { 
+                        show: true, 
+                        total: { 
+                            show: true, 
+                            label: 'Total Active', 
+                            fontSize: '11px', 
+                            fontWeight: 700, 
+                            color: '#6b7280', 
+                            formatter: () => '100%' 
+                        },
+                        value: {
+                            fontSize: '22px',
+                            fontWeight: 800,
+                            fontFamily: 'Outfit',
+                            color: '#000000',
+                            formatter: (val) => val + '%'
+                        }
+                    } 
+                } 
+            } 
+        },
         stroke: { width: 0 }
     };
     new ApexCharts(document.querySelector("#donutChart"), donutOptions).render();
 
-    // Sparklines
-    const sparklineGen = (color) => ({
-        chart: { type: 'area', height: 40, sparkline: { enabled: true }, animations: { enabled: false } },
+    // Sparklines for KPI Cards
+    const sparklineGen = (color, sparkData) => ({
+        chart: { type: 'area', height: 40, sparkline: { enabled: true }, animations: { enabled: true } },
         stroke: { curve: 'smooth', width: 2 },
-        fill: { opacity: 0.1, colors: [color] },
-        series: [{ data: [15, 25, 18, 30, 22, 35, 28] }],
+        fill: { opacity: 0.05, colors: [color] },
+        series: [{ data: sparkData }],
         colors: [color],
         tooltip: { enabled: false }
     });
-    new ApexCharts(document.querySelector("#sparkline1"), sparklineGen('#000000')).render();
-    new ApexCharts(document.querySelector("#sparkline2"), sparklineGen('#000000')).render();
-    new ApexCharts(document.querySelector("#sparkline3"), sparklineGen('#6b7280')).render();
-    new ApexCharts(document.querySelector("#sparkline4"), sparklineGen('#000000')).render();
+    
+    new ApexCharts(document.querySelector("#sparkline1"), sparklineGen('#000000', [10, 12, 11, 15, 14, 18, 16])).render();
+    new ApexCharts(document.querySelector("#sparkline2"), sparklineGen('#000000', [45, 60, 52, 75, 62, 85, 92])).render();
+    new ApexCharts(document.querySelector("#sparkline3"), sparklineGen('#6b7280', [32, 28, 30, 24, 25, 28, 27])).render();
+    new ApexCharts(document.querySelector("#sparkline4"), sparklineGen('#000000', [93, 94, 94, 95, 94, 95, 94.2])).render();
 
     // Real-time Activity Feed Polling
     function fetchRecentActivities() {
         fetch('{{ url_for("org.get_recent_activities") }}')
             .then(response => response.json())
             .then(data => {
-                const container = document.querySelector('.activity-feed');
-                const viewAllLink = container.querySelector('.text-center.mt-3');
+                const container = document.querySelector('.activity-feed-timeline');
+                if (!container) return;
+
+                const viewAllLink = container.querySelector('.timeline-footer-action');
                 
-                // Remove existing activity items
-                const existingItems = container.querySelectorAll('.d-flex.gap-3.mb-4');
+                // Hide loading spinner if present
+                const loadingStream = container.querySelector('.loading-stream');
+                if (loadingStream) {
+                    loadingStream.style.display = 'none';
+                }
+                
+                // Remove existing timeline items
+                const existingItems = container.querySelectorAll('.activity-timeline-item');
                 existingItems.forEach(item => item.remove());
                 
                 // Remove no-data message if exists
@@ -344,29 +600,81 @@
                 if (data.length === 0) {
                     const noData = document.createElement('div');
                     noData.className = 'no-activity-msg';
-                    noData.style.cssText = "text-align: center; padding: 2rem 0; color: var(--grey-400); font-size: 0.875rem;";
-                    noData.innerText = "No recent activity recorded.";
+                    noData.style.cssText = "text-align: center; padding: 3rem 0; color: var(--grey-400); font-size: 0.875rem;";
+                    noData.innerText = "No recent system logs or activity recorded.";
                     container.insertBefore(noData, viewAllLink);
                     return;
                 }
                 
-                data.forEach(act => {
+                data.forEach((act, idx) => {
                     const div = document.createElement('div');
-                    div.className = "d-flex gap-3 mb-4 border-bottom-dashed pb-4";
+                    div.className = "activity-timeline-item";
                     
-                    let iconClass = 'bi-pencil-square';
-                    if (act.action.includes('Login')) iconClass = 'bi-shield-lock';
-                    if (act.action.includes('Create') || act.action.includes('Add')) iconClass = 'bi-plus-circle';
-                    if (act.action.includes('Security')) iconClass = 'bi-key';
-                    if (act.action.includes('Campaign')) iconClass = 'bi-megaphone';
+                    let iconClass = 'bi-activity';
+                    let badgeBg = 'rgba(107, 114, 128, 0.06)';
+                    let iconColor = 'var(--grey-600)';
+                    let borderColor = 'var(--grey-100)';
+                    
+                    const actionLower = act.action.toLowerCase();
+                    
+                    if (actionLower.includes('login') || actionLower.includes('auth')) {
+                        iconClass = 'bi-shield-lock-fill';
+                        badgeBg = 'rgba(37, 99, 235, 0.06)';
+                        iconColor = '#2563eb';
+                        borderColor = 'rgba(37, 99, 235, 0.12)';
+                    } else if (actionLower.includes('create') || actionLower.includes('add') || actionLower.includes('new')) {
+                        iconClass = 'bi-plus-lg';
+                        badgeBg = 'rgba(16, 185, 129, 0.06)';
+                        iconColor = '#10b981';
+                        borderColor = 'rgba(16, 185, 129, 0.12)';
+                    } else if (actionLower.includes('delete') || actionLower.includes('remove')) {
+                        iconClass = 'bi-trash3-fill';
+                        badgeBg = 'rgba(239, 68, 68, 0.06)';
+                        iconColor = '#ef4444';
+                        borderColor = 'rgba(239, 68, 68, 0.12)';
+                    } else if (actionLower.includes('campaign')) {
+                        iconClass = 'bi-megaphone-fill';
+                        badgeBg = 'rgba(168, 85, 247, 0.06)';
+                        iconColor = '#a855f7';
+                        borderColor = 'rgba(168, 85, 247, 0.12)';
+                    } else if (actionLower.includes('payment') || actionLower.includes('subscribe') || actionLower.includes('invoice') || actionLower.includes('billing')) {
+                        iconClass = 'bi-credit-card-fill';
+                        badgeBg = 'rgba(245, 158, 11, 0.06)';
+                        iconColor = '#d97706';
+                        borderColor = 'rgba(245, 158, 11, 0.12)';
+                    } else if (actionLower.includes('update') || actionLower.includes('edit') || actionLower.includes('modify') || actionLower.includes('change') || actionLower.includes('save')) {
+                        iconClass = 'bi-pencil-fill';
+                        badgeBg = 'rgba(99, 102, 241, 0.06)';
+                        iconColor = '#6366f1';
+                        borderColor = 'rgba(99, 102, 241, 0.12)';
+                    }
+                    
+                    // Format and highlight details
+                    let detailsHtml = act.details || 'System operation executed.';
+                    // Highlight IP addresses
+                    detailsHtml = detailsHtml.replace(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g, '<code class="ip-code">$1</code>');
+                    // Highlight quoted elements
+                    detailsHtml = detailsHtml.replace(/'([^']+)'/g, '<span class="details-highlight">"$1"</span>');
                     
                     div.innerHTML = `
-                        <div class="activity-icon">
-                            <i class="bi ${iconClass}"></i>
+                        <div class="activity-timeline-marker">
+                            <div class="activity-timeline-dot" style="background: ${badgeBg}; color: ${iconColor}; border: 1px solid ${borderColor};">
+                                <i class="bi ${iconClass}"></i>
+                            </div>
+                            <div class="activity-timeline-line"></div>
                         </div>
-                        <div>
-                            <h6 class="activity-item-title" style="margin-bottom: 2px;">${act.action}: ${act.details}</h6>
-                            <p class="activity-item-time" style="margin: 0; opacity: 0.8;">${act.time} • <span class="fw-bold">${act.user}</span></p>
+                        <div class="activity-timeline-content">
+                            <div class="activity-timeline-header">
+                                <h5 class="activity-timeline-title">${act.action}</h5>
+                                <span class="activity-timeline-time">${act.time}</span>
+                            </div>
+                            <p class="activity-timeline-details">${detailsHtml}</p>
+                            <div class="activity-timeline-footer">
+                                <span class="activity-user-badge ${act.user === 'System' ? 'system' : ''}">
+                                    <i class="bi ${act.user === 'System' ? 'bi-cpu-fill' : 'bi-person-fill'}" style="font-size: 0.7rem; opacity: 0.85;"></i>
+                                    ${act.user}
+                                </span>
+                            </div>
                         </div>
                     `;
                     container.insertBefore(div, viewAllLink);
@@ -379,20 +687,22 @@
     fetchRecentActivities();
     setInterval(fetchRecentActivities, 30000);
 
-    function showModuleReport(data) {
-        document.getElementById('m_modal_name').innerText = data.name + ' Report';
-        document.getElementById('m_modal_campaigns').innerText = data.campaigns;
-        document.getElementById('m_modal_records').innerText = data.records;
-        document.getElementById('m_modal_calls').innerText = data.calls;
-        document.getElementById('m_modal_messages').innerText = data.messages;
-        document.getElementById('m_modal_creator').innerText = data.creator;
-        document.getElementById('m_modal_date').innerText = data.created_at;
-        
-        document.getElementById('moduleReportModal').style.display = 'flex';
-    }
-
-    function hideModuleReport() {
-        document.getElementById('moduleReportModal').style.display = 'none';
+    function deleteModule(mid) {
+        fetch(`/org/modules/${mid}/delete`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                window.location.reload();
+            } else {
+                alert('Failed to delete module: ' + data.error);
+            }
+        })
+        .catch(err => console.error(err));
     }
 </script>
 {% endblock %}

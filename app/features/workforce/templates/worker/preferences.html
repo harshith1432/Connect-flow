@@ -23,17 +23,21 @@
                             <div class="col-md-6">
                                 <label class="form-label">Theme Mode</label>
                                 <select name="theme" class="form-select premium-input">
-                                    <option value="system" {% if user.theme == 'system' %}selected{% endif %}>System Default</option>
-                                    <option value="light" {% if user.theme == 'light' %}selected{% endif %}>Light Mode</option>
-                                    <option value="dark" {% if user.theme == 'dark' %}selected{% endif %}>Dark Mode</option>
+                                    <option value="system" {% if current_user.preferences and current_user.preferences.get('theme') == 'system' %}selected{% endif %}>System Default</option>
+                                    <option value="light" {% if current_user.preferences and current_user.preferences.get('theme') == 'light' %}selected{% endif %}>Light Mode</option>
+                                    <option value="dark" {% if current_user.preferences and current_user.preferences.get('theme') == 'dark' %}selected{% endif %}>Dark Mode</option>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Language</label>
                                 <select name="language" class="form-select premium-input">
-                                    <option value="en" {% if user.language == 'en' %}selected{% endif %}>English (US)</option>
-                                    <option value="en-gb" {% if user.language == 'en-gb' %}selected{% endif %}>English (UK)</option>
-                                    <option value="es" {% if user.language == 'es' %}selected{% endif %}>Español</option>
+                                    <option value="English" {% if not current_user.preferences or current_user.preferences.get('language') == 'English' %}selected{% endif %}>English</option>
+                                    <option value="Hindi" {% if current_user.preferences and current_user.preferences.get('language') == 'Hindi' %}selected{% endif %}>Hindi</option>
+                                    <option value="Kannada" {% if current_user.preferences and current_user.preferences.get('language') == 'Kannada' %}selected{% endif %}>Kannada</option>
+                                    <option value="Tamil" {% if current_user.preferences and current_user.preferences.get('language') == 'Tamil' %}selected{% endif %}>Tamil</option>
+                                    <option value="Marathi" {% if current_user.preferences and current_user.preferences.get('language') == 'Marathi' %}selected{% endif %}>Marathi</option>
+                                    <option value="Malayalam" {% if current_user.preferences and current_user.preferences.get('language') == 'Malayalam' %}selected{% endif %}>Malayalam</option>
+                                    <option value="Telugu" {% if current_user.preferences and current_user.preferences.get('language') == 'Telugu' %}selected{% endif %}>Telugu</option>
                                 </select>
                             </div>
                         </div>

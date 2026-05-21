@@ -125,6 +125,11 @@ class FormValidator {
         const value = input.value.trim();
         const recordId = input.getAttribute('data-record-id') || null;
 
+        // Get group_id from closest form
+        const form = input.closest('form');
+        const groupIdInput = form ? form.querySelector('input[name="group_id"]') : null;
+        const groupId = groupIdInput ? groupIdInput.value : null;
+
         if (!value) return;
 
         // Show "Checking..."
@@ -140,7 +145,8 @@ class FormValidator {
                 body: JSON.stringify({
                     field_id: fieldId,
                     value: value,
-                    record_id: recordId
+                    record_id: recordId,
+                    group_id: groupId
                 })
             });
 

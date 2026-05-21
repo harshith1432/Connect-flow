@@ -1,0 +1,150 @@
+{% extends "base_platform_premium.html" %}
+
+{% block title %}ConnectFlow | Helpdesk{% endblock %}
+{% block page_title %}Helpdesk Support{% endblock %}
+
+{% block content %}
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Queries</span>
+            <div class="kpi-icon">
+                <i class="bi bi-headset"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ total_queries }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-info-circle"></i>
+            <span>Registered</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Pending Queries</span>
+            <div class="kpi-icon">
+                <i class="bi bi-exclamation-circle{% if pending_queries > 0 %}-fill text-warning{% endif %}"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ pending_queries }}</div>
+        <div class="kpi-trend {% if pending_queries > 0 %}trend-down{% else %}trend-up{% endif %}">
+            <i class="bi {% if pending_queries > 0 %}bi-hourglass-split{% else %}bi-check-all{% endif %}"></i>
+            <span>{% if pending_queries > 0 %}Needs Attention{% else %}All Solved{% endif %}</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Resolved Queries</span>
+            <div class="kpi-icon">
+                <i class="bi bi-check-circle-fill text-success"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ resolved_queries }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-shield-check"></i>
+            <span>Completed</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <div class="col-12">
+        <div class="premium-card">
+            <div class="card-header-premium">
+                <div class="header-left">
+                    <h2>Support Tickets</h2>
+                    <p>Track and resolve issues submitted by Organization Admins and Workers</p>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table align-middle table-hover" style="border-collapse: separate; border-spacing: 0 0.5rem; padding: 0 1.5rem;">
+                    <thead>
+                        <tr style="color: var(--grey-400); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <th class="border-0 pb-3" style="width: 15%;">Ticket Number</th>
+                            <th class="border-0 pb-3" style="width: 20%;">Organization</th>
+                            <th class="border-0 pb-3" style="width: 20%;">Submitter</th>
+                            <th class="border-0 pb-3" style="width: 25%;">Message</th>
+                            <th class="border-0 pb-3" style="width: 10%;">Status</th>
+                            <th class="border-0 pb-3 text-end" style="width: 10%;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for q in queries %}
+                        <tr style="background: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-radius: 8px;">
+                            <td class="border-0 rounded-start" style="padding: 1.2rem 1rem;">
+                                <span class="fw-bold" style="color: var(--text-dark); font-family: monospace; font-size: 0.95rem;">{{ q.ticket_number }}</span>
+                            </td>
+                            <td class="border-0" style="padding: 1.2rem 1rem;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div style="width: 32px; height: 32px; border-radius: 6px; background: var(--grey-100); display: flex; align-items: center; justify-content: center; color: var(--grey-600);">
+                                        <i class="bi bi-building"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold" style="color: var(--text-dark); font-size: 0.9rem;">{{ q.to_dict().organization_name }}</div>
+                                        <div class="small" style="color: var(--grey-400);">ID: {{ q.organization_id }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="border-0" style="padding: 1.2rem 1rem;">
+                                <div>
+                                    <div class="fw-semibold" style="color: var(--text-dark); font-size: 0.9rem;">{{ q.to_dict().user_name }}</div>
+                                    <div class="d-flex align-items-center gap-1.5 mt-1">
+                                        {% if q.user_type == 'org_admin' %}
+                                        <span class="badge" style="background: rgba(75, 85, 99, 0.1); color: #4b5563; font-size: 0.7rem; padding: 2px 6px;">Org Admin</span>
+                                        {% else %}
+                                        <span class="badge" style="background: rgba(107, 114, 128, 0.1); color: #6b7280; font-size: 0.7rem; padding: 2px 6px;">Worker</span>
+                                        {% endif %}
+                                        <span class="small text-muted" style="font-size: 0.75rem;">({{ q.to_dict().user_email }})</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="border-0" style="padding: 1.2rem 1rem;">
+                                <div style="max-height: 80px; overflow-y: auto; font-size: 0.9rem; color: var(--text-dark); line-height: 1.4; word-break: break-word; white-space: pre-line;">
+                                    {{ q.message }}
+                                </div>
+                                <div class="small text-muted mt-1" style="font-size: 0.75rem;">
+                                    Submitted: {{ q.created_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
+                                </div>
+                            </td>
+                            <td class="border-0" style="padding: 1.2rem 1rem;">
+                                {% if q.status == 'Pending' %}
+                                <span class="badge-premium" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">Pending</span>
+                                {% else %}
+                                <span class="badge-premium" style="background: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">Resolved</span>
+                                {% endif %}
+                            </td>
+                            <td class="border-0 rounded-end text-end" style="padding: 1.2rem 1rem;">
+                                <div class="d-flex justify-content-end gap-2">
+                                    {% if q.status == 'Pending' %}
+                                    <form method="post" action="{{ url_for('super_admin.resolve_query', qid=q.id) }}" style="margin: 0;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button class="btn btn-sm btn-success d-flex align-items-center gap-1.5" style="border-radius: 8px; font-size: 0.8rem; padding: 6px 12px; font-weight: 500;" title="Mark as Solved">
+                                            <i class="bi bi-check2-circle" style="font-size: 0.95rem;"></i> Solve
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" disabled style="border-radius: 8px; font-size: 0.8rem; padding: 6px 12px; font-weight: 500; opacity: 0.65;">
+                                        <i class="bi bi-check2-all" style="font-size: 0.95rem;"></i> Solved
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5 border-0">
+                                <div class="empty-state py-4" style="color: var(--grey-400);">
+                                    <i class="bi bi-headset" style="font-size: 2.5rem; margin-bottom: 1rem; display: block;"></i>
+                                    <p class="fw-semibold" style="font-size: 1.1rem; color: var(--text-dark);">No Support Tickets Found</p>
+                                    <p class="small text-muted" style="max-width: 320px; margin: 0.25rem auto 0 auto;">When Organization Admins or Workers raise queries from their dashboards, they will appear here in real-time.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

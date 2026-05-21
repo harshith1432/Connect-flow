@@ -1,183 +1,378 @@
-{% extends "base.html" %}
+{% extends "base_platform_premium.html" %}
 
-{% block title %}Manage Platform Admins{% endblock %}
+{% block title %}ConnectFlow | Platform Admins{% endblock %}
+{% block page_title %}Platform Admin Management{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <nav aria-label="breadcrumb">
-            <ul class="breadcrumb-premium d-flex align-items-center mb-0 p-0">
-                <li class="breadcrumb-item-premium">
-                    <a href="{{ url_for('super_admin.dashboard') }}">
-                        <i class="bi bi-speedometer2 me-1"></i> Dashboard
-                    </a>
-                </li>
-                <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50">
-                    <i class="bi bi-chevron-right small"></i>
-                </li>
-                <li class="breadcrumb-item-premium active fw-bold text-dark">
-                    Platform Admins
-                </li>
-            </ul>
-        </nav>
-        <h2 class="fw-bold mt-2">Security & Admin Management</h2>
+<!-- KPI Overview Row -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Admins</span>
+            <div class="kpi-icon">
+                <i class="bi bi-shield-lock"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ admins|length }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-people"></i>
+            <span>Registered</span>
+        </div>
     </div>
-    <button class="btn btn-primary" style="border-radius: 20px;" data-bs-toggle="modal" data-bs-target="#addAdminModal">
-        <i class="bi bi-person-plus me-1"></i> Add New Admin
-    </button>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Default Login</span>
+            <div class="kpi-icon">
+                <i class="bi bi-key{% if security.default_admin_enabled %}-fill{% endif %}"></i>
+            </div>
+        </div>
+        <div class="kpi-value" style="font-size: 1.25rem;">{% if security.default_admin_enabled %}Enabled{% else %}Disabled{% endif %}</div>
+        <div class="kpi-trend {% if security.default_admin_enabled %}trend-up{% else %}trend-down{% endif %}">
+            <i class="bi bi-{% if security.default_admin_enabled %}check-circle{% else %}x-circle{% endif %}"></i>
+            <span>{% if security.default_admin_enabled %}Active{% else %}Blocked{% endif %}</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Security Score</span>
+            <div class="kpi-icon">
+                <i class="bi bi-shield-check"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{% if not security.default_admin_enabled and admins|length > 1 %}High{% elif admins|length > 1 %}Medium{% else %}Low{% endif %}</div>
+        <div class="kpi-trend {% if not security.default_admin_enabled %}trend-up{% else %}trend-down{% endif %}">
+            <i class="bi bi-graph-up"></i>
+            <span>Platform</span>
+        </div>
+    </div>
+    <div class="kpi-card" style="cursor: pointer;" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+        <div class="kpi-header">
+            <span class="kpi-label">Quick Action</span>
+            <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                <i class="bi bi-person-plus"></i>
+            </div>
+        </div>
+        <div class="kpi-value" style="font-size: 1.25rem;">Add Admin</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-plus-circle"></i>
+            <span>Invite</span>
+        </div>
+    </div>
 </div>
 
-<div class="row">
-    <!-- Security Settings Card -->
-    <div class="col-md-4">
-        <div class="card border-0 shadow-sm mb-4" style="border-radius: 15px;">
-            <div class="card-body">
-                <h5 class="fw-bold mb-3">System Security</h5>
-                <p class="text-muted small mb-4">Manage system-level access controls and default credentials.</p>
+<!-- Main Content Grid -->
+<div class="row g-4">
+    <!-- Left Column: Security + Quick Actions -->
+    <div class="col-lg-4">
+        <div class="d-flex flex-column gap-4">
 
-                <form method="POST" action="{{ url_for('super_admin.manage_admins') }}">
+            <!-- Personal Preferences -->
+            <div class="premium-panel">
+                <div class="card-header-premium" style="margin-bottom: 1.5rem;">
+                    <div class="header-left">
+                        <h2>Personal Preferences</h2>
+                        <p>Customize your workspace</p>
+                    </div>
+                    <div class="kpi-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899;">
+                        <i class="bi bi-palette"></i>
+                    </div>
+                </div>
+
+                <form method="POST" action="{{ url_for('super_admin.update_preferences') }}" id="preferencesForm">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded-3 mb-3">
-                        <div>
-                            <div class="fw-bold">Default Admin Login</div>
-                            <div class="smaller text-muted">Allow login via .env credentials</div>
+
+                    <div class="form-group mb-3">
+                        <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Theme Mode</label>
+                        <select name="theme" class="form-select" style="border-radius: 10px; font-size: 0.85rem;" onchange="this.form.submit()">
+                            <option value="system" {% if current_user.preferences and current_user.preferences.get('theme') == 'system' %}selected{% endif %}>System Default</option>
+                            <option value="light" {% if not current_user.preferences or current_user.preferences.get('theme') == 'light' %}selected{% endif %}>Light Mode</option>
+                            <option value="dark" {% if current_user.preferences and current_user.preferences.get('theme') == 'dark' %}selected{% endif %}>Dark Mode</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="form-label" style="font-size: 0.8rem; font-weight: 700;">Language</label>
+                        <select name="language" class="form-select" style="border-radius: 10px; font-size: 0.85rem;" onchange="this.form.submit()">
+                            <option value="English" {% if not current_user.preferences or current_user.preferences.get('language') == 'English' %}selected{% endif %}>English</option>
+                            <option value="Hindi" {% if current_user.preferences and current_user.preferences.get('language') == 'Hindi' %}selected{% endif %}>Hindi</option>
+                            <option value="Kannada" {% if current_user.preferences and current_user.preferences.get('language') == 'Kannada' %}selected{% endif %}>Kannada</option>
+                            <option value="Tamil" {% if current_user.preferences and current_user.preferences.get('language') == 'Tamil' %}selected{% endif %}>Tamil</option>
+                            <option value="Marathi" {% if current_user.preferences and current_user.preferences.get('language') == 'Marathi' %}selected{% endif %}>Marathi</option>
+                            <option value="Malayalam" {% if current_user.preferences and current_user.preferences.get('language') == 'Malayalam' %}selected{% endif %}>Malayalam</option>
+                            <option value="Telugu" {% if current_user.preferences and current_user.preferences.get('language') == 'Telugu' %}selected{% endif %}>Telugu</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Security Control Center -->
+            <div class="premium-panel">
+                <div class="card-header-premium" style="margin-bottom: 1.5rem;">
+                    <div class="header-left">
+                        <h2>Security Controls</h2>
+                        <p>Platform access configuration</p>
+                    </div>
+                    <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+                        <i class="bi bi-shield-lock"></i>
+                    </div>
+                </div>
+
+                <!-- Default Admin Login Toggle -->
+                <form method="POST" action="{{ url_for('super_admin.manage_admins') }}" id="securityForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                    <div class="security-control-item">
+                        <div class="security-control-left">
+                            <div class="security-icon" style="background: {% if security.default_admin_enabled %}rgba(245, 158, 11, 0.1){% else %}rgba(16, 185, 129, 0.1){% endif %}; color: {% if security.default_admin_enabled %}#f59e0b{% else %}#10b981{% endif %};">
+                                <i class="bi bi-key-fill"></i>
+                            </div>
+                            <div>
+                                <div class="security-title">Default Admin Login</div>
+                                <div class="security-desc">Allow login via .env credentials</div>
+                            </div>
                         </div>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" name="default_admin_enabled"
-                                id="defaultAdminSwitch" style="width: 2.5em; height: 1.25em;" {% if
-                                security.default_admin_enabled %}checked{% endif %} onchange="this.form.submit()">
+                        <div class="form-check form-switch m-0">
+                            <input class="form-check-input security-toggle" type="checkbox" name="default_admin_enabled"
+                                id="defaultAdminSwitch" {% if security.default_admin_enabled %}checked{% endif %}
+                                onchange="this.form.submit()">
                         </div>
                     </div>
                 </form>
 
-                <div class="alert alert-warning smaller mb-0" style="border-radius: 12px; border: none;">
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    <strong>Important:</strong> Disabling this will block the default account ({{ default_email }}).
-                    Ensure you have another admin account verified.
+                <!-- Security Advisory -->
+                <div class="security-advisory {% if security.default_admin_enabled %}advisory-warning{% else %}advisory-success{% endif %}">
+                    <div class="advisory-icon">
+                        <i class="bi bi-{% if security.default_admin_enabled %}exclamation-triangle{% else %}check-circle{% endif %}-fill"></i>
+                    </div>
+                    <div>
+                        <div class="advisory-title">{% if security.default_admin_enabled %}Security Advisory{% else %}Secure Configuration{% endif %}</div>
+                        <div class="advisory-text">
+                            {% if security.default_admin_enabled %}
+                            Default account ({{ default_email }}) is active. Disable after creating dedicated admin accounts for better security.
+                            {% else %}
+                            Default admin login is disabled. Only registered admin accounts can access the platform.
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <!-- Quick Actions Panel -->
+            <div class="premium-panel">
+                <div class="card-header-premium" style="margin-bottom: 1rem;">
+                    <div class="header-left">
+                        <h2>Quick Actions</h2>
+                        <p>Admin management shortcuts</p>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-column gap-2">
+                    <button class="quick-action-btn" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+                        <div class="qa-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+                            <i class="bi bi-person-plus"></i>
+                        </div>
+                        <div class="qa-content">
+                            <div class="qa-title">Invite Admin</div>
+                            <div class="qa-desc">Add new platform administrator</div>
+                        </div>
+                        <i class="bi bi-chevron-right qa-arrow"></i>
+                    </button>
+
+                    <button class="quick-action-btn" onclick="window.location.href='{{ url_for('super_admin.dashboard') }}'">
+                        <div class="qa-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+                            <i class="bi bi-grid-1x2"></i>
+                        </div>
+                        <div class="qa-content">
+                            <div class="qa-title">Dashboard</div>
+                            <div class="qa-desc">Return to platform overview</div>
+                        </div>
+                        <i class="bi bi-chevron-right qa-arrow"></i>
+                    </button>
+
+                    <button class="quick-action-btn" onclick="window.location.href='{{ url_for('super_admin.notifications') }}'">
+                        <div class="qa-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                            <i class="bi bi-bell"></i>
+                        </div>
+                        <div class="qa-content">
+                            <div class="qa-title">Notifications</div>
+                            <div class="qa-desc">View platform alerts</div>
+                        </div>
+                        <i class="bi bi-chevron-right qa-arrow"></i>
+                    </button>
+                </div>
+            </div>
+
         </div>
     </div>
 
-    <!-- Admin List Card -->
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm" style="border-radius: 15px;">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="bg-light">
-                            <tr>
-                                <th class="ps-4">Admin Email</th>
-                                <th>Created At</th>
-                                <th class="text-end pe-4">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for admin in admins %}
-                            <tr>
-                                <td class="ps-4">
-                                    <div class="fw-bold">{{ admin.email }}</div>
-                                    {% if admin.email == default_email %}
-                                    <span class="badge bg-primary-subtle text-primary smaller">Default Account</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="small text-muted">{{ admin.created_at.strftime('%d %b, %Y') }}</div>
-                                </td>
-                                <td class="text-end pe-4">
-                                    <div class="d-flex gap-2 justify-content-end">
-                                        <button class="btn btn-sm btn-outline-secondary" style="border-radius: 20px;"
-                                            data-bs-toggle="modal" data-bs-target="#editAdminModal{{ admin.id }}">
-                                            <i class="bi bi-pencil me-1"></i> Edit
-                                        </button>
-                                        {% if admin.email != default_email %}
-                                        <form action="{{ url_for('super_admin.delete_admin', aid=admin.id) }}" method="POST"
-                                            style="display:inline;">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                style="border-radius: 20px;"
-                                                onclick="return confirm('Are you sure you want to remove this admin?')">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </form>
-                                        {% endif %}
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <!-- Edit Admin Modal -->
-                            <div class="modal fade" id="editAdminModal{{ admin.id }}" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <div class="modal-content" style="border-radius: 20px;">
-                                        <div class="modal-header border-0 pb-0">
-                                            <h5 class="fw-bold">Update Admin Account</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <form action="{{ url_for('super_admin.update_admin', aid=admin.id) }}" method="POST">
-                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <label
-                                                        class="form-label smaller fw-bold text-muted text-uppercase">Email
-                                                        Address</label>
-                                                    <input type="email" name="email" class="form-control"
-                                                        value="{{ admin.email }}" required style="border-radius: 12px;">
-                                                </div>
-                                                <div class="mb-3">
-                                                    <label
-                                                        class="form-label smaller fw-bold text-muted text-uppercase">New
-                                                        Password (leave blank to keep current)</label>
-                                                    <input type="password" name="password" class="form-control"
-                                                        placeholder="••••••••" style="border-radius: 12px;">
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer border-0">
-                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal"
-                                                    style="border-radius: 12px;">Cancel</button>
-                                                <button type="submit" class="btn btn-primary"
-                                                    style="border-radius: 12px;">Update Admin</button>
-                                            </div>
-                                        </form>
-                                    </div>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+    <!-- Right Column: Admin Table -->
+    <div class="col-lg-8">
+        <div class="premium-panel">
+            <div class="card-header-premium">
+                <div class="header-left">
+                    <h2>Platform Administrators</h2>
+                    <p>All registered admin accounts</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge-premium">{{ admins|length }} Admins</span>
+                    <button class="btn-black" style="padding: 0.5rem 1rem; font-size: 0.815rem;" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+                        <i class="bi bi-plus-lg"></i> Add Admin
+                    </button>
                 </div>
             </div>
+
+            {% if admins %}
+            <div class="table-responsive">
+                <table class="activity-table">
+                    <thead>
+                        <tr>
+                            <th>Administrator</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                            <th style="text-align: right;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for admin in admins %}
+                        <tr class="admin-row">
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="admin-avatar {% if admin.email == default_email %}avatar-default{% endif %}">
+                                        {{ admin.email[0].upper() }}
+                                    </div>
+                                    <div>
+                                        <div class="admin-email">{{ admin.email }}</div>
+                                        <div class="d-flex align-items-center gap-2 mt-1">
+                                            {% if admin.email == default_email %}
+                                            <span class="admin-badge badge-system">
+                                                <i class="bi bi-star-fill" style="font-size: 0.55rem;"></i> System Default
+                                            </span>
+                                            {% endif %}
+                                            {% if admin.id == current_user.id %}
+                                            <span class="admin-badge badge-you">
+                                                <i class="bi bi-person-fill" style="font-size: 0.55rem;"></i> You
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="role-badge">
+                                    <i class="bi bi-shield-fill-check" style="font-size: 0.7rem;"></i>
+                                    Platform Owner
+                                </span>
+                            </td>
+                            <td>
+                                <div class="admin-date">{{ admin.created_at.strftime('%d %b, %Y') }}</div>
+                                <div class="admin-date-sub">{{ admin.created_at.strftime('%I:%M %p') }}</div>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <button class="btn-action-premium" title="Edit Admin"
+                                        data-bs-toggle="modal" data-bs-target="#editAdminModal{{ admin.id }}"
+                                        style="color: var(--grey-600);">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    {% if admin.email != default_email and admin.id != current_user.id %}
+                                    <form action="{{ url_for('super_admin.delete_admin', aid=admin.id) }}" method="POST" style="margin: 0;">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn-action-premium" title="Delete Admin"
+                                            style="color: #ef4444;"
+                                            onclick="return confirm('Are you sure you want to remove this admin? This action cannot be undone.')">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 4rem 2rem;">
+                <div style="width: 80px; height: 80px; background: var(--grey-50); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <i class="bi bi-shield-lock" style="font-size: 2rem; color: var(--grey-300);"></i>
+                </div>
+                <h4 style="font-family: var(--font-heading); font-weight: 800; margin-bottom: 0.5rem; color: var(--black);">No Admins Found</h4>
+                <p style="color: var(--grey-400); font-size: 0.9rem; max-width: 300px; margin: 0 auto 1.5rem;">Create your first platform administrator to get started.</p>
+                <button class="btn-black" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+                    <i class="bi bi-person-plus"></i> Add Admin
+                </button>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
 
+<!-- Edit Admin Modals (one per admin — preserved functionality) -->
+{% for admin in admins %}
+<div class="modal fade" id="editAdminModal{{ admin.id }}" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-modal">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="modal-title-premium">Update Administrator</h5>
+                    <p class="modal-subtitle-premium">Modify account credentials for {{ admin.email }}</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('super_admin.update_admin', aid=admin.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-input" value="{{ admin.email }}" required>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">New Password</label>
+                        <input type="password" name="password" class="form-input" placeholder="Leave blank to keep current">
+                        <div style="font-size: 0.75rem; color: var(--grey-400); margin-top: 0.5rem;">Only fill this if you want to change the password.</div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn-secondary-premium" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-black">
+                        <i class="bi bi-check-lg"></i> Update Admin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
 <!-- Add Admin Modal -->
 <div class="modal fade" id="addAdminModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content" style="border-radius: 20px;">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content premium-modal">
             <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold">Add Platform Admin</h5>
+                <div>
+                    <h5 class="modal-title-premium">Add Platform Admin</h5>
+                    <p class="modal-subtitle-premium">Create a new administrator with full platform access</p>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <form action="{{ url_for('super_admin.add_admin') }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <div class="modal-body">
-                    <p class="text-muted small mb-4">Create a new administrator with full access to the platform
-                        dashboard.</p>
-                    <div class="mb-3">
-                        <label class="form-label smaller fw-bold text-muted text-uppercase">Email Address</label>
-                        <input type="email" name="email" class="form-control" placeholder="admin@example.com" required
-                            style="border-radius: 12px;">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-input" placeholder="admin@example.com" required>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label smaller fw-bold text-muted text-uppercase">Password</label>
-                        <input type="password" name="password" class="form-control" placeholder="••••••••" required
-                            style="border-radius: 12px;">
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-input" placeholder="Choose a strong password" required>
+                        <div style="font-size: 0.75rem; color: var(--grey-400); margin-top: 0.5rem;">Minimum 8 characters recommended with mixed case and symbols.</div>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal"
-                        style="border-radius: 12px;">Cancel</button>
-                    <button type="submit" class="btn btn-primary" style="border-radius: 12px;">Create Admin</button>
+                    <button type="button" class="btn-secondary-premium" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-black">
+                        <i class="bi bi-person-plus"></i> Create Admin
+                    </button>
                 </div>
             </form>
         </div>
@@ -185,41 +380,303 @@
 </div>
 
 <style>
-    .smaller {
-        font-size: 0.75rem;
+    /* Security Controls */
+    .security-control-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.25rem;
+        background: var(--grey-50);
+        border-radius: 16px;
+        margin-bottom: 1rem;
+        transition: var(--transition-base);
+        border: 1px solid transparent;
     }
 
-    .breadcrumb-premium {
-        list-style: none;
-        padding: 0;
-        margin: 0;
+    .security-control-item:hover {
+        background: var(--white);
+        border-color: var(--grey-100);
+        box-shadow: var(--shadow-premium);
+    }
+
+    .security-control-left {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .security-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .security-title {
         font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--black);
+        font-family: var(--font-heading);
     }
 
-    .breadcrumb-item-premium a {
-        color: #94a3b8;
-        text-decoration: none;
-        transition: color 0.2s;
+    .security-desc {
+        font-size: 0.78rem;
+        color: var(--grey-400);
         font-weight: 500;
     }
 
-    .breadcrumb-item-premium a:hover {
-        color: #6c5ce7;
+    .security-toggle {
+        width: 2.75em !important;
+        height: 1.4em !important;
+        cursor: pointer;
+        border-color: var(--grey-300) !important;
     }
 
-    .breadcrumb-item-premium.active {
-        color: #475569;
-        font-weight: 600;
+    .security-toggle:checked {
+        background-color: var(--black) !important;
+        border-color: var(--black) !important;
     }
 
-    .breadcrumb-spacer-premium {
-        color: #cbd5e1;
+    .security-toggle:focus {
+        box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    /* Security Advisory */
+    .security-advisory {
+        display: flex;
+        gap: 0.875rem;
+        padding: 1rem 1.25rem;
+        border-radius: 16px;
+        align-items: flex-start;
+    }
+
+    .advisory-warning {
+        background: rgba(245, 158, 11, 0.06);
+        border: 1px solid rgba(245, 158, 11, 0.15);
+    }
+
+    .advisory-success {
+        background: rgba(16, 185, 129, 0.06);
+        border: 1px solid rgba(16, 185, 129, 0.15);
+    }
+
+    .advisory-icon {
+        font-size: 1.1rem;
+        flex-shrink: 0;
+        margin-top: 2px;
+    }
+
+    .advisory-warning .advisory-icon { color: #f59e0b; }
+    .advisory-success .advisory-icon { color: #10b981; }
+
+    .advisory-title {
+        font-size: 0.815rem;
+        font-weight: 700;
+        color: var(--black);
+        margin-bottom: 0.2rem;
+    }
+
+    .advisory-text {
+        font-size: 0.78rem;
+        color: var(--grey-500);
+        line-height: 1.5;
+    }
+
+    /* Quick Actions */
+    .quick-action-btn {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.875rem 1rem;
+        background: var(--grey-50);
+        border: 1px solid transparent;
+        border-radius: 14px;
+        cursor: pointer;
+        transition: var(--transition-base);
+        width: 100%;
+        text-align: left;
+        font-family: var(--font-body);
+    }
+
+    .quick-action-btn:hover {
+        background: var(--white);
+        border-color: var(--grey-200);
+        box-shadow: var(--shadow-premium);
+        transform: translateX(4px);
+    }
+
+    .qa-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        flex-shrink: 0;
+    }
+
+    .qa-content { flex-grow: 1; }
+
+    .qa-title {
+        font-size: 0.875rem;
+        font-weight: 700;
+        color: var(--black);
+    }
+
+    .qa-desc {
         font-size: 0.75rem;
+        color: var(--grey-400);
+        font-weight: 500;
     }
 
-    .form-switch .form-check-input:checked {
-        background-color: #6c5ce7;
-        border-color: #6c5ce7;
+    .qa-arrow {
+        color: var(--grey-300);
+        font-size: 0.815rem;
+        transition: var(--transition-base);
     }
+
+    .quick-action-btn:hover .qa-arrow {
+        color: var(--black);
+        transform: translateX(3px);
+    }
+
+    /* Admin Table */
+    .admin-row {
+        transition: var(--transition-base);
+    }
+
+    .admin-row:hover {
+        background: var(--grey-50);
+    }
+
+    .admin-avatar {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: var(--grey-100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1rem;
+        color: var(--grey-600);
+        font-family: var(--font-heading);
+        flex-shrink: 0;
+    }
+
+    .admin-avatar.avatar-default {
+        background: var(--grey-900);
+        color: var(--white);
+    }
+
+    .admin-email {
+        font-weight: 700;
+        font-size: 0.9rem;
+        color: var(--black);
+    }
+
+    .admin-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.15rem 0.55rem;
+        border-radius: 100px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .badge-system {
+        background: rgba(99, 102, 241, 0.1);
+        color: #6366f1;
+    }
+
+    .badge-you {
+        background: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .role-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.75rem;
+        background: var(--grey-50);
+        border: 1px solid var(--grey-100);
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--grey-600);
+    }
+
+    .admin-date {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--grey-700);
+    }
+
+    .admin-date-sub {
+        font-size: 0.72rem;
+        color: var(--grey-400);
+        font-weight: 500;
+    }
+
+    /* Premium Modal */
+    .premium-modal {
+        border: none;
+        border-radius: 24px !important;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
+    }
+
+    .premium-modal .modal-header {
+        padding: 2rem 2rem 0.5rem;
+    }
+
+    .premium-modal .modal-body {
+        padding: 1.5rem 2rem;
+    }
+
+    .premium-modal .modal-footer {
+        padding: 0.5rem 2rem 2rem;
+        gap: 0.75rem;
+    }
+
+    .modal-title-premium {
+        font-family: var(--font-heading);
+        font-weight: 800;
+        font-size: 1.25rem;
+        color: var(--black);
+        margin-bottom: 0.15rem;
+    }
+
+    .modal-subtitle-premium {
+        font-size: 0.85rem;
+        color: var(--grey-400);
+        margin-bottom: 0;
+        font-weight: 500;
+    }
+
+    /* Admin Row Animations */
+    @keyframes fadeSlideIn {
+        from { opacity: 0; transform: translateY(8px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .admin-row {
+        animation: fadeSlideIn 0.3s ease forwards;
+    }
+
+    {% for admin in admins %}
+    .admin-row:nth-child({{ loop.index }}) {
+        animation-delay: {{ loop.index * 0.06 }}s;
+    }
+    {% endfor %}
 </style>
 {% endblock %}

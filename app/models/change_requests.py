@@ -56,6 +56,6 @@ class PlatformNotification(db.Model):
     is_read = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    organization_rel = relationship(
+    organization = relationship(
         "Organization", backref=backref("notifications", cascade="all, delete-orphan")
     )

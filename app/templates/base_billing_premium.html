@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}ConnectFlow Premium{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_premium.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_extensions.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    {% block head_extra %}{% endblock %}
+</head>
+<body data-user-id="{{ current_user.id if (current_user.is_authenticated and current_user.id) else '' }}"
+      data-user-role="{{ current_user.role if (current_user.is_authenticated and current_user.role) else '' }}"
+      data-onboarding-completed="{{ 'true' if (current_user.is_authenticated and ((current_user.onboarding_completed is defined and current_user.onboarding_completed) or (current_user.role is defined and current_user.role == 'platform_owner'))) else 'false' }}">
+
+    <!-- Premium Sidebar -->
+    <aside class="premium-sidebar">
+        <div class="sidebar-logo" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div>
+                Connect<span>Flow</span>
+            </div>
+            <button class="btn-close-sidebar" id="close-sidebar-btn">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('org.dashboard') }}" class="nav-item {% if request.endpoint == 'org.dashboard' %}active{% endif %}">
+                <i class="bi bi-grid-1x2"></i> Dashboard
+            </a>
+            <a href="{{ url_for('org.browse_plans') }}" class="nav-item {% if request.endpoint in ['org.browse_plans', 'org.checkout'] %}active{% endif %}">
+                <i class="bi bi-star"></i> Subscriptions
+            </a>
+            <a href="{{ url_for('org.payments') }}" class="nav-item {% if request.endpoint == 'org.payments' %}active{% endif %}">
+                <i class="bi bi-credit-card"></i> Payments
+            </a>
+            <a href="{{ url_for('org.invoices') }}" class="nav-item {% if request.endpoint == 'org.invoices' %}active{% endif %}">
+                <i class="bi bi-receipt"></i> Invoices
+            </a>
+
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="user-profile" style="display: flex; align-items: center; gap: 1rem; padding: 0.5rem; margin-bottom: 1rem;">
+                <div class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--grey-800); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff;">
+                    {{ (current_user.email or 'U')[0].upper() }}
+                </div>
+                <div class="user-info" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                    <h6 style="font-size: 0.875rem; margin-bottom: 0; color: #fff; font-family: 'Outfit', sans-serif;">{{ current_user.organization.name if current_user.organization else 'Organization' }}</h6>
+                    <p style="font-size: 0.75rem; color: var(--grey-500); margin-bottom: 0; font-family: 'Inter', sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ current_user.email }}</p>
+                </div>
+            </div>
+            <a href="{{ url_for('org.logout') }}" class="nav-item" style="color: #ef4444;">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <main class="main-wrapper">
+        <header class="premium-topbar">
+            <div class="topbar-left" style="display: flex; align-items: center; gap: 1rem;">
+                <button class="btn-hamburger" id="toggle-sidebar-btn">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1>{% block page_title %}Billing{% endblock %}</h1>
+            </div>
+            
+            <div class="topbar-right">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Search billing, plans, or invoices...">
+                </div>
+                <div class="topbar-actions" style="display: flex; align-items: center; gap: 1rem;">
+                    <button class="btn-icon">
+                        <i class="bi bi-bell"></i>
+                        <span class="notification-badge" style="display: none;">0</span>
+                    </button>
+                    <button class="btn-icon"><i class="bi bi-chat-left-dots"></i></button>
+                    <div class="user-avatar" style="width: 40px; height: 40px; border-radius: 50%; background: var(--grey-900); display: flex; align-items: center; justify-content: center; font-weight: 700; color: #fff;">
+                        {{ (current_user.email or 'U')[0].upper() }}
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <section class="dashboard-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, msg in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }}" 
+                             style="padding: 1rem; border-radius: 12px; margin-bottom: 2rem; background: var(--white); border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium);">
+                            {{msg}}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('toggle-sidebar-btn');
+            const closeBtn = document.getElementById('close-sidebar-btn');
+            const sidebar = document.querySelector('.premium-sidebar');
+
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    sidebar.classList.add('active');
+                    let overlay = document.querySelector('.sidebar-overlay');
+                    if (!overlay) {
+                        overlay = document.createElement('div');
+                        overlay.className = 'sidebar-overlay';
+                        document.body.appendChild(overlay);
+                        overlay.addEventListener('click', function() {
+                            sidebar.classList.remove('active');
+                            overlay.classList.remove('active');
+                        });
+                    }
+                    setTimeout(() => {
+                        overlay.classList.add('active');
+                    }, 50);
+                });
+            }
+
+            if (closeBtn && sidebar) {
+                closeBtn.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    const overlay = document.querySelector('.sidebar-overlay');
+                    if (overlay) {
+                        overlay.classList.remove('active');
+                    }
+                });
+            }
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/dashboard_extensions.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

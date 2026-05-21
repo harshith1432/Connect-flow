@@ -97,8 +97,12 @@ class ModuleRecord(db.Model):
 
     @property
     def named_values(self):
-        """Returns a dictionary mapping field name to its value."""
-        return {v.field.name: v.value for v in self.values if v.field}
+        """Returns a dictionary mapping field name to its value.
+        
+        Field names are stripped of leading/trailing whitespace to handle
+        CSV column headers with extra spaces (e.g., 'number ' -> 'number').
+        """
+        return {v.field.name.strip(): v.value for v in self.values if v.field}
 
 
 class ModuleRecordValue(db.Model):

@@ -16,6 +16,7 @@ class PlatformAdmin(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    preferences = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     @staticmethod
@@ -92,3 +93,31 @@ class PlatformSecurity(db.Model):
             db.session.add(settings)
             db.session.commit()
         return settings
+
+
+class PaymentGateway(db.Model):
+    __tablename__ = "payment_gateways"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False) # e.g., "Razorpay Standard"
+    provider = db.Column(db.String(50), nullable=False) # 'razorpay', 'stripe'
+    gateway_type = db.Column(db.String(50), default="standard")
+    client_key = db.Column(db.String(255))
+    secret_key = db.Column(db.String(255))
+    webhook_secret = db.Column(db.String(255))
+    deployment_mode = db.Column(db.String(20), default="test") # test, live
+    active = db.Column(db.Boolean, default=False)
+    logo = db.Column(db.String(255))
+    priority = db.Column(db.Integer, default=0)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "provider": self.provider,
+            "gateway_type": self.gateway_type,
+            "deployment_mode": self.deployment_mode,
+            "active": self.active,
+            "logo": self.logo,
+            "priority": self.priority
+        }

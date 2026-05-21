@@ -115,7 +115,13 @@
             <div style="height: 6px; background: var(--grey-100); border-radius: 10px; overflow: hidden;">
                 <div style="width: 82%; height: 100%; background: var(--black);"></div>
             </div>
-            <div style="font-size: 0.75rem; color: var(--grey-400); margin-top: 0.5rem;">Renewal predicted on June 15.</div>
+            <div style="font-size: 0.75rem; color: var(--grey-400); margin-top: 0.5rem;">
+                {% if subscription and subscription.expires_at %}
+                    Renewal predicted on {{ subscription.expires_at.strftime('%B %d, %Y') }}.
+                {% else %}
+                    No active renewal predicted.
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>

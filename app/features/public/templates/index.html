@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConnectFlow | Enterprise OS for Operations</title>
-    <meta name="description" content="Scale your communication infrastructure with precision. The unified CRM and Automation platform for high-volume voice operations.">
+    <title>ConnectFlow | Intelligent Communication Automation Platform</title>
+    <meta name="description" content="ConnectFlow is an intelligent communication automation platform. Upload your audience data, select voice or WhatsApp channels, define your message, and let the system automatically broadcast at scale.">
     
     <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
@@ -32,7 +32,7 @@
             <div class="nav-auth">
                 {% if current_user.is_authenticated %}
                     {% if current_user.role == 'platform_owner' %}
-                        <a href="{{ url_for('admin.dashboard') }}" class="btn-black">Go to Dashboard</a>
+                        <a href="{{ url_for('super_admin.dashboard') }}" class="btn-black">Go to Dashboard</a>
                     {% elif current_user.role == 'worker' %}
                         <a href="{{ url_for('worker.dashboard') }}" class="btn-black">Worker Workspace</a>
                     {% else %}
@@ -50,13 +50,13 @@
     <section class="hero">
         <div class="container hero-grid">
             <div class="hero-content reveal">
-                <span class="hero-label">ENTERPRISE OS FOR OPERATIONS</span>
-                <h1>Scale your communication infrastructure with precision.</h1>
-                <p>The unified CRM and Automation platform for high-volume voice operations, WhatsApp orchestration, and workforce management. Engineered for organizations that demand reliability.</p>
+                <span class="hero-label">INTELLIGENT COMMUNICATION AUTOMATION</span>
+                <h1>Automate outbound communication at scale.</h1>
+                <p>The intelligent outbound automation platform. Upload your audience data, select your channel, define your message, and let ConnectFlow make voice calls and send WhatsApp messages automatically. No manual calling, no repetitive communication, no complex two-way support systems.</p>
                 
                 <div class="hero-ctas">
-                    <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
-                    <a href="#demo" class="btn-outline">Book Enterprise Demo</a>
+                    <a href="{{ url_for('org.register') }}" class="btn-black">Start Automating</a>
+                    <a href="#demo" class="btn-outline">Request Demo</a>
                 </div>
             </div>
             
@@ -86,45 +86,45 @@
     <section class="features" id="features">
         <div class="container">
             <div class="section-header reveal">
-                <h2>Engineered for Performance</h2>
-                <p>Everything you need to orchestrate complex operations at scale without the technical overhead.</p>
+                <h2>Intelligent Outbound Automation</h2>
+                <p>Everything you need to launch and deliver communication campaigns automatically without manual overhead.</p>
             </div>
             
             <div class="feature-grid">
                 <div class="feature-card reveal" style="animation-delay: 0.1s;">
-                    <div class="feature-icon"><i class="bi bi-diagram-3"></i></div>
-                    <h3>Dynamic Data Modules</h3>
-                    <p>Create custom data structures for Leads, Attendance, or Surveys. Build complex schemas without writing a single line of code.</p>
+                    <div class="feature-icon"><i class="bi bi-upload"></i></div>
+                    <h3>Audience Data Upload</h3>
+                    <p>Easily upload your audience, customer, student, or employee records. Map custom fields to dynamically personalize every message template.</p>
                 </div>
                 
                 <div class="feature-card reveal" style="animation-delay: 0.2s;">
-                    <div class="feature-icon"><i class="bi bi-megaphone"></i></div>
-                    <h3>Automated Campaigns</h3>
-                    <p>Run high-volume voice and WhatsApp campaigns with intelligent scheduling and personalized script injection.</p>
+                    <div class="feature-icon"><i class="bi bi-telephone-outbound"></i></div>
+                    <h3>Automated Voice Calls</h3>
+                    <p>Make automated outbound voice calls at scale. Deliver announcements, alerts, and instructions without picking up a single phone.</p>
                 </div>
                 
                 <div class="feature-card reveal" style="animation-delay: 0.3s;">
-                    <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
-                    <h3>Secure Role Management</h3>
-                    <p>Granular permissions and enterprise-grade security ensure your data remains protected and compliant.</p>
+                    <div class="feature-icon"><i class="bi bi-whatsapp"></i></div>
+                    <h3>WhatsApp Broadcasting</h3>
+                    <p>Orchestrate high-volume WhatsApp outreach to send personalized, high-priority messages directly to your recipients' chat screens.</p>
                 </div>
                 
                 <div class="feature-card reveal" style="animation-delay: 0.4s;">
-                    <div class="feature-icon"><i class="bi bi-whatsapp"></i></div>
-                    <h3>WhatsApp Automation</h3>
-                    <p>Direct API integration for reliable message delivery and automated conversation workflows at scale.</p>
+                    <div class="feature-icon"><i class="bi bi-ban"></i></div>
+                    <h3>Zero Manual Dialing</h3>
+                    <p>Completely eliminate manual, repetitive communication. No calling agents required and no support queues to manage.</p>
                 </div>
                 
                 <div class="feature-card reveal" style="animation-delay: 0.5s;">
-                    <div class="feature-icon"><i class="bi bi-people"></i></div>
-                    <h3>Worker Workflows</h3>
-                    <p>Efficiently manage distributed teams with specialized worker workspaces and real-time performance tracking.</p>
+                    <div class="feature-icon"><i class="bi bi-play-circle"></i></div>
+                    <h3>One-Click Campaign Launch</h3>
+                    <p>Define your channel, insert your message template, and initiate delivery instantly across your entire audience database.</p>
                 </div>
                 
                 <div class="feature-card reveal" style="animation-delay: 0.6s;">
-                    <div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
-                    <h3>Real-time Analytics</h3>
-                    <p>Live dashboards and deep-dive reporting to monitor campaign health and operational efficiency.</p>
+                    <div class="feature-icon"><i class="bi bi-bar-chart-line"></i></div>
+                    <h3>Delivery Analytics</h3>
+                    <p>Track delivery logs, answer rates, and read receipts in real-time to monitor the progress of your communication campaign.</p>
                 </div>
             </div>
         </div>
@@ -135,29 +135,29 @@
         <div class="container">
             <div class="split-section">
                 <div class="split-content reveal">
-                    <h2>Built for organizations that demand precision.</h2>
+                    <h2>Designed for reliable, high-volume broadcasting.</h2>
                     
                     <div class="why-item">
                         <div class="why-icon"><i class="bi bi-check"></i></div>
                         <div class="why-text">
-                            <h4>Enterprise Reliability</h4>
-                            <p>99.9% uptime SLA for your mission-critical communication infrastructure.</p>
+                            <h4>Scale-Out Delivery</h4>
+                            <p>Automate thousands of concurrent voice calls and WhatsApp messages with robust carrier connections.</p>
                         </div>
                     </div>
                     
                     <div class="why-item">
                         <div class="why-icon"><i class="bi bi-check"></i></div>
                         <div class="why-text">
-                            <h4>Seamless Integration</h4>
-                            <p>Connect your existing data sources and workflows via our robust API ecosystem.</p>
+                            <h4>Outbound-Only Efficiency</h4>
+                            <p>Focus purely on sending information out. No support tickets, no two-way chat noise—just direct, clean automation.</p>
                         </div>
                     </div>
                     
                     <div class="why-item">
                         <div class="why-icon"><i class="bi bi-check"></i></div>
                         <div class="why-text">
-                            <h4>Global Scale</h4>
-                            <p>Deploy campaigns across multiple regions and languages with a single platform.</p>
+                            <h4>Effortless Repetitive Tasks</h4>
+                            <p>Save hundreds of hours by replacing manual phone operations with scheduled automation flows.</p>
                         </div>
                     </div>
                 </div>
@@ -175,30 +175,30 @@
     <section class="workflow" id="workflow">
         <div class="container">
             <div class="section-header reveal">
-                <h2>Operational Workflow</h2>
-                <p>How ConnectFlow orchestrates your communication infrastructure from start to finish.</p>
+                <h2>How ConnectFlow Works</h2>
+                <p>Launch outbound communication campaigns in four straightforward steps.</p>
             </div>
             
             <div class="workflow-steps reveal">
                 <div class="workflow-step">
                     <div class="step-number">1</div>
-                    <h4>Connect Data</h4>
-                    <p>Sync your existing CRM or import custom data modules seamlessly.</p>
+                    <h4>Upload Audience Data</h4>
+                    <p>Import your customer, student, or employee records dynamically into your database.</p>
                 </div>
                 <div class="workflow-step">
                     <div class="step-number">2</div>
-                    <h4>Configure Logic</h4>
-                    <p>Define automated triggers and sequence rules for your operations.</p>
+                    <h4>Select Channel</h4>
+                    <p>Choose your communication channel—automated voice calls, WhatsApp, or multi-channel sequence.</p>
                 </div>
                 <div class="workflow-step">
                     <div class="step-number">3</div>
-                    <h4>Execute At Scale</h4>
-                    <p>Launch high-volume voice and WhatsApp campaigns globally.</p>
+                    <h4>Define the Message</h4>
+                    <p>Draft your message script or notification text, complete with dynamic personalization tags.</p>
                 </div>
                 <div class="workflow-step">
                     <div class="step-number">4</div>
-                    <h4>Optimize Performance</h4>
-                    <p>Analyze real-time data to refine and improve operational efficiency.</p>
+                    <h4>Launch Automation</h4>
+                    <p>The system automatically initiates calls and sends WhatsApp messages to deliver your information at scale.</p>
                 </div>
             </div>
         </div>
@@ -208,8 +208,8 @@
     <section class="security" id="security">
         <div class="container">
             <div class="section-header reveal">
-                <h2>Enterprise-Grade Security</h2>
-                <p>Your data is our priority. Engineered with a security-first mindset for organizations that demand total compliance.</p>
+                <h2>Secure Campaign Infrastructure</h2>
+                <p>Protect your audience contacts and communication logs with fully isolated, compliant cloud architecture.</p>
             </div>
             
             <div class="security-grid">
@@ -249,46 +249,46 @@
     <section class="pricing" id="pricing">
         <div class="container">
             <div class="section-header reveal">
-                <h2>Simple, Scalable Pricing</h2>
-                <p>Choose the plan that fits your operational needs. Transparent pricing for teams of all sizes.</p>
+                <h2>Simple, Volume-Based Pricing</h2>
+                <p>Choose the automation tier that matches your outbound broadcasting requirements.</p>
             </div>
             
             <div class="pricing-grid">
                 <div class="pricing-card reveal" style="animation-delay: 0.1s;">
                     <h3>Starter</h3>
-                    <p>Perfect for small teams.</p>
+                    <p>For small-scale outbound lists.</p>
                     <div class="price">$49<span>/mo</span></div>
                     <ul class="pricing-features">
-                        <li><i class="bi bi-check2"></i> Up to 5 Data Modules</li>
-                        <li><i class="bi bi-check2"></i> 5,000 Messages/mo</li>
-                        <li><i class="bi bi-check2"></i> Basic Analytics</li>
+                        <li><i class="bi bi-check2"></i> Up to 5,000 automated broadcasts</li>
+                        <li><i class="bi bi-check2"></i> Dynamic text templates</li>
+                        <li><i class="bi bi-check2"></i> Voice & WhatsApp delivery</li>
                         <li><i class="bi bi-check2"></i> Email Support</li>
                     </ul>
-                    <a href="{{ url_for('org.register') }}" class="btn-outline">Get Started</a>
+                    <a href="{{ url_for('org.register') }}" class="btn-outline">Start Automating</a>
                 </div>
                 
                 <div class="pricing-card featured reveal" style="animation-delay: 0.2s;">
                     <h3>Growth</h3>
-                    <p>Best for scaling operations.</p>
+                    <p>For active automated outreach.</p>
                     <div class="price">$199<span>/mo</span></div>
                     <ul class="pricing-features">
-                        <li><i class="bi bi-check2"></i> Unlimited Data Modules</li>
-                        <li><i class="bi bi-check2"></i> 50,000 Messages/mo</li>
-                        <li><i class="bi bi-check2"></i> Advanced Analytics</li>
+                        <li><i class="bi bi-check2"></i> Up to 50,000 automated broadcasts</li>
+                        <li><i class="bi bi-check2"></i> Advanced analytics reporting</li>
+                        <li><i class="bi bi-check2"></i> Campaign performance logs</li>
                         <li><i class="bi bi-check2"></i> Priority Support</li>
                     </ul>
-                    <a href="{{ url_for('org.register') }}" class="btn-black">Start Scaling</a>
+                    <a href="{{ url_for('org.register') }}" class="btn-black">Scale Broadcasting</a>
                 </div>
                 
                 <div class="pricing-card reveal" style="animation-delay: 0.3s;">
                     <h3>Enterprise</h3>
-                    <p>For large scale organizations.</p>
+                    <p>For enterprise-scale delivery.</p>
                     <div class="price">Custom</div>
                     <ul class="pricing-features">
-                        <li><i class="bi bi-check2"></i> Dedicated Infrastructure</li>
-                        <li><i class="bi bi-check2"></i> Unlimited Messages</li>
-                        <li><i class="bi bi-check2"></i> Custom Integrations</li>
-                        <li><i class="bi bi-check2"></i> 24/7 Account Manager</li>
+                        <li><i class="bi bi-check2"></i> High-volume outbound capacity</li>
+                        <li><i class="bi bi-check2"></i> Custom voice configurations</li>
+                        <li><i class="bi bi-check2"></i> Dedicated deliverability channels</li>
+                        <li><i class="bi bi-check2"></i> Uptime SLA and 24/7 account manager</li>
                     </ul>
                     <a href="#contact" class="btn-outline">Talk to Sales</a>
                 </div>
@@ -302,7 +302,7 @@
             <div class="footer-grid">
                 <div class="footer-brand">
                     <a href="/" class="logo">Connect<span>Flow</span></a>
-                    <p>The enterprise OS for high-performance operations and communication orchestration.</p>
+                    <p>The intelligent communication automation platform for outbound voice calls and WhatsApp messaging at scale.</p>
                 </div>
                 
                 <div class="footer-column">

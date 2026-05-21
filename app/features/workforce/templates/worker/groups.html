@@ -1,141 +1,469 @@
-{% extends 'base.html' %}
-{% block title %}{{ module.name }} - Groups{% endblock %}
+{% extends "base_worker_premium.html" %}
+{% block title %}{{ module.name }} — Data Groups | ConnectFlow{% endblock %}
+{% block page_title %}{{ module.name }}{% endblock %}
+
+{% block head_extra %}
+<style>
+/* ── Page-level tokens ─────────────────────────────────────── */
+:root {
+  --accent: #6D5EF6;
+  --accent-light: rgba(109,94,246,.08);
+  --success: #17C964;
+  --warning: #F5A524;
+  --danger: #F31260;
+  --card-radius: 20px;
+  --card-shadow: 0 4px 24px rgba(0,0,0,.05);
+}
+
+/* ── KPI cards ─────────────────────────────────────────────── */
+.g-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.g-kpi-card {
+  background:#fff;
+  border:1px solid #f0f0f5;
+  border-radius: var(--card-radius);
+  padding:1.35rem 1.5rem;
+  box-shadow: var(--card-shadow);
+  transition: transform .25s, box-shadow .25s;
+}
+.g-kpi-card:hover { transform:translateY(-4px); box-shadow:0 10px 30px rgba(0,0,0,.09); }
+.g-kpi-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:.75rem; }
+.g-kpi-label { font-size:.78rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.5px; }
+.g-kpi-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
+.icon-purple { background: var(--accent-light); color: var(--accent); }
+.icon-green  { background: rgba(23,201,100,.1); color: var(--success); }
+.icon-amber  { background: rgba(245,165,36,.1);  color: var(--warning); }
+.icon-blue   { background: rgba(59,130,246,.1);  color:#3b82f6; }
+.g-kpi-value { font-family:'Outfit',sans-serif; font-size:2rem; font-weight:800; color:#111; margin-bottom:.2rem; }
+.g-kpi-sub   { font-size:.78rem; font-weight:600; color:#10b981; display:flex; align-items:center; gap:.3rem; }
+
+/* ── Section card ──────────────────────────────────────────── */
+.section-card {
+  background:#fff;
+  border:1px solid #f0f0f5;
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow);
+  margin-bottom:1.75rem;
+}
+.section-header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:1.5rem 1.75rem 1rem;
+  border-bottom:1px solid #f5f5fa;
+}
+.section-header h2 { font-size:1.1rem; font-weight:800; margin:0; }
+.section-header p  { font-size:.82rem; color:#6b7280; margin:0; }
+.section-body { padding:1.5rem 1.75rem; }
+
+/* ── Group grid ────────────────────────────────────────────── */
+.groups-grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px,1fr));
+  gap:1.25rem;
+}
+
+/* ── Group card ────────────────────────────────────────────── */
+.group-card {
+  background:#fff;
+  border:1.5px solid #eef0f6;
+  border-radius: var(--card-radius);
+  overflow:hidden;
+  transition: transform .25s, border-color .25s, box-shadow .25s;
+  position:relative;
+  display:flex; flex-direction:column;
+}
+.group-card:hover {
+  transform:translateY(-5px);
+  border-color: var(--accent);
+  box-shadow:0 12px 36px rgba(109,94,246,.12);
+}
+.group-card-accent {
+  height:4px;
+  background: linear-gradient(90deg, var(--accent) 0%, #a78bfa 100%);
+}
+.group-card-body { padding:1.35rem 1.4rem; flex:1; }
+.group-name {
+  font-family:'Outfit',sans-serif;
+  font-size:1.05rem; font-weight:800; color:#111;
+  margin-bottom:.35rem;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.group-created { font-size:.75rem; color:#9ca3af; font-weight:500; margin-bottom:1rem; }
+
+.group-stats {
+  display:flex; gap:1rem; margin-bottom:1.25rem;
+}
+.gstat {
+  display:flex; flex-direction:column;
+  background:#f8f8fc; border-radius:10px; padding:.5rem .85rem;
+  flex:1;
+}
+.gstat-val { font-size:1.1rem; font-weight:800; color:#111; }
+.gstat-lbl { font-size:.68rem; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.4px; }
+
+/* ── Card actions ──────────────────────────────────────────── */
+.group-card-footer {
+  display:flex; flex-direction:column; gap:.6rem;
+  padding:1rem 1.4rem 1.2rem;
+  border-top:1px solid #f3f4f8;
+}
+.gf-top-row { display:flex; gap:.5rem; }
+.gf-bottom-row { display:flex; gap:.5rem; }
+
+.btn-g {
+  flex:1; display:flex; align-items:center; justify-content:center;
+  gap:.4rem; padding:.5rem .75rem;
+  border-radius:10px; font-size:.78rem; font-weight:700;
+  border:1.5px solid #e5e7eb; background:#fff;
+  color:#374151; text-decoration:none; cursor:pointer;
+  transition: all .2s;
+}
+.btn-g:hover { border-color:#111; background:#f9f9fc; color:#111; }
+.btn-g.primary {
+  background:#111; color:#fff; border-color:#111;
+}
+.btn-g.primary:hover { background:#333; }
+.btn-g.danger { color: var(--danger); border-color:#fecdd3; background:#fff0f3; }
+.btn-g.danger:hover { background: var(--danger); color:#fff; border-color: var(--danger); }
+
+/* ── Empty state ───────────────────────────────────────────── */
+.empty-groups {
+  text-align:center; padding:5rem 2rem;
+}
+.empty-groups .empty-icon {
+  width:80px; height:80px; border-radius:20px;
+  background: var(--accent-light);
+  display:flex; align-items:center; justify-content:center;
+  font-size:2.5rem; color: var(--accent);
+  margin:0 auto 1.5rem;
+}
+.empty-groups h3 { font-size:1.3rem; font-weight:800; margin-bottom:.5rem; }
+.empty-groups p  { color:#6b7280; font-size:.9rem; margin-bottom:1.5rem; }
+
+/* ── Topbar CTA ────────────────────────────────────────────── */
+.topbar-cta { display:flex; align-items:center; gap:.75rem; }
+.btn-add-group {
+  display:inline-flex; align-items:center; gap:.45rem;
+  padding:.6rem 1.2rem; border-radius:12px;
+  background:#111; color:#fff; font-weight:700; font-size:.85rem;
+  border:none; cursor:pointer; transition: all .2s; text-decoration:none;
+}
+.btn-add-group:hover { background:#333; color:#fff; transform:translateY(-2px); }
+
+/* ── Premium Modal ─────────────────────────────────────────── */
+.premium-modal .modal-content {
+  border-radius:20px; border:none;
+  box-shadow:0 25px 60px rgba(0,0,0,.15);
+}
+.premium-modal .modal-header {
+  border-bottom:1px solid #f3f4f8; padding:1.5rem 1.75rem 1.25rem;
+}
+.premium-modal .modal-title { font-weight:800; font-size:1.15rem; }
+.premium-modal .modal-body  { padding:1.5rem 1.75rem; }
+.premium-modal .modal-footer{ border-top:1px solid #f3f4f8; padding:1.25rem 1.75rem; }
+.premium-input {
+  width:100%; padding:.75rem 1rem;
+  border:1.5px solid #e5e7eb; border-radius:12px;
+  font-size:.9rem; font-family:'Inter',sans-serif;
+  background:#f9f9fc; transition: border-color .2s, background .2s;
+}
+.premium-input:focus { outline:none; border-color: var(--accent); background:#fff; box-shadow:0 0 0 3px rgba(109,94,246,.1); }
+.field-label { font-size:.78rem; font-weight:700; color:#374151; text-transform:uppercase; letter-spacing:.5px; margin-bottom:.45rem; display:block; }
+
+/* ── Analytics sidebar ─────────────────────────────────────── */
+.analytics-col .section-card:not(:last-child) { margin-bottom:1.25rem; }
+.mini-stat-row { display:flex; gap:.75rem; margin-bottom:1rem; }
+.mini-stat { flex:1; background:#f8f8fc; border-radius:12px; padding:.75rem 1rem; }
+.mini-stat-val { font-size:1.3rem; font-weight:800; color:#111; }
+.mini-stat-lbl { font-size:.7rem; color:#6b7280; font-weight:600; text-transform:uppercase; }
+
+/* ── Responsive ────────────────────────────────────────────── */
+@media(max-width:1200px){ .g-kpi-grid{ grid-template-columns:repeat(2,1fr); } }
+@media(max-width:768px) {
+  .g-kpi-grid{ grid-template-columns:1fr; }
+  .groups-grid{ grid-template-columns:1fr; }
+  .main-layout{ flex-direction:column; }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="row align-items-center mb-5">
-    <div class="col text-start">
-        <div class="mb-1">
-            <a href="{{ url_for('worker.dashboard') }}"
-                class="text-muted text-decoration-none small text-uppercase fw-bold">
-                <i class="bi bi-chevron-left me-1"></i>Back to Workspace
-            </a>
-        </div>
-        <h1 class="mb-0">{{ module.name }}</h1>
-        <p class="text-muted mb-0">Manage data groups and structures for {{ module.name }}</p>
+
+<!-- ── KPI Overview Row ──────────────────────────────────────── -->
+<div class="g-kpi-grid">
+  <div class="g-kpi-card">
+    <div class="g-kpi-top">
+      <span class="g-kpi-label">Total Groups</span>
+      <div class="g-kpi-icon icon-purple"><i class="bi bi-collection"></i></div>
     </div>
+    <div class="g-kpi-value">{{ module.groups|length }}</div>
+    <div class="g-kpi-sub"><i class="bi bi-check-circle-fill"></i> Active Module</div>
+  </div>
+  <div class="g-kpi-card">
+    <div class="g-kpi-top">
+      <span class="g-kpi-label">Total Records</span>
+      <div class="g-kpi-icon icon-green"><i class="bi bi-database"></i></div>
+    </div>
+    {% set total_records = namespace(n=0) %}
+    {% for g in module.groups %}{% set total_records.n = total_records.n + g.records|length %}{% endfor %}
+    <div class="g-kpi-value">{{ total_records.n }}</div>
+    <div class="g-kpi-sub"><i class="bi bi-arrow-up-right"></i> Across all groups</div>
+  </div>
+  <div class="g-kpi-card">
+    <div class="g-kpi-top">
+      <span class="g-kpi-label">Campaigns</span>
+      <div class="g-kpi-icon icon-amber"><i class="bi bi-megaphone"></i></div>
+    </div>
+    {% set total_camps = namespace(n=0) %}
+    {% for g in module.groups %}{% set total_camps.n = total_camps.n + g.campaigns|length %}{% endfor %}
+    <div class="g-kpi-value">{{ total_camps.n }}</div>
+    <div class="g-kpi-sub"><i class="bi bi-lightning-charge-fill"></i> Linked campaigns</div>
+  </div>
+  <div class="g-kpi-card">
+    <div class="g-kpi-top">
+      <span class="g-kpi-label">Scripts</span>
+      <div class="g-kpi-icon icon-blue"><i class="bi bi-file-code"></i></div>
+    </div>
+    {% set total_scripts = namespace(n=0) %}
+    {% for g in module.groups %}{% set total_scripts.n = total_scripts.n + g.scripts|length %}{% endfor %}
+    <div class="g-kpi-value">{{ total_scripts.n }}</div>
+    <div class="g-kpi-sub"><i class="bi bi-check2-circle"></i> Message templates</div>
+  </div>
 </div>
 
-<div class="row align-items-center mb-4">
-    <div class="col text-start">
-        <h3 class="mb-0">Data Groups</h3>
-    </div>
-    <div class="col-auto text-end">
-        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addGroupModal">
-            <i class="bi bi-plus-lg me-2"></i>Add Group
-        </button>
-    </div>
-</div>
-{% if module.groups %}
+<!-- ── Main Content + Analytics ──────────────────────────────── -->
 <div class="row g-4">
-    {% for g in module.groups %}
-    <div class="col-md-6 col-lg-4">
-        <div class="card h-100 hover-card">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-                <h5 class="fw-bold text-primary mb-0 text-truncate w-75" title="{{ g.name }}">{{ g.name }}</h5>
-                <span class="badge bg-light text-dark border">{{ g.records|length }} Records</span>
-            </div>
+  <div class="col-lg-8">
 
-            <div class="d-grid gap-2 mt-auto">
-                <div class="d-flex gap-2">
-                    <a href="{{ url_for('worker.campaigns', gid=g.id) }}" class="btn btn-light btn-sm flex-fill border"
-                        title="Create Campaign">
-                        <i class="bi bi-megaphone me-1"></i>Campaign
-                    </a>
-                    <a href="{{ url_for('worker.scripts', gid=g.id) }}" class="btn btn-light btn-sm flex-fill border"
-                        title="Manage Scripts">
-                        <i class="bi bi-file-text me-1"></i>Scripts
-                    </a>
+    <!-- Section Card: Groups Grid -->
+    <div class="section-card">
+      <div class="section-header">
+        <div>
+          <h2>Data Groups</h2>
+          <p>Organize records into groups, then attach scripts and launch campaigns</p>
+        </div>
+        <div class="topbar-cta">
+          <button class="btn-add-group" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+            <i class="bi bi-plus-lg"></i> New Group
+          </button>
+        </div>
+      </div>
+      <div class="section-body">
+
+        {% if module.groups %}
+        <div class="groups-grid">
+          {% for g in module.groups %}
+          <div class="group-card">
+            <div class="group-card-accent"></div>
+            <div class="group-card-body">
+              <div class="group-name" title="{{ g.name }}">{{ g.name }}</div>
+              <div class="group-created">
+                <i class="bi bi-calendar3 me-1"></i>
+                Created {{ g.created_at.strftime('%b %d, %Y') if g.created_at else 'N/A' }}
+              </div>
+              <div class="group-stats">
+                <div class="gstat">
+                  <span class="gstat-val">{{ g.records|length }}</span>
+                  <span class="gstat-lbl">Records</span>
                 </div>
-                <a href="{{ url_for('worker.group_dashboard', gid=g.id) }}" class="btn btn-primary btn-sm">
-                    Enter Dashboard
+                <div class="gstat">
+                  <span class="gstat-val">{{ g.campaigns|length }}</span>
+                  <span class="gstat-lbl">Campaigns</span>
+                </div>
+                <div class="gstat">
+                  <span class="gstat-val">{{ g.scripts|length }}</span>
+                  <span class="gstat-lbl">Scripts</span>
+                </div>
+              </div>
+            </div>
+            <div class="group-card-footer">
+              <div class="gf-top-row">
+                <a href="{{ url_for('worker.campaigns', gid=g.id) }}" class="btn-g">
+                  <i class="bi bi-megaphone"></i> Campaigns
                 </a>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-light btn-sm flex-fill" data-bs-toggle="modal"
-                        data-bs-target="#editGroupModal{{ g.id }}">
-                        <i class="bi bi-pencil me-1"></i>Edit
-                    </button>
-                    <form action="{{ url_for('worker.delete_group', gid=g.id) }}" method="POST" class="flex-fill"
-                        onsubmit="return confirm('Are you sure? All data in this group will be deleted.')">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                            <i class="bi bi-trash me-1"></i>Delete
-                        </button>
-                    </form>
-                </div>
+                <a href="{{ url_for('worker.scripts', gid=g.id) }}" class="btn-g">
+                  <i class="bi bi-file-text"></i> Scripts
+                </a>
+                <a href="{{ url_for('worker.manage_module', mid=module.id, group=g.id) }}" class="btn-g primary">
+                  <i class="bi bi-box-arrow-in-right"></i> Enter
+                </a>
+              </div>
+              <div class="gf-bottom-row">
+                <button class="btn-g" data-bs-toggle="modal" data-bs-target="#editGroupModal{{ g.id }}">
+                  <i class="bi bi-pencil"></i> Edit
+                </button>
+                <form action="{{ url_for('worker.delete_group', gid=g.id) }}" method="POST" style="flex:1;"
+                      onsubmit="return confirm('Delete group and all its data?')">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn-g danger w-100">
+                    <i class="bi bi-trash3"></i> Delete
+                  </button>
+                </form>
+              </div>
             </div>
+          </div>
+          {% endfor %}
 
-        </div>
-    </div>
-    {% endfor %}
-</div>
-{% else %}
-<div class="row">
-    <div class="col-12">
-        <div class="text-center py-5 card">
-            <div class="mb-3">
-                <i class="bi bi-collection text-primary" style="font-size: 4rem; opacity: 0.3;"></i>
+          <!-- Add-more card -->
+          <div class="group-card" style="border:2px dashed #e5e7eb; background:#fafafe; cursor:pointer;"
+               data-bs-toggle="modal" data-bs-target="#addGroupModal">
+            <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:3rem 1rem; gap:.75rem;">
+              <div style="width:52px;height:52px;border-radius:14px;background:rgba(109,94,246,.08);display:flex;align-items:center;justify-content:center;font-size:1.6rem;color:#6D5EF6;">
+                <i class="bi bi-plus-lg"></i>
+              </div>
+              <div style="font-weight:800;font-size:.95rem;color:#374151;">Create New Group</div>
+              <div style="font-size:.78rem;color:#9ca3af;">Segment your data into batches</div>
             </div>
-            <h3>No groups found</h3>
-            <p class="text-muted mb-4">Create a group to start adding records and launching campaigns.</p>
-            <button class="btn btn-primary px-4 py-2" data-bs-toggle="modal" data-bs-target="#addGroupModal">
-                <i class="bi bi-plus-lg me-2"></i>Create First Group
-            </button>
+          </div>
         </div>
+
+        {% else %}
+        <div class="empty-groups">
+          <div class="empty-icon"><i class="bi bi-collection"></i></div>
+          <h3>No Groups Yet</h3>
+          <p>Create your first data group to segment records and start launching campaigns.</p>
+          <button class="btn-add-group" data-bs-toggle="modal" data-bs-target="#addGroupModal">
+            <i class="bi bi-plus-lg"></i> Create First Group
+          </button>
+        </div>
+        {% endif %}
+
+      </div>
     </div>
+
+  </div>
+
+  <!-- ── Analytics Sidebar ────────────────────────────────────── -->
+  <div class="col-lg-4 analytics-col">
+
+    <!-- Module Info Card -->
+    <div class="section-card">
+      <div class="section-header">
+        <div>
+          <h2>Module Overview</h2>
+          <p>{{ module.name }}</p>
+        </div>
+        <a href="{{ url_for('worker.dashboard') }}" class="btn-g" style="flex:none;padding:.45rem 1rem;">
+          <i class="bi bi-arrow-left"></i> Back
+        </a>
+      </div>
+      <div class="section-body" style="padding-top:.75rem;">
+        <div class="mini-stat-row">
+          <div class="mini-stat">
+            <div class="mini-stat-val">{{ module.groups|length }}</div>
+            <div class="mini-stat-lbl">Groups</div>
+          </div>
+          <div class="mini-stat">
+            <div class="mini-stat-val">{{ total_camps.n }}</div>
+            <div class="mini-stat-lbl">Campaigns</div>
+          </div>
+        </div>
+        <div style="background:#f8f8fc;border-radius:12px;padding:1rem;">
+          <div style="font-size:.75rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:.5rem;">Status</div>
+          <div style="display:flex;align-items:center;gap:.5rem;">
+            <span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;"></span>
+            <span style="font-weight:700;font-size:.9rem;color:#111;">{{ module.status|capitalize }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions Card -->
+    <div class="section-card">
+      <div class="section-header"><div><h2>Quick Actions</h2></div></div>
+      <div class="section-body" style="display:flex;flex-direction:column;gap:.6rem;padding-top:.5rem;">
+        <button class="btn-g" style="justify-content:flex-start;padding:.75rem 1rem;"
+                data-bs-toggle="modal" data-bs-target="#addGroupModal">
+          <i class="bi bi-plus-circle" style="color:#6D5EF6;"></i> New Group
+        </button>
+        <a href="{{ url_for('worker.dashboard') }}" class="btn-g" style="justify-content:flex-start;padding:.75rem 1rem;">
+          <i class="bi bi-grid" style="color:#3b82f6;"></i> Back to Workspace
+        </a>
+      </div>
+    </div>
+
+    <!-- Groups List summary -->
+    {% if module.groups %}
+    <div class="section-card">
+      <div class="section-header"><div><h2>All Groups</h2><p>Quick summary</p></div></div>
+      <div class="section-body" style="padding-top:.5rem;">
+        {% for g in module.groups %}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:.7rem 0;border-bottom:1px solid #f3f4f8;">
+          <div>
+            <div style="font-weight:700;font-size:.88rem;color:#111;">{{ g.name }}</div>
+            <div style="font-size:.72rem;color:#9ca3af;">{{ g.records|length }} records</div>
+          </div>
+          <a href="{{ url_for('worker.campaigns', gid=g.id) }}"
+             style="font-size:.75rem;font-weight:700;color:#6D5EF6;text-decoration:none;">
+            Campaigns →
+          </a>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
 </div>
-{% endif %}
-</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- MODALS                                                       -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 
 <!-- Edit Group Modals -->
 {% for g in module.groups %}
-<div class="modal fade" id="editGroupModal{{ g.id }}" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <form action="{{ url_for('worker.edit_group', gid=g.id) }}" method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Group Name</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label text-muted small text-uppercase fw-bold">Group Name</label>
-                        <input type="text" name="name" class="form-control form-control-lg" value="{{ g.name }}"
-                            placeholder="e.g. Placement Data 2024" required>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary px-4">Save Changes</button>
-                </div>
-            </form>
+<div class="modal fade premium-modal" id="editGroupModal{{ g.id }}" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="{{ url_for('worker.edit_group', gid=g.id) }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Group</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
+        <div class="modal-body">
+          <label class="field-label">Group Name</label>
+          <input type="text" name="name" class="premium-input" value="{{ g.name }}"
+                 placeholder="e.g. Batch 2024" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-g" style="flex:none;padding:.6rem 1.2rem;" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn-add-group" style="border:none;">Save Changes</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
 {% endfor %}
 
 <!-- Add Group Modal -->
-<div class="modal fade" id="addGroupModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-lg">
-        <div class="modal-content">
-            <form action="{{ url_for('worker.add_group', mid=module.id) }}" method="POST">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-header">
-                    <h5 class="modal-title">Create New Group</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body p-4">
-                    <div class="mb-3">
-                        <label class="form-label text-muted small text-uppercase fw-bold">Group Name</label>
-                        <input type="text" name="name" class="form-control form-control-lg"
-                            placeholder="e.g. Batch 2024, North Zone" required>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary px-4">Create Group</button>
-                </div>
-            </form>
+<div class="modal fade premium-modal" id="addGroupModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form action="{{ url_for('worker.add_group', mid=module.id) }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-header">
+          <h5 class="modal-title">Create New Group</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
+        <div class="modal-body">
+          <label class="field-label">Group Name</label>
+          <input type="text" name="name" class="premium-input"
+                 placeholder="e.g. Batch 2024, North Zone" required>
+          <p style="font-size:.8rem;color:#9ca3af;margin-top:.6rem;">
+            Groups help you segment module records into batches for targeted campaign delivery.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-g" style="flex:none;padding:.6rem 1.2rem;" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn-add-group" style="border:none;">Create Group</button>
+        </div>
+      </form>
     </div>
+  </div>
 </div>
+
 {% endblock %}

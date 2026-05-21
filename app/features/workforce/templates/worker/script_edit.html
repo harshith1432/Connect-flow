@@ -1,197 +1,779 @@
-{% extends 'base.html' %}
+{% extends 'base_worker_premium.html' %}
 {% block title %}Edit Script - {{ module.name }}{% endblock %}
+{% block page_title %}Edit Script{% endblock %}
+{% block head_extra %}
+<style>
+    /* Global Design */
+    body {
+        background-color: #F6F7FB;
+        font-family: 'Poppins', sans-serif;
+        font-weight: 500;
+    }
+    
+    h1, h2, h3, h4, h5, h6 {
+        font-weight: 800;
+    }
+
+    /* Cards */
+    .premium-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, .05);
+        border: none;
+        padding: 16px;
+        animation: fadeIn 0.5s ease;
+    }
+
+    /* Animations */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .hover-lift {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 15px 45px rgba(15, 23, 42, .1);
+    }
+
+    /* Page Header */
+    .breadcrumb-custom {
+        font-size: 0.75rem;
+        color: #64748b;
+        margin-bottom: 8px;
+        font-weight: 500;
+    }
+    .breadcrumb-custom a {
+        color: #64748b;
+        text-decoration: none;
+        transition: color 0.2s ease;
+    }
+    .breadcrumb-custom a:hover {
+        color: #0f172a;
+    }
+    .breadcrumb-custom .separator {
+        margin: 0 8px;
+        font-size: 0.8rem;
+    }
+    
+    .page-title {
+        font-size: 1.25rem;
+        color: #0f172a;
+        margin-bottom: 0px;
+    }
+    .page-subtitle {
+        color: #64748b;
+        font-size: 0.8rem;
+    }
+
+    /* Buttons */
+    .btn-premium {
+        height: 32px;
+        border-radius: 8px;
+        padding: 0 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.75rem;
+        transition: all 0.2s ease;
+        border: none;
+    }
+    .btn-primary-premium {
+        background: #000000;
+        color: #ffffff;
+    }
+    .btn-primary-premium:hover {
+        background: #1e293b;
+        color: #ffffff;
+        transform: scale(1.02);
+    }
+    .btn-secondary-premium {
+        background: #ffffff;
+        color: #0f172a;
+        border: 1px solid #e2e8f0;
+    }
+    .btn-secondary-premium:hover {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        transform: scale(1.02);
+    }
+    .btn-danger-premium {
+        background: #ff5d5d;
+        color: white;
+    }
+    .btn-danger-premium:hover {
+        background: #fc4a4a;
+        transform: scale(1.02);
+    }
+
+    /* Channel Strategy - Segmented Selector */
+    .segmented-control {
+        display: flex;
+        background: #f1f5f9;
+        border-radius: 10px;
+        padding: 3px;
+        gap: 3px;
+        position: relative;
+    }
+    .segmented-control input[type="radio"] {
+        display: none;
+    }
+    .segmented-control label {
+        flex: 1;
+        text-align: center;
+        padding: 4px 8px;
+        border-radius: 6px;
+        color: #64748b;
+        font-size: 0.75rem;
+        cursor: pointer;
+        font-weight: 600;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1;
+        margin: 0;
+    }
+    .segmented-control input[type="radio"]:checked + label {
+        background: #ffffff;
+        color: #000000;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+    .segmented-control label:hover:not(.active) {
+        transform: translateY(-1px);
+        color: #334155;
+    }
+
+    /* Floating Label Select */
+    .form-floating-custom {
+        position: relative;
+    }
+    .select-premium {
+        height: 38px;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        padding: 10px 10px 2px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #0f172a;
+        background-color: #ffffff;
+        transition: all 0.2s ease;
+        appearance: none;
+    }
+    .select-premium:focus {
+        border-color: #000000;
+        box-shadow: none;
+        outline: none;
+    }
+    .form-floating-custom label {
+        position: absolute;
+        top: 9px;
+        left: 10px;
+        font-size: 0.75rem;
+        color: #64748b;
+        transition: all 0.2s ease;
+        pointer-events: none;
+        transform-origin: left top;
+    }
+    .select-premium:focus ~ label,
+    .select-premium:not(:placeholder-shown) ~ label {
+        transform: scale(0.75) translateY(-10px);
+        color: #000000;
+        font-weight: 600;
+    }
+
+    /* Premium Message Editor */
+    .editor-wrapper {
+        background: #FAFBFD;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        transition: border-color 0.2s ease;
+        overflow: hidden;
+    }
+    .editor-wrapper:focus-within {
+        border-color: #000000;
+    }
+    .editor-toolbar {
+        display: flex;
+        gap: 2px;
+        padding: 6px 10px;
+        border-bottom: 1px solid #e2e8f0;
+        background: #ffffff;
+    }
+    .toolbar-btn {
+        background: transparent;
+        border: none;
+        color: #64748b;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        font-size: 0.8rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+    }
+    .toolbar-btn:hover {
+        background: #f1f5f9;
+        color: #000000;
+    }
+    .editor-textarea {
+        width: 100%;
+        min-height: 100px;
+        padding: 10px;
+        border: none;
+        background: transparent;
+        font-family: inherit;
+        font-size: 0.8rem;
+        color: #0f172a;
+        resize: none;
+        line-height: 1.4;
+    }
+    .editor-textarea:focus {
+        outline: none;
+    }
+    .editor-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        border-top: 1px solid #e2e8f0;
+        background: #ffffff;
+    }
+    .char-counter {
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    /* Variables Pills */
+    .var-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 8px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #0f172a;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .var-pill:hover {
+        background: #000000;
+        color: #ffffff;
+        border-color: #000000;
+    }
+    
+    /* Live Preview Sticky */
+    .sticky-preview {
+        position: sticky;
+        top: 90px;
+    }
+    .preview-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    .preview-icon {
+        width: 32px;
+        height: 32px;
+        background: #f8fafc;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+    
+    /* WhatsApp Preview */
+    .wa-preview {
+        background: #e5ddd5;
+        border-radius: 8px;
+        padding: 10px 8px;
+        position: relative;
+        min-height: 100px;
+        display: none;
+    }
+    .wa-bubble {
+        background: #dcf8c6;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border-top-right-radius: 0;
+        font-size: 0.75rem;
+        color: #111b21;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        margin-bottom: 4px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        position: relative;
+    }
+    .wa-bubble::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: -8px;
+        width: 0;
+        height: 0;
+        border-left: 8px solid #dcf8c6;
+        border-bottom: 8px solid transparent;
+    }
+
+    /* Voice Preview */
+    .voice-preview {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 16px;
+        display: none;
+    }
+    .voice-transcript {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        color: #334155;
+        margin-bottom: 16px;
+        white-space: pre-wrap;
+    }
+    .voice-player {
+        background: #ffffff;
+        border-radius: 16px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+    .play-btn {
+        width: 36px;
+        height: 36px;
+        background: #000000;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+    }
+    .play-btn:hover {
+        transform: scale(1.05);
+    }
+    .wave-anim {
+        flex: 1;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+    .wave-bar {
+        flex: 1;
+        height: 3px;
+        background: #e2e8f0;
+        border-radius: 2px;
+        transition: height 0.1s ease;
+    }
+    .wave-anim.active .wave-bar {
+        background: #3b82f6;
+        animation: soundWave 1s infinite alternate;
+    }
+    @keyframes soundWave {
+        0% { height: 3px; }
+        100% { height: 16px; }
+    }
+    
+    /* Email Preview */
+    .email-preview {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+        display: none;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    }
+    .email-header {
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 12px;
+        margin-bottom: 12px;
+    }
+    .email-body {
+        font-size: 0.85rem;
+        color: #334155;
+        white-space: pre-wrap;
+        line-height: 1.5;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-5">
-    <div class="text-center-mobile w-100">
-        <div class="mb-1">
-            <a href="{{ url_for('worker.scripts', gid=group.id) }}"
-                class="text-muted text-decoration-none small text-uppercase fw-bold">
-                <i class="bi bi-chevron-left me-1"></i>Back to Scripts
-            </a>
+<form method="post" id="scriptForm" class="needs-validation" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+    
+    <!-- Page Header -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-2">
+        <div>
+            <div class="breadcrumb-custom d-flex align-items-center">
+                <a href="#">Workspace</a>
+                <span class="separator">›</span>
+                <a href="{{ url_for('worker.manage_groups', mid=module.id) }}">Groups</a>
+                <span class="separator">›</span>
+                <a href="{{ url_for('worker.scripts', gid=group.id) }}">Scripts</a>
+                <span class="separator">›</span>
+                <span class="text-dark">Edit</span>
+            </div>
+            <h1 class="page-title">Edit Script</h1>
+            <p class="page-subtitle mb-0">Update message template for <strong>{{ group.name }}</strong></p>
         </div>
-        <h1>Edit Script</h1>
-        <p class="text-muted">Update message template for <strong>{{ group.name }}</strong></p>
+        <div class="d-flex flex-wrap gap-2">
+            <a href="{{ url_for('worker.scripts', gid=group.id) }}" class="btn btn-premium btn-secondary-premium text-decoration-none">Cancel</a>
+            <button type="button" class="btn btn-premium btn-secondary-premium">Save Draft</button>
+            <button type="submit" class="btn btn-premium btn-primary-premium">Publish</button>
+        </div>
     </div>
-</div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card h-100 p-4 border-0 shadow-sm">
-            <form method="post" class="needs-validation" novalidate>
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
+    <!-- Layout: 70% / 30% -->
+    <div class="row" style="row-gap: 16px;">
+        <!-- Left Side: Editor (70%) -->
+        <div class="col-lg-8 pe-lg-4">
+            <div class="premium-card hover-lift">
+                
+                <!-- Channel Strategy -->
                 <div class="mb-3">
-                    <label class="form-label">Communication Type</label>
-                    <select name="type" id="scriptType" class="form-select" required>
-                        <option value="whatsapp_text" {% if script.type=='whatsapp_text' %}selected{% endif %}>WhatsApp Message</option>
-                        <option value="call" {% if script.type=='call' %}selected{% endif %}>Call</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Language</label>
-                    <select name="language" id="scriptLanguage" class="form-select" required>
-                        {% for lang in ['English', 'Hindi', 'Kannada', 'Tamil', 'Telugu', 'Malayalam', 'Marathi'] %}
-                        <option value="{{ lang }}" {% if script.language==lang %}selected{% endif %}>{{ lang }}</option>
-                        {% endfor %}
-                    </select>
-                    <div id="langHelp" class="form-text mt-1 text-muted"></div>
-                </div>
+                    <h6 class="mb-1 text-dark fw-bold" style="font-size: 0.85rem;">Channel Strategy</h6>
+                    <div class="segmented-control">
+                        <input type="radio" name="type" id="type_whatsapp" value="whatsapp_text" {% if script.type=='whatsapp_text' %}checked{% endif %} onchange="updateView()">
+                        <label for="type_whatsapp"><i class="bi bi-whatsapp me-2"></i>WhatsApp</label>
+                        
+                        <input type="radio" name="type" id="type_call" value="call" {% if script.type=='call' %}checked{% endif %} onchange="updateView()">
+                        <label for="type_call"><i class="bi bi-telephone me-2"></i>Voice Call</label>
 
-                <div class="mb-3 position-relative">
-                    <label class="form-label" id="contentLabel">Script Content</label>
-                    <textarea name="content" id="scriptContent" class="form-control" rows="8"
-                        placeholder="Type your message here..." required
-                        style="min-height: 150px; resize: vertical;">{{ script.content }}</textarea>
-                    <div class="invalid-feedback">Content is required.</div>
-
-                    <!-- Voice Preview Button -->
-                    <div class="mt-2 text-end">
-                        <button type="button" class="btn btn-outline-info btn-sm" id="btnPreviewVoice">
-                            <i class="bi bi-play-circle me-1"></i> Play Voice Preview
-                        </button>
+                        <input type="radio" name="type" id="type_email" value="email" {% if script.type=='email' %}checked{% endif %} onchange="updateView()">
+                        <label for="type_email"><i class="bi bi-envelope me-2"></i>Email</label>
                     </div>
+                </div>
 
-                    <!-- Insert Placeholder Buttons -->
-                    <div class="mt-3">
-                        <label class="form-label text-muted small fw-bold">Insert Placeholder:</label>
-                        <div class="d-flex flex-wrap gap-2">
-                            {% for field in fields %}
-                            <button type="button" class="btn btn-sm btn-outline-primary placeholder-btn"
-                                data-field="{{ field.name }}">
-                                {{ field.name }}
-                            </button>
+                <!-- Language -->
+                <div class="mb-3">
+                    <h6 class="mb-1 text-dark fw-bold" style="font-size: 0.85rem;">Language</h6>
+                    <div class="form-floating-custom">
+                        <select name="language" id="scriptLanguage" class="form-select select-premium" required onchange="updateView()">
+                            <!-- Empty option so floating label works correctly -->
+                            <option value=" " style="display:none;"></option>
+                            {% for lang in ['English', 'Hindi', 'Kannada', 'Tamil', 'Telugu', 'Malayalam', 'Marathi'] %}
+                            <option value="{{ lang }}" {% if script.language==lang %}selected{% endif %}>{{ lang }}</option>
                             {% endfor %}
+                        </select>
+                        <label>Select preferred language</label>
+                    </div>
+                    <div id="langHelp" class="form-text mt-2 ms-2"></div>
+                </div>
+
+                <!-- Insert Variables -->
+                <div class="mb-3">
+                    <div class="d-flex align-items-center mb-2 gap-2">
+                        <h6 class="mb-0 text-dark fw-bold" style="font-size: 0.85rem;">Insert Variables</h6>
+                        <span class="badge bg-dark rounded-pill" id="varBadge" style="display: none;">0</span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2" id="varChipsContainer">
+                        <span class="text-muted small"><i class="bi bi-hourglass-split"></i> Loading variables...</span>
+                    </div>
+                </div>
+
+                <!-- Message Editor -->
+                <div class="mb-2">
+                    <h6 class="mb-1 text-dark fw-bold" style="font-size: 0.85rem;">Message Editor</h6>
+                    <div class="editor-wrapper">
+                        <!-- Toolbar -->
+                        <div class="editor-toolbar">
+                            <button type="button" class="toolbar-btn" title="Bold"><i class="bi bi-type-bold"></i></button>
+                            <button type="button" class="toolbar-btn" title="Italic"><i class="bi bi-type-italic"></i></button>
+                            <div style="width: 1px; background: #e2e8f0; margin: 0 8px;"></div>
+                            <button type="button" class="toolbar-btn" title="Undo"><i class="bi bi-arrow-counterclockwise"></i></button>
+                            <button type="button" class="toolbar-btn ms-auto" title="Preview"><i class="bi bi-eye"></i></button>
                         </div>
-                        <div class="form-text mt-2">Click a button to insert a placeholder at cursor position.</div>
+                        
+                        <!-- Textarea -->
+                        <textarea name="content" id="scriptContent" class="editor-textarea" 
+                            placeholder="Type your message...&#10;Use {{field_name}} to personalize." required
+                            oninput="autoExpand(this); updateView();">{{ script.content }}</textarea>
+                        
+                        <!-- Footer -->
+                        <div class="editor-footer">
+                            <div class="char-counter"><span id="charCount">0</span> characters</div>
+                            <div class="small text-muted"><i class="bi bi-markdown text-dark me-1"></i>Markdown supported</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fallback Settings (Hidden by default for non-call) -->
+                <div class="mt-4 pt-3 border-top" id="backupSettingsContainer" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h6 class="mb-1 text-dark fw-bold">WhatsApp Fallback</h6>
+                            <p class="text-muted small mb-0">Automatically send a message if call fails.</p>
+                        </div>
+                        <div class="form-check form-switch fs-4">
+                            <input class="form-check-input" type="checkbox" id="backupEnabled" name="backup_enabled"
+                                {% if script.backup_enabled %}checked{% endif %} onchange="updateBackupTemplateVisibility()">
+                        </div>
+                    </div>
+                    
+                    <div class="editor-wrapper" id="backupTemplateGroup" {% if not script.backup_enabled %}style="display: none;"{% endif %}>
+                        <textarea name="backup_template" id="backupTemplate" class="editor-textarea" style="min-height: 120px;"
+                            placeholder="Fallback message (English)..." oninput="autoExpand(this);">{{ script.backup_template or '' }}</textarea>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Right Side: Live Preview (30%) -->
+        <div class="col-lg-4">
+            <div class="sticky-preview">
+                <div class="premium-card">
+                    <div class="preview-header">
+                        <div class="preview-icon" style="width: 24px; height: 24px; font-size: 0.8rem;">
+                            <i id="previewIcon" class="bi bi-phone text-dark"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0 fw-bold text-dark" style="font-size: 0.85rem;">Live Preview</h6>
+                            <small class="text-muted" id="previewSubtitle" style="font-size: 0.75rem;">WhatsApp view</small>
+                        </div>
+                    </div>
+                    
+                    <!-- WhatsApp Preview -->
+                    <div id="waPreview" class="wa-preview">
+                        <div class="wa-bubble" id="waBubbleText">
+                            Message will appear here...
+                        </div>
                     </div>
 
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="{{ url_for('worker.scripts', gid=group.id) }}"
-                            class="btn btn-outline-secondary px-4">Cancel</a>
-                        <button class="btn btn-primary px-4">
-                            <i class="bi bi-save me-2"></i>Update Script
-                        </button>
+                    <!-- Voice Preview -->
+                    <div id="voicePreview" class="voice-preview">
+                        <div class="voice-transcript" id="voiceTranscriptText">
+                            Script will appear here...
+                        </div>
+                        <div class="voice-player">
+                            <button type="button" class="play-btn" id="btnPreviewVoice">
+                                <i class="bi bi-play-fill fs-4"></i>
+                            </button>
+                            <div class="wave-anim" id="previewAudioWave">
+                                <div class="wave-bar" style="animation-delay: 0.1s"></div>
+                                <div class="wave-bar" style="animation-delay: 0.2s"></div>
+                                <div class="wave-bar" style="animation-delay: 0.3s"></div>
+                                <div class="wave-bar" style="animation-delay: 0.4s"></div>
+                                <div class="wave-bar" style="animation-delay: 0.5s"></div>
+                                <div class="wave-bar" style="animation-delay: 0.6s"></div>
+                                <div class="wave-bar" style="animation-delay: 0.7s"></div>
+                                <div class="wave-bar" style="animation-delay: 0.8s"></div>
+                            </div>
+                        </div>
                     </div>
-            </form>
+
+                    <!-- Email Preview -->
+                    <div id="emailPreview" class="email-preview">
+                        <div class="email-header">
+                            <small class="text-muted d-block mb-1">Subject</small>
+                            <strong class="text-dark">Customer Care Update</strong>
+                        </div>
+                        <div class="email-body" id="emailBodyText">
+                            Email content will appear here...
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         </div>
     </div>
-</div>
+</form>
 
 <script>
-    function updateScriptRules() {
-        const type = document.getElementById('scriptType')?.value;
+    // Elements
+    const scriptContent = document.getElementById('scriptContent');
+    const charCount = document.getElementById('charCount');
+    
+    // Auto-expand textarea
+    function autoExpand(field) {
+        field.style.height = 'inherit';
+        const computed = window.getComputedStyle(field);
+        const height = parseInt(computed.getPropertyValue('border-top-width'), 10)
+                     + parseInt(computed.getPropertyValue('padding-top'), 10)
+                     + field.scrollHeight
+                     + parseInt(computed.getPropertyValue('padding-bottom'), 10)
+                     + parseInt(computed.getPropertyValue('border-bottom-width'), 10);
+        field.style.height = height + 'px';
+    }
+
+    // Update view based on selections
+    function updateView() {
+        const type = document.querySelector('input[name="type"]:checked')?.value || 'whatsapp_text';
         const lang = document.getElementById('scriptLanguage')?.value;
         const langHelp = document.getElementById('langHelp');
+        const backupContainer = document.getElementById('backupSettingsContainer');
+        const text = scriptContent.value;
+        
+        // Character counter
+        charCount.textContent = text.length;
 
-        const contentLabel = document.getElementById('contentLabel');
-        const voiceContainer = document.getElementById('voiceScriptContainer');
+        // Preview containers
+        const waPreview = document.getElementById('waPreview');
+        const voicePreview = document.getElementById('voicePreview');
+        const emailPreview = document.getElementById('emailPreview');
+        
+        const previewIcon = document.getElementById('previewIcon');
+        const previewSubtitle = document.getElementById('previewSubtitle');
+
+        // Hide all previews first
+        waPreview.style.display = 'none';
+        voicePreview.style.display = 'none';
+        emailPreview.style.display = 'none';
 
         let helpText = "";
         let colorClass = "text-muted";
 
-        // Reset visibility
-        if (voiceContainer) voiceContainer.style.display = 'none';
-        if (contentLabel) contentLabel.textContent = "Script Content";
-
         if (type === 'whatsapp_text') {
-            helpText = "⚠️ <strong>Rule:</strong> WhatsApp Text scripts should be written in <strong>ENGLISH</strong> only.";
-            colorClass = "text-warning";
-
-            contentLabel.textContent = "Text Message Content (English)";
+            waPreview.style.display = 'block';
+            document.getElementById('waBubbleText').textContent = text || 'Message will appear here...';
+            previewIcon.className = 'bi bi-whatsapp text-success';
+            previewSubtitle.textContent = 'WhatsApp Message';
+            
+            helpText = "⚠️ Rule: WhatsApp Text scripts should be written in English only.";
+            colorClass = "text-danger fw-bold";
+            if (backupContainer) backupContainer.style.display = 'none';
 
         } else if (type === 'call') {
-            if (lang === 'Hindi') {
-                helpText = "✅ Write the script in <strong>Hindi</strong>.";
-                colorClass = "text-success";
-            } else if (lang === 'English') {
-                helpText = "✅ Write the script in <strong>English</strong>.";
-                colorClass = "text-success";
+            voicePreview.style.display = 'block';
+            document.getElementById('voiceTranscriptText').textContent = text || 'Script will appear here...';
+            previewIcon.className = 'bi bi-telephone text-primary';
+            previewSubtitle.textContent = 'Voice Call';
+            
+            if (backupContainer) backupContainer.style.display = 'block';
+            
+            if (lang === 'Hindi' || lang === 'English') {
+                helpText = `✅ Write the script in ${lang}.`;
+                colorClass = "text-success fw-bold";
             } else {
-                helpText = `⚠️ <strong>Rule:</strong> For ${lang}, the system defaults to English logic. Please write the script in <strong>ENGLISH</strong>.`;
-                colorClass = "text-danger";
+                helpText = `⚠️ Rule: For ${lang}, the system defaults to English logic. Write in English.`;
+                colorClass = "text-danger fw-bold";
             }
+        } else if (type === 'email') {
+            emailPreview.style.display = 'block';
+            document.getElementById('emailBodyText').textContent = text || 'Email content will appear here...';
+            previewIcon.className = 'bi bi-envelope text-dark';
+            previewSubtitle.textContent = 'Email format';
+            if (backupContainer) backupContainer.style.display = 'none';
         }
 
         if (langHelp) {
             langHelp.innerHTML = helpText;
-            langHelp.className = "form-text mt-1 " + colorClass;
+            langHelp.className = "form-text mt-2 ms-2 " + colorClass;
         }
     }
 
-    // Placeholder Logic (Robust Mousedown)
+    function updateBackupTemplateVisibility() {
+        const checkbox = document.getElementById('backupEnabled');
+        const templateGroup = document.getElementById('backupTemplateGroup');
+        if (checkbox && templateGroup) {
+            templateGroup.style.display = checkbox.checked ? 'block' : 'none';
+        }
+    }
+
+    // Initialize Variables & Events
     document.addEventListener('DOMContentLoaded', function () {
-        // Init rules
-        const typeSelect = document.getElementById('scriptType');
-        const langSelect = document.getElementById('scriptLanguage');
+        updateView();
+        updateBackupTemplateVisibility();
+        autoExpand(scriptContent);
+        autoExpand(document.getElementById('backupTemplate'));
 
-        if (typeSelect) typeSelect.addEventListener('change', updateScriptRules);
-        if (langSelect) langSelect.addEventListener('change', updateScriptRules);
-
-        updateScriptRules(); // Initial call
-
-        // Track active textarea
-        let activeTextarea = document.getElementById('scriptContent');
+        let activeTextarea = scriptContent;
         
         function setupTextarea(ta) {
             if (!ta) return;
-            ta.addEventListener('focus', function () {
-                activeTextarea = this;
+            ['focus', 'mouseup', 'input'].forEach(evt => {
+                ta.addEventListener(evt, function () { activeTextarea = this; });
             });
-            ta.addEventListener('mouseup', function () {
-                activeTextarea = this;
-            });
-            ta.addEventListener('input', function() {
-                activeTextarea = this;
+        }
+        document.querySelectorAll('textarea').forEach(setupTextarea);
+
+        function bindChipEvents() {
+            document.querySelectorAll('.placeholder-btn').forEach(btn => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+                
+                newBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    if (!activeTextarea) activeTextarea = document.getElementById('scriptContent');
+                    if (!activeTextarea) return;
+
+                    const fieldName = this.getAttribute('data-field');
+                    const text = '{' + '{' + fieldName + '}}';
+
+                    activeTextarea.focus();
+
+                    if (typeof activeTextarea.setRangeText === 'function') {
+                        activeTextarea.setRangeText(text, activeTextarea.selectionStart, activeTextarea.selectionEnd, 'end');
+                    } else {
+                        const start = activeTextarea.selectionStart;
+                        const end = activeTextarea.selectionEnd;
+                        const before = activeTextarea.value.substring(0, start);
+                        const after = activeTextarea.value.substring(end, activeTextarea.value.length);
+                        activeTextarea.value = before + text + after;
+                        activeTextarea.selectionStart = activeTextarea.selectionEnd = start + text.length;
+                    }
+
+                    activeTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+                    autoExpand(activeTextarea);
+                });
             });
         }
 
-        setupTextarea(activeTextarea);
-        document.querySelectorAll('textarea').forEach(setupTextarea);
+        window.loadVariables = function() {
+            const container = document.getElementById('varChipsContainer');
+            const badge = document.getElementById('varBadge');
+            const gid = "{{ group.id }}";
+            if (!container || !gid) return;
+            
+            fetch(`{{ url_for('worker.group_script_variables_api', gid=group.id) }}`, { cache: 'no-store' })
+                .then(res => res.json())
+                .then(data => {
+                    container.innerHTML = '';
+                    if (data.variables && data.variables.length > 0) {
+                        badge.textContent = data.variables.length;
+                        badge.style.display = 'inline-block';
+                        
+                        data.variables.forEach(v => {
+                            container.innerHTML += `<button type="button" class="var-pill placeholder-btn" data-field="${v.key}">
+                                <i class="bi ${v.icon} text-muted me-2"></i> ${v.label}
+                            </button>`;
+                        });
+                        bindChipEvents();
+                    } else {
+                        badge.style.display = 'none';
+                        container.innerHTML = '<span class="text-muted small"><i class="bi bi-info-circle"></i> No fields defined.</span>';
+                    }
+                })
+                .catch(err => {
+                    container.innerHTML = '<span class="text-danger small"><i class="bi bi-exclamation-triangle"></i> Failed to load variables</span>';
+                });
+        };
+        
+        loadVariables();
+        window.addEventListener('schemaUpdated', loadVariables);
 
-        // Button Click
-        const buttons = document.querySelectorAll('.placeholder-btn');
-        buttons.forEach(btn => {
-            btn.addEventListener('click', function (e) {
-                e.preventDefault();
-
-                if (!activeTextarea) {
-                    activeTextarea = document.getElementById('scriptContent');
-                }
-                
-                if (!activeTextarea) return;
-
-                const fieldName = this.getAttribute('data-field');
-                const text = '{' + '{' + fieldName + '}}';
-
-                activeTextarea.focus();
-
-                if (typeof activeTextarea.setRangeText === 'function') {
-                    activeTextarea.setRangeText(text, activeTextarea.selectionStart, activeTextarea.selectionEnd, 'end');
-                } else {
-                    const start = activeTextarea.selectionStart;
-                    const end = activeTextarea.selectionEnd;
-                    const before = activeTextarea.value.substring(0, start);
-                    const after = activeTextarea.value.substring(end, activeTextarea.value.length);
-                    activeTextarea.value = before + text + after;
-                    activeTextarea.selectionStart = activeTextarea.selectionEnd = start + text.length;
-                }
-
-                activeTextarea.dispatchEvent(new Event('input', { bubbles: true }));
-            });
-        });
-
-        // Voice Preview Logic
+        // Audio Player Simulation / Logic
         const btnPreview = document.getElementById('btnPreviewVoice');
         let audioPlayer = new Audio();
         let isPlaying = false;
-        let originalHtml = btnPreview ? btnPreview.innerHTML : '';
+        const previewWave = document.getElementById('previewAudioWave');
 
         function resetPreviewState() {
             if (btnPreview) {
-                btnPreview.innerHTML = originalHtml;
-                btnPreview.classList.remove('btn-outline-danger');
-                btnPreview.classList.add('btn-outline-info');
+                btnPreview.innerHTML = '<i class="bi bi-play-fill fs-4"></i>';
                 isPlaying = false;
+                if(previewWave) previewWave.classList.remove('active');
             }
         }
 
@@ -207,16 +789,13 @@
                     return;
                 }
 
-                const content = activeTextarea.value;
+                const content = document.getElementById('scriptContent').value;
                 const lang = document.getElementById('scriptLanguage').value;
 
-                if (!content.trim()) {
-                    alert("Please enter some text to preview.");
-                    return;
-                }
+                if (!content.trim()) return;
 
-                btnPreview.disabled = true;
-                btnPreview.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
+                btnPreview.innerHTML = '<span class="spinner-border spinner-border-sm text-white"></span>';
+                if(previewWave) previewWave.classList.add('active');
 
                 try {
                     const response = await fetch('{{ url_for("worker.preview_voice") }}', {
@@ -225,32 +804,22 @@
                             'Content-Type': 'application/json',
                             'X-CSRFToken': '{{ csrf_token() }}'
                         },
-                        body: JSON.stringify({
-                            text: content,
-                            language: lang
-                        })
+                        body: JSON.stringify({ text: content, language: lang })
                     });
 
                     const result = await response.json();
                     if (result.success && result.audio_url) {
                         audioPlayer.src = result.audio_url;
                         audioPlayer.play();
-
-                        btnPreview.disabled = false;
                         isPlaying = true;
-                        btnPreview.innerHTML = '<i class="bi bi-stop-circle text-danger me-1"></i> Stop Preview';
-                        btnPreview.classList.remove('btn-outline-info');
-                        btnPreview.classList.add('btn-outline-danger');
+                        btnPreview.innerHTML = '<i class="bi bi-stop-fill fs-4"></i>';
                     } else {
-                        alert("Error: " + (result.error || "Could not generate audio."));
                         resetPreviewState();
-                        btnPreview.disabled = false;
+                        alert(result.error || "Could not generate audio preview.");
                     }
                 } catch (err) {
-                    console.error(err);
-                    alert("Connection error: " + err.message);
                     resetPreviewState();
-                    btnPreview.disabled = false;
+                    console.error("Preview error", err);
                 }
             });
         }

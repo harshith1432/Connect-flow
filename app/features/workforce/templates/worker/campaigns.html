@@ -1,261 +1,418 @@
-{% extends 'base.html' %}
-{% block title %}{{ module.name }} - Campaigns{% endblock %}
+{% extends "base_worker_premium.html" %}
+{% block title %}Campaigns — {{ group.name }} | ConnectFlow{% endblock %}
+{% block page_title %}Campaign Dashboard{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/campaigns.css') }}">
+{% endblock %}
 {% block content %}
-<div class="row align-items-center mb-5">
-    <div class="col text-start">
-        <div class="mb-1">
-            <a href="{{ url_for('worker.manage_groups', mid=module.id) }}"
-                class="text-muted text-decoration-none small text-uppercase fw-bold">
-                <i class="bi bi-chevron-left me-1"></i>Back to Groups
-            </a>
-        </div>
-        <h1 class="mb-0">Campaigns</h1>
-        <p class="text-muted mb-0">Launch specialized communication for <strong>{{ group.name }}</strong> ({{
-            module.name }})
-        </p>
-    </div>
-    <div class="col-auto text-end">
-        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
-            <i class="bi bi-plus-lg me-2"></i> New Campaign
-        </button>
-    </div>
+<!-- Breadcrumb -->
+<div class="breadcrumb-bar">
+  <a href="{{ url_for('worker.dashboard') }}"><i class="bi bi-grid"></i> Workspace</a>
+  <i class="bi bi-chevron-right"></i>
+  <a href="{{ url_for('worker.manage_groups', mid=module.id) }}">{{ module.name }}</a>
+  <i class="bi bi-chevron-right"></i>
+  <span style="color:#111;font-weight:700;">{{ group.name }} — Campaigns</span>
 </div>
 
-<div class="card border-0 shadow-sm">
-    <div class="card-header bg-white py-3 border-bottom">
-        <h5 class="mb-0 fw-bold text-primary">All Campaigns <span class="badge bg-light text-dark ms-2">{{
-                campaigns|length }}</span></h5>
+<!-- KPI Row -->
+{% set running = campaigns|selectattr('status','equalto','running')|list %}
+{% set completed = campaigns|selectattr('status','equalto','completed')|list %}
+{% set drafts = campaigns|selectattr('status','equalto','draft')|list %}
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-top"><span class="kpi-lbl">Total</span>
+      <div class="kpi-ico ico-p"><i class="bi bi-megaphone"></i></div>
     </div>
-    <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
-        <table class="table align-middle mb-0 text-nowrap">
-            <thead class="bg-light">
-                <tr>
-                    <th class="text-uppercase small text-muted font-weight-bold ps-4">Campaign Name</th>
-                    <th class="text-uppercase small text-muted font-weight-bold">Type</th>
-                    <th class="text-uppercase small text-muted font-weight-bold">Script</th>
-                    <th class="text-uppercase small text-muted font-weight-bold">Status</th>
-                    <th class="text-uppercase small text-muted font-weight-bold">Created</th>
-                    <th class="text-end text-uppercase small text-muted font-weight-bold pe-4">Actions</th>
-                </tr>
+    <div class="kpi-val">{{ campaigns|length }}</div>
+    <div class="kpi-sub"><i class="bi bi-collection"></i> All campaigns</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-top"><span class="kpi-lbl">Running</span>
+      <div class="kpi-ico ico-g"><i class="bi bi-play-circle"></i></div>
+    </div>
+    <div class="kpi-val">{{ running|length }}</div>
+    <div class="kpi-sub"><span class="pulse"></span> Live now</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-top"><span class="kpi-lbl">Completed</span>
+      <div class="kpi-ico ico-b"><i class="bi bi-check2-circle"></i></div>
+    </div>
+    <div class="kpi-val">{{ completed|length }}</div>
+    <div class="kpi-sub"><i class="bi bi-check-circle-fill"></i> Finished</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-top"><span class="kpi-lbl">Drafts</span>
+      <div class="kpi-ico ico-d"><i class="bi bi-file-earmark"></i></div>
+    </div>
+    <div class="kpi-val">{{ drafts|length }}</div>
+    <div class="kpi-sub"><i class="bi bi-clock"></i> Pending launch</div>
+  </div>
+</div>
+
+<!-- Main + Sidebar -->
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="sc">
+      <div class="sh">
+        <div>
+          <h2>Campaigns <span style="font-size:.75rem;font-weight:600;color:#9ca3af;margin-left:.5rem;">{{ group.name
+              }}</span></h2>
+          <p>Manage communication campaigns for this group</p>
+        </div>
+        <button class="btn-new" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
+          <i class="bi bi-plus-lg"></i> New Campaign
+        </button>
+      </div>
+      <div class="sb">
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+          <input type="text" class="fi fi-search" id="campSearch" placeholder="Search campaigns...">
+          <select class="fi" id="statusFilter">
+            <option value="">All Statuses</option>
+            <option value="running">Running</option>
+            <option value="completed">Completed</option>
+            <option value="failed">Failed</option>
+            <option value="paused">Paused</option>
+            <option value="scheduled">Scheduled</option>
+          </select>
+          <select class="fi" id="typeFilter">
+            <option value="">All Types</option>
+            <option value="whatsapp_text">WhatsApp</option>
+            <option value="call">Call</option>
+          </select>
+        </div>
+
+        <!-- Bulk Toolbar -->
+        <div class="bulk-toolbar" id="bulkToolbar" style="display:none;">
+          <div class="bulk-toolbar-content">
+            <div class="bulk-toolbar-left">
+              <span class="bulk-toolbar-count" id="bulkCount">✓ 0 Selected</span>
+            </div>
+            <div class="bulk-toolbar-actions">
+              <button class="btn-bulk" data-action="start"><i class="bi bi-play-fill"></i> Start</button>
+              <button class="btn-bulk" data-action="pause"><i class="bi bi-pause-fill"></i> Pause</button>
+              <button class="btn-bulk" data-action="restart"><i class="bi bi-arrow-clockwise"></i> Restart</button>
+              <button class="btn-bulk" data-action="stop"><i class="bi bi-stop-fill"></i> Stop</button>
+              <button class="btn-bulk" data-action="export"><i class="bi bi-download"></i> Export</button>
+              <button class="btn-bulk" data-action="duplicate"><i class="bi bi-files"></i> Duplicate</button>
+              <button class="btn-bulk" data-action="assign"><i class="bi bi-tag-fill"></i> Assign Script</button>
+              <button class="btn-bulk" data-action="move"><i class="bi bi-folder-symlink-fill"></i> Move</button>
+              <button class="btn-bulk text-danger" data-action="delete" style="color:var(--danger);"><i
+                  class="bi bi-trash-fill"></i> Delete</button>
+              <button class="btn-bulk-icon" data-action="clear" title="Clear selection"><i
+                  class="bi bi-x-lg"></i></button>
+            </div>
+          </div>
+        </div>
+
+        {% if campaigns %}
+        <div style="overflow-x:auto;">
+          <table class="ctable" id="campTable">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;"><input type="checkbox" class="camp-chk camp-chk-all"
+                    id="selectAllChk"></th>
+                <th>Campaign</th>
+                <th>Type</th>
+                <th>Script</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th style="text-align:right;">Actions</th>
+              </tr>
             </thead>
             <tbody>
-                {% for c in campaigns %}
-                <tr>
-                    <td class="fw-bold ps-4" title="{{ c.name }}">
-                        <div style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                            {{ c.name }}
-                        </div>
-                    </td>
-                    <td>
-                        {% if c.type == 'whatsapp_text' %}
-                        <span class="badge bg-success text-white"><i class="bi bi-whatsapp me-1"></i> WhatsApp</span>
-                        {% else %}
-                        <span class="badge bg-primary text-white"><i class="bi bi-telephone me-1"></i> Call</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if c.script_id %}
-                        <span class="badge bg-light text-dark border"><i class="bi bi-file-text me-1"></i> ID: {{
-                            c.script_id }}</span>
-                        {% else %}
-                        <span class="text-muted">-</span>
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if c.status == 'draft' %}
-                        <span class="badge bg-secondary text-white">Draft</span>
-                        {% elif c.status == 'running' %}
-                        <span class="badge bg-primary text-white"><span class="spinner-grow spinner-grow-sm me-1"
-                                style="width: 0.5rem; height: 0.5rem;"></span>
-                            Running</span>
-                        {% elif c.status == 'completed' %}
-                        <span class="badge bg-success text-white">Completed</span>
-                        {% else %}
-                        <span class="badge bg-light text-dark">{{ c.status }}</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-muted small">{{ c.created_at.strftime('%Y-%m-%d') }}</td>
-                    <td class="text-end pe-4">
-                        {% if c.status == 'draft' %}
-                        <form method="post" action="{{ url_for('worker.start_campaign', cid=c.id) }}"
-                            style="display:inline;"
-                            onsubmit="return confirm('Start this campaign? Communications will be queued.');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                            <button class="btn btn-sm btn-primary"><i class="bi bi-play-fill me-1"></i>
-                                Start</button>
-                        </form>
-                        {% else %}
-                        <a href="{{ url_for('worker.campaign_report', cid=c.id) }}"
-                            class="btn btn-sm btn-outline-primary"><i class="bi bi-bar-chart-line me-1"></i> Report</a>
-                        {% endif %}
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6" class="text-center py-5">
-                        <div class="mb-3">
-                            <i class="bi bi-megaphone display-4 text-muted opacity-25"></i>
-                        </div>
-                        <h5 class="text-muted">No campaigns launched yet</h5>
-                        <p class="text-muted small mb-4">Create your first campaign to start engaging with your list.
-                        </p>
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
-                            <i class="bi bi-plus-lg me-2"></i>Create Campaign
-                        </button>
-                    </td>
-                </tr>
-                {% endfor %}
+              {% for c in campaigns %}
+              <tr data-id="{{ c.id }}" data-name="{{ c.name|lower }}" data-status="{{ c.status }}"
+                data-type="{{ c.type }}" class="camp-row">
+                <td style="text-align: center;"><input type="checkbox" class="camp-chk camp-chk-row" value="{{ c.id }}">
+                </td>
+                <td>
+                  <div class="camp-name" title="{{ c.name }}">{{ c.name }}</div>
+                  <div class="camp-meta">ID #{{ c.id }}</div>
+                </td>
+                <td>
+                  {% if c.type == 'whatsapp_text' %}
+                  <span class="badge-type badge-wa"><i class="bi bi-whatsapp"></i> WhatsApp</span>
+                  {% else %}
+                  <span class="badge-type badge-call"><i class="bi bi-telephone"></i> Call</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if c.script_id %}
+                  <span
+                    style="font-size:.8rem;font-weight:600;color:#374151;background:#f3f4f6;padding:.25rem .6rem;border-radius:8px;">
+                    <i class="bi bi-file-text me-1"></i>ID {{ c.script_id }}
+                  </span>
+                  {% else %}
+                  <span style="color:#d1d5db;font-size:.82rem;">—</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if c.status == 'running' %}
+                  <span class="badge-status s-running"><span class="pulse"></span> Running</span>
+                  {% elif c.status == 'completed' %}
+                  <span class="badge-status s-completed"><i class="bi bi-check-circle-fill"></i> Completed</span>
+                  {% elif c.status == 'failed' %}
+                  <span class="badge-status s-failed"><i class="bi bi-x-circle-fill"></i> Failed</span>
+                  {% elif c.status == 'paused' %}
+                  <span class="badge-status s-paused"><i class="bi bi-pause-circle-fill"></i> Paused</span>
+                  {% elif c.status == 'scheduled' %}
+                  <span class="badge-status s-draft"><i class="bi bi-calendar"></i> Scheduled</span>
+                  {% else %}
+                  <span class="badge-status s-draft"><i class="bi bi-circle"></i> Draft</span>
+                  {% endif %}
+                </td>
+                <td style="color:#9ca3af;font-size:.8rem;">{{ c.created_at.strftime('%b %d, %Y') }}</td>
+                <td>
+                  <div class="act-row">
+                    {% if c.status == 'draft' %}
+                    <form method="post" action="{{ url_for('worker.start_campaign', cid=c.id) }}"
+                      style="display:inline;"
+                      onsubmit="return confirm('Start this campaign? Communications will be queued.');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn-act start"><i class="bi bi-play-fill"></i> Start</button>
+                    </form>
+                    {% else %}
+                    <a href="{{ url_for('worker.campaign_report', cid=c.id) }}" class="btn-act report">
+                      <i class="bi bi-bar-chart-line"></i> Report
+                    </a>
+                    {% endif %}
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
             </tbody>
-        </table>
-    </div>
-</div>
-
-<!-- Create Campaign Modal -->
-<div class="modal fade" id="createCampaignModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-scrollable modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Create New Campaign</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body" style="max-height: 65vh; overflow-y: auto;">
-                <form id="campaignForm" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                    <div class="mb-3">
-                        <label class="form-label">Campaign Name</label>
-                        <input name="name" class="form-control" placeholder="e.g. Diwali Promo 2024" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Communication Type</label>
-                        <select name="type" class="form-select" id="campaignTypeSelect">
-                        <option value="whatsapp_text">WhatsApp Message</option>
-                        <option value="call">Call</option>
-                    </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Select Script</label>
-                        <div class="input-group">
-                            <select name="script_id" class="form-select" id="scriptSelect" required>
-                                <option value="">-- Choose Script --</option>
-                                {% for s in scripts %}
-                                <option value="{{ s.id }}" data-type="{{ s.type }}" data-content="{{ s.content }}"
-                                    data-lang="{{ s.language }}">[{{ s.language }}] {{ s.content[:30] }}...</option>
-                                {% endfor %}
-                            </select>
-                            <button type="button" class="btn btn-outline-info" id="btnPreviewCampaignScript">
-                                <i class="bi bi-play-fill"></i>
-                            </button>
-                        </div>
-                        <div class="form-text">Ensure the script matches your chosen communication type.</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Sender Number (Optional)</label>
-                        <select name="sender_number_id" class="form-select" id="senderNumberSelect">
-                            <option value="">-- Use Platform Default --</option>
-                            {% for n in numbers %}
-                            <option value="{{ n.id }}" data-channel="{{ n.channel_type }}">{{ n.number }} ({{ n.channel_type|title }})</option>
-                            {% endfor %}
-                        </select>
-                        <div class="form-text">Select a specific number or use the system default.</div>
-                    </div>
-
-                    <!-- Voice Call Settings removed as requested -->
-
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                <button type="submit" form="campaignForm" class="btn btn-primary">Create Draft</button>
-            </div>
+          </table>
         </div>
+        {% else %}
+        <div class="empty-state">
+          <div class="empty-icon"><i class="bi bi-megaphone"></i></div>
+          <h3>No Campaigns Yet</h3>
+          <p>Create your first campaign to start engaging with records in <strong>{{ group.name }}</strong>.</p>
+          <button class="btn-new" data-bs-toggle="modal" data-bs-target="#createCampaignModal">
+            <i class="bi bi-plus-lg"></i> Create Campaign
+          </button>
+        </div>
+        {% endif %}
+      </div>
     </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="col-lg-4">
+    <div class="sc">
+      <div class="sh">
+        <div>
+          <h2>Group Info</h2>
+          <p>{{ group.name }}</p>
+        </div>
+      </div>
+      <div class="sb">
+        <div class="side-stat">
+          <div class="side-stat-val">{{ campaigns|length }}</div>
+          <div class="side-stat-lbl">Total Campaigns</div>
+        </div>
+        <div class="side-stat">
+          <div class="side-stat-val">{{ running|length }}</div>
+          <div class="side-stat-lbl">Running</div>
+        </div>
+        <div class="side-stat">
+          <div class="side-stat-val">{{ completed|length }}</div>
+          <div class="side-stat-lbl">Completed</div>
+        </div>
+        <hr style="border-color:#f0f0f5;margin:1rem 0;">
+        <a href="{{ url_for('worker.scripts', gid=group.id) }}" class="btn-act"
+          style="width:100%;justify-content:center;padding:.7rem 1rem;margin-bottom:.5rem;">
+          <i class="bi bi-file-text"></i> Manage Scripts
+        </a>
+        <a href="{{ url_for('worker.manage_groups', mid=module.id) }}" class="btn-act"
+          style="width:100%;justify-content:center;padding:.7rem 1rem;">
+          <i class="bi bi-arrow-left"></i> Back to Groups
+        </a>
+      </div>
+    </div>
+
+    {% if scripts %}
+    <div class="sc">
+      <div class="sh">
+        <div>
+          <h2>Available Scripts</h2>
+          <p>{{ scripts|length }} templates</p>
+        </div>
+      </div>
+      <div class="sb" style="padding-top:.5rem;">
+        {% for s in scripts[:5] %}
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid #f5f5fa;">
+          <div
+            style="width:32px;height:32px;border-radius:9px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;color:var(--accent);font-size:.9rem;flex-shrink:0;">
+            <i class="bi bi-file-text"></i>
+          </div>
+          <div>
+            <div style="font-size:.82rem;font-weight:700;color:#111;">{{ s.content[:28] }}{% if s.content|length > 28
+              %}...{% endif %}</div>
+            <div style="font-size:.7rem;color:#9ca3af;">{{ s.type }} · {{ s.language }}</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
 </div>
 
+<!-- Create Campaign Modal (all existing logic preserved) -->
+<div class="modal fade pm" id="createCampaignModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div>
+          <h5 class="modal-title">New Campaign</h5>
+          <p style="font-size:.8rem;color:#9ca3af;margin:0;">Configure and launch for <strong>{{ group.name }}</strong>
+          </p>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="campaignForm" method="post" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="pf-lbl">Campaign Name</label>
+              <input name="name" class="pf-input" placeholder="e.g. Diwali Promo 2024" required>
+            </div>
+            <div class="col-md-6">
+              <label class="pf-lbl">Communication Type</label>
+              <select name="type" class="pf-input" id="campaignTypeSelect">
+                <option value="whatsapp_text">WhatsApp Message</option>
+                <option value="call">Call</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="pf-lbl">Sender Number (Optional)</label>
+              <select name="sender_number_id" class="pf-input" id="senderNumberSelect">
+                <option value="">— Use Platform Default —</option>
+                {% for n in numbers %}
+                <option value="{{ n.id }}" data-channel="{{ n.channel_type }}">{{ n.number }} ({{ n.channel_type|title
+                  }})</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="pf-lbl">Select Script</label>
+              <div style="display:flex;gap:.5rem;">
+                <select name="script_id" class="pf-input" id="scriptSelect" required style="flex:1;">
+                  <option value="">— Choose Script —</option>
+                  {% for s in scripts %}
+                  <option value="{{ s.id }}" data-type="{{ s.type }}" data-content="{{ s.content }}"
+                    data-lang="{{ s.language }}">
+                    [{{ s.language }}] {{ s.content[:40] }}...
+                  </option>
+                  {% endfor %}
+                </select>
+                <button type="button" class="btn-act" id="btnPreviewCampaignScript"
+                  style="flex:none;padding:.6rem .9rem;" title="Preview Voice">
+                  <i class="bi bi-play-fill"></i>
+                </button>
+              </div>
+              <p style="font-size:.75rem;color:#9ca3af;margin-top:.4rem;">Ensure the script type matches your
+                communication type.</p>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn-act" style="flex:none;padding:.6rem 1.2rem;"
+          data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" form="campaignForm" class="btn-new" style="border:none;">
+          <i class="bi bi-megaphone"></i> Create Draft
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- Right Click Menu -->
+  <div class="context-menu" id="rowContextMenu" style="display:none;">
+    <ul class="context-menu-list">
+      <li class="context-menu-item" data-action="report"><i class="bi bi-bar-chart-line"></i> View Report</li>
+      <li class="context-menu-item" data-action="edit"><i class="bi bi-pencil"></i> Edit</li>
+      <li class="context-menu-item" data-action="duplicate"><i class="bi bi-files"></i> Duplicate</li>
+      <li class="context-menu-item" data-action="archive"><i class="bi bi-archive"></i> Archive</li>
+      <li class="context-menu-item text-danger" data-action="delete"><i class="bi bi-trash"></i> Delete</li>
+    </ul>
+  </div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const typeSelect   = document.getElementById('campaignTypeSelect');
-    const scriptSelect = document.getElementById('scriptSelect');
-    const senderSelect = document.getElementById('senderNumberSelect');
+  <!-- Bulk Actions Modals Placeholders -->
+  <div class="modal fade pm" id="assignScriptModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Assign Script</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label class="pf-lbl">Select Script</label>
+          <select class="pf-input" id="bulkScriptSelect">
+            <option value="">— Choose Script —</option>
+            {% for s in scripts %}
+            <option value="{{ s.id }}">[{{ s.language }}] {{ s.content[:40] }}...</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-act" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn-new" id="btnConfirmAssignScript">Assign</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    if (typeSelect && scriptSelect) {
-        const allScriptOptions = Array.from(scriptSelect.options).slice(1);
-        const allSenderOptions = senderSelect ? Array.from(senderSelect.options).slice(1) : [];
+  <div class="modal fade pm" id="moveCampaignModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Move Campaigns</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Moving <strong id="moveCampaignCount">0</strong> campaigns to another group.</p>
+          <label class="pf-lbl">Select Destination Group</label>
+          <select class="pf-input" id="bulkGroupSelect">
+            <option value="">— Choose Group —</option>
+            <!-- Populate via JS or context -->
+          </select>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-act" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn-new" id="btnConfirmMove">Move</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-        typeSelect.addEventListener('change', function () {
-            const selectedType = this.value;
+  <div class="modal fade pm" id="deleteCampaignModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title text-danger"><i class="bi bi-exclamation-triangle"></i> Delete Campaigns</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p>Are you sure you want to delete <strong id="deleteCampaignCount">0</strong> campaigns?</p>
+          <p style="font-size:0.85rem;color:#6b7280;">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-act" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn-new" style="background:var(--danger);" id="btnConfirmDelete">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-            // Filter Scripts
-            scriptSelect.innerHTML = '<option value="">-- Choose Script --</option>';
-            allScriptOptions.forEach(opt => {
-                if (opt.dataset.type === selectedType)
-                    scriptSelect.appendChild(opt.cloneNode(true));
-            });
+  {% endblock %}
 
-            // Filter Sender Numbers
-            if (senderSelect) {
-                senderSelect.innerHTML = '<option value="">-- Use Platform Default --</option>';
-                allSenderOptions.forEach(opt => {
-                    const ch = opt.dataset.channel;
-                    if (selectedType === 'call' && ['voice', 'hooman_voice'].includes(ch))
-                        senderSelect.appendChild(opt.cloneNode(true));
-                    else if (selectedType.startsWith('whatsapp') && ch === 'whatsapp')
-                        senderSelect.appendChild(opt.cloneNode(true));
-                });
-            }
-        });
-
-        typeSelect.dispatchEvent(new Event('change'));
-    }
-
-    // Voice Preview for Campaigns
-    const campaignPreviewBtn = document.getElementById('btnPreviewCampaignScript');
-    const audioPlayer = new Audio();
-
-    if (campaignPreviewBtn) {
-        campaignPreviewBtn.addEventListener('click', async function () {
-            const selectedOption = scriptSelect.options[scriptSelect.selectedIndex];
-            if (!selectedOption || !selectedOption.value) {
-                alert('Please select a script first.');
-                return;
-            }
-
-            const text = selectedOption.dataset.content;
-            const lang = selectedOption.dataset.lang;
-
-            const originalHtml = this.innerHTML;
-            this.disabled = true;
-            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-            try {
-                const response = await fetch('/worker/preview-voice', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token() }}'
-                    },
-                    body: JSON.stringify({ text: text, language: lang })
-                });
-
-                const data = await response.json();
-                if (data.success) {
-                    audioPlayer.src = data.audio_url;
-                    audioPlayer.play();
-                } else {
-                    alert('Error generating preview: ' + data.error);
-                }
-            } catch (error) {
-                console.error('Preview error:', error);
-                alert('Failed to play preview.');
-            } finally {
-                this.disabled = false;
-                this.innerHTML = originalHtml;
-            }
-        });
-    }
-});
-
-</script>
-{% endblock %}
-
+  {% block scripts %}
+  <script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+  </script>
+  <script src="{{ url_for('static', filename='js/campaigns.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/bulk_actions.js') }}"></script>
+  {% endblock %}

@@ -12,17 +12,30 @@
     <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
         <div>
             <h2 class="fw-bold text-dark mb-1">Module Intelligence: {{ module.name }}</h2>
-            <p class="text-muted small mb-0">Harnessing dynamic data capture and processing.</p>
+            <div class="d-flex align-items-center gap-2">
+                <p class="text-muted small mb-0">Harnessing dynamic data capture and processing.</p>
+                {% if active_group %}
+                <span style="display:inline-flex;align-items:center;gap:.35rem;padding:.3rem .8rem;border-radius:100px;font-size:.75rem;font-weight:700;background:rgba(109,94,246,.1);color:#6D5EF6;">
+                    <i class="bi bi-funnel-fill"></i> Group: {{ active_group.name }}
+                </span>
+                {% endif %}
+            </div>
         </div>
         <div class="d-flex gap-2">
+            {% if active_group %}
+            <button class="btn btn-premium-white" onclick="window.location.href='{{ url_for('worker.manage_groups', mid=module.id) }}'">
+                <i class="bi bi-arrow-left me-1"></i>Back to Groups
+            </button>
+            {% else %}
             <button class="btn btn-premium-white" onclick="window.location.href='{{ url_for('worker.dashboard') }}'">
                 Back
             </button>
-            <button class="btn btn-premium-white" onclick="window.location.href='{{ url_for('worker.create_module') }}'">
-                <i class="bi bi-plus-circle me-2"></i>New Module
-            </button>
+            {% endif %}
             <button class="btn btn-premium-dark" data-bs-toggle="modal" data-bs-target="#addRecordModal">
                 <i class="bi bi-plus-lg me-2"></i>Add Entry
+            </button>
+            <button class="btn btn-premium-dark" data-bs-toggle="modal" data-bs-target="#addFieldModal">
+                <i class="bi bi-layout-text-sidebar me-2"></i>Configure Fields
             </button>
             <div class="dropdown">
                 <button class="btn btn-premium-white dropdown-toggle" data-bs-toggle="dropdown">
@@ -31,8 +44,8 @@
                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg rounded-xl">
                     <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#importModal"><i class="bi bi-cloud-arrow-up me-2"></i>Import Data</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="{{ url_for('worker.export_records', mid=module.id, format='csv') }}"><i class="bi bi-filetype-csv me-2"></i>Export CSV</a></li>
-                    <li><a class="dropdown-item" href="{{ url_for('worker.export_records', mid=module.id, format='excel') }}"><i class="bi bi-filetype-xlsx me-2"></i>Export Excel</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('worker.export_records', mid=module.id, format='csv', group_id=active_group.id if active_group else None) }}"><i class="bi bi-filetype-csv me-2"></i>Export CSV</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('worker.export_records', mid=module.id, format='excel', group_id=active_group.id if active_group else None) }}"><i class="bi bi-filetype-xlsx me-2"></i>Export Excel</a></li>
                 </ul>
             </div>
         </div>
@@ -83,9 +96,8 @@
                                 <input class="form-check-input" type="checkbox" id="selectAll">
                             </div>
                         </th>
-                        <th style="min-width: 120px;">Created</th>
                         {% for f in fields %}
-                        <th style="min-width: 150px;">{{ f.name }}</th>
+                        <th style="min-width: 150px;" data-field-id="{{ f.id }}">{{ f.name }}</th>
                         {% endfor %}
                         <th class="text-end pe-4" style="width: 120px;">Actions</th>
                     </tr>
@@ -98,22 +110,18 @@
                                 <input class="form-check-input record-checkbox" type="checkbox" value="{{ r.id }}" onchange="updateBulkActions()">
                             </div>
                         </td>
-                        <td>
-                            <div class="date-cell">
-                                <span class="d-block fw-semibold text-dark">{{ r.created_at.strftime('%d %b, %H:%M') }}</span>
-                                <span class="smaller text-muted">ID: #{{ r.id }}</span>
-                            </div>
-                        </td>
                         {% for f in fields %}
-                        <td>
+                        <td data-field-id="{{ f.id }}">
                             {% set val = r.computed_values.get(f.id, '-') %}
                             <div class="field-cell">
                                 {% if f.field_type == 'phone' and val != '-' %}
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="text-dark fw-medium">{{ val }}</span>
+                                        {% if f.meta and f.meta.communication %}
                                         <a href="https://wa.me/{{ val|replace(' ', '')|replace('+', '')|replace('-', '') }}" target="_blank" class="whatsapp-icon-link" title="WhatsApp this contact">
                                             <i class="bi bi-whatsapp"></i>
                                         </a>
+                                        {% endif %}
                                     </div>
                                 {% elif f.field_type == 'email' and val != '-' %}
                                     <a href="mailto:{{ val }}" class="text-dark-link text-decoration-none border-bottom border-dark">{{ val }}</a>
@@ -144,13 +152,19 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="{{ fields|length + 3 }}" class="text-center py-5">
+                        <td colspan="{{ fields|length + 2 }}" class="text-center py-5">
                             <div class="empty-state py-5">
                                 <div class="empty-icon-wrapper mb-4">
                                     <i class="bi bi-folder2-open display-1 text-light"></i>
                                 </div>
                                 <h4 class="fw-bold">No Records Found</h4>
-                                <p class="text-muted mx-auto" style="max-width: 300px;">This module currently has no dynamic data. Start by adding a record manually or import a file.</p>
+                                <p class="text-muted mx-auto" style="max-width: 300px;">
+                                    {% if active_group %}
+                                    No records inside group <strong>{{ active_group.name }}</strong>. Start by adding a record or importing data.
+                                    {% else %}
+                                    This module currently has no dynamic data. Start by adding a record manually or import a file.
+                                    {% endif %}
+                                </p>
                                 <div class="mt-4 d-flex justify-content-center gap-2">
                                     <button class="btn btn-premium-dark px-4" data-bs-toggle="modal" data-bs-target="#addRecordModal">Add Record</button>
                                     <button class="btn btn-premium-white px-4" data-bs-toggle="modal" data-bs-target="#importModal">Import CSV</button>
@@ -168,36 +182,46 @@
 <!-- Modals & Styles... -->
 <!-- Modals remain mostly the same but with enhanced premium styling -->
 
-<!-- Manage Fields Modal -->
-<div class="modal fade" id="manageFieldsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
+<!-- Add/Configure Fields Modal -->
+<div class="modal fade" id="addFieldModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content border-0 shadow-2xl">
-            <div class="modal-header border-0 px-4 pt-4">
+            <div class="modal-header border-bottom pb-3">
                 <div>
-                    <h5 class="modal-title fw-bold text-dark">Module Architecture</h5>
-                    <p class="small text-muted mb-0">Define how data should be captured and processed in this module.</p>
+                    <h5 class="modal-title fw-bold text-dark mb-1">Configure Module Fields</h5>
+                    <p class="text-muted small mb-0">Design and manage custom attributes for this data module.</p>
                 </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="d-flex align-items-center gap-3">
+                    <button type="button" class="btn btn-link text-primary text-decoration-none p-0 d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#fieldGuideModal">
+                        <i class="bi bi-journal-text"></i> Guide
+                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="resetFieldForm()"></button>
+                </div>
             </div>
             <div class="modal-body px-4 pb-4">
-                <div class="mb-4">
-                    <label class="small fw-bold text-uppercase text-muted mb-3 d-block">Active Schema Structure</label>
-                    <div id="fieldsList" class="d-flex flex-wrap gap-2">
-                        <!-- Loaded via JS -->
-                    </div>
-                </div>
-
-                <div class="field-builder-card p-4 rounded-xl border-dashed">
-                    <h6 class="fw-bold mb-4 text-dark border-bottom pb-3"><i class="bi bi-layers me-2"></i>Append New Attribute</h6>
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="premium-form-group">
+                <div class="row g-4">
+                    <!-- Left Panel: Field Builder (40% width) -->
+                    <div class="col-lg-5 col-md-5 border-end pe-lg-4">
+                        <div class="field-builder-card p-3 bg-light rounded-xl border">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0 text-dark" id="fieldFormTitle">
+                                    <i class="bi bi-plus-circle me-2"></i>Deploy Attribute
+                                </h6>
+                                <button type="button" class="btn btn-sm btn-link text-decoration-none text-muted"
+                                    id="cancelFieldEditBtn" style="display: none;" onclick="resetFieldForm()">
+                                    Cancel Edit
+                                </button>
+                            </div>
+                            
+                            <!-- Field form fields -->
+                            <input type="hidden" id="editFieldId" value="">
+                            
+                            <div class="premium-form-group mb-3">
                                 <label class="small fw-bold text-muted mb-1">Attribute Name</label>
                                 <input type="text" id="newFieldName" class="form-control" placeholder="e.g. Current Status">
                             </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="premium-form-group">
+
+                            <div class="premium-form-group mb-3">
                                 <label class="small fw-bold text-muted mb-1">Data Logic Type</label>
                                 <select id="newFieldType" class="form-select" onchange="toggleFieldLogic()">
                                     <optgroup label="Static Inputs">
@@ -218,56 +242,73 @@
                                     </optgroup>
                                 </select>
                             </div>
-                            <div class="form-check mt-3">
+
+                            <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" id="newFieldUnique">
                                 <label class="form-check-label small fw-bold text-dark" for="newFieldUnique">
-                                    Enforce Unique Constraint (No duplicates allowed)
+                                    Enforce Unique Constraint
                                 </label>
                             </div>
-                        </div>
 
-                        <!-- Options for Select -->
-                        <div id="dropdownOptionsSection" class="col-12 d-none">
-                            <div class="premium-form-group">
+                            <!-- Communication Toggle (shown only for phone fields) -->
+                            <div class="form-check form-switch mb-3 d-none" id="communicationToggleSection">
+                                <input class="form-check-input" type="checkbox" id="newFieldCommunication">
+                                <label class="form-check-label small fw-bold text-dark" for="newFieldCommunication">
+                                    Use for Communication (WhatsApp/Calls)
+                                </label>
+                            </div>
+
+                            <!-- Options for Select -->
+                            <div id="dropdownOptionsSection" class="premium-form-group mb-3 d-none">
                                 <label class="small fw-bold text-muted mb-1">Selectable Options (Comma separated)</label>
                                 <input type="text" id="fieldOptions" class="form-control" placeholder="Active, Pending, Completed, Error">
                             </div>
-                        </div>
 
-                        <!-- Formula for Calculated -->
-                        <div id="calculatedFormulaSection" class="col-12 d-none">
-                            <div class="premium-form-group">
+                            <!-- Formula for Calculated -->
+                            <div id="calculatedFormulaSection" class="premium-form-group mb-3 d-none">
                                 <label class="small fw-bold text-muted mb-1">Mathematical Formula Matrix</label>
-                                <div class="input-group">
+                                <div class="input-group mb-2">
                                     <span class="input-group-text bg-light border-end-0">f(x)</span>
-                                    <input type="text" id="fieldFormula" class="form-control border-start-0" placeholder="({rate} * {hours}) + {bonus}">
+                                    <textarea id="fieldFormula" class="form-control border-start-0" rows="2" placeholder="({rate} * {hours}) + {bonus}"></textarea>
+                                </div>
+                                <div class="small text-muted mb-2">Available Fields:</div>
+                                <div class="d-flex flex-wrap gap-1" id="availableFieldsFormula">
+                                    <!-- Populated dynamically via JS -->
                                 </div>
                                 <p class="smaller text-muted mt-2"><i class="bi bi-info-circle me-1"></i> Reference other fields using <b>{field_name}</b> syntax.</p>
                             </div>
-                        </div>
 
-                        <!-- Conditions for Boolean -->
-                        <div id="booleanConditionSection" class="col-12 d-none">
-                            <div class="premium-form-group">
-                                <label class="small fw-bold text-muted mb-1">Conditional Logical Rule</label>
-                                <div id="conditionBuilder" class="bg-light p-3 rounded-xl border">
-                                    <div class="condition-row d-flex gap-2">
-                                        <input type="text" class="form-control form-control-sm cond-field" placeholder="Field Name">
-                                        <select class="form-select form-select-sm cond-op">
-                                            <option value="==">is exactly</option>
-                                            <option value="!=">is not</option>
-                                            <option value=">">greater than</option>
-                                            <option value="<">less than</option>
-                                            <option value="contains">contains</option>
-                                        </select>
-                                        <input type="text" class="form-control form-control-sm cond-val" placeholder="Target Value">
-                                    </div>
+                            <!-- Conditions for Boolean -->
+                            <div id="booleanConditionSection" class="premium-form-group mb-3 d-none">
+                                <label class="small fw-bold text-muted mb-2 d-block">Conditional Logical Rule</label>
+                                <div class="mb-2">
+                                    <select id="logicOperator" class="form-select form-select-sm mb-2" style="width: auto;">
+                                        <option value="AND">Match ALL (AND)</option>
+                                        <option value="OR">Match ANY (OR)</option>
+                                    </select>
                                 </div>
+                                <div id="conditionBuilder" class="d-flex flex-column gap-2 mb-2">
+                                    <!-- Condition rows loaded here -->
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addConditionRow()">
+                                    <i class="bi bi-plus-lg me-1"></i>Add Condition
+                                </button>
+                            </div>
+
+                            <div class="mt-4">
+                                <button class="btn btn-premium-dark w-100" id="fieldSubmitBtn" onclick="submitField()">Deploy Attribute</button>
                             </div>
                         </div>
-
-                        <div class="col-12 text-end">
-                            <button class="btn btn-premium-dark px-5" onclick="addField()">Deploy Attribute</button>
+                    </div>
+                    
+                    <!-- Right Panel: Existing Fields (60% width) -->
+                    <div class="col-lg-7 col-md-7">
+                        <h6 class="fw-bold mb-3 text-dark text-uppercase small tracking-wider">Active Schema Structure</h6>
+                        <div id="fieldsListContainer" class="pe-2" style="max-height: 400px; overflow-y: auto;">
+                            <!-- List of fields with drag handles, badges, edit/delete actions -->
+                            <div id="fieldsList" class="d-flex flex-column gap-2">
+                                <!-- Loaded via JS -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -316,13 +357,17 @@
             </div>
             <form action="{{ url_for('worker.add_record', mid=module.id) }}" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                {% if active_group %}
+                <input type="hidden" name="group_id" value="{{ active_group.id }}">
+                {% endif %}
                 <div class="modal-body px-4 pb-4">
                     <div class="row g-4">
                         {% for f in fields %}
-                            {% if f.field_type not in ['calculated', 'boolean'] %}
                             <div class="col-md-6">
                                 <label class="form-label small fw-bold text-muted">{{ f.name }}</label>
-                                {% if f.field_type == 'text' %}
+                                {% if f.field_type in ['calculated', 'boolean'] %}
+                                    <input type="text" class="form-control bg-light" placeholder="Calculated Automatically" disabled>
+                                {% elif f.field_type == 'text' %}
                                     <input type="text" name="field_{{ f.id }}" class="form-control" placeholder="Enter {{ f.name }}">
                                 {% elif f.field_type == 'number' %}
                                     <input type="number" name="field_{{ f.id }}" class="form-control">
@@ -343,9 +388,10 @@
                                     <select name="field_{{ f.id }}" class="form-select">
                                         <option value="English">English</option>
                                         <option value="Hindi">Hindi</option>
-                                        <option value="Marathi">Marathi</option>
-                                        <option value="Gujarati">Gujarati</option>
+                                        <option value="Kannada">Kannada</option>
                                         <option value="Tamil">Tamil</option>
+                                        <option value="Marathi">Marathi</option>
+                                        <option value="Malayalam">Malayalam</option>
                                         <option value="Telugu">Telugu</option>
                                     </select>
                                 {% elif f.field_type == 'file' %}
@@ -354,7 +400,6 @@
                                     <input type="text" name="field_{{ f.id }}" class="form-control">
                                 {% endif %}
                             </div>
-                            {% endif %}
                         {% endfor %}
                     </div>
                 </div>
@@ -617,13 +662,267 @@
 
     .rounded-xl { border-radius: 1.25rem; }
     .shadow-2xl { box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.15); }
+
+    /* Field Configuration Split-Layout Style */
+    #addFieldModal .modal-dialog {
+        max-width: 1000px;
+    }
+    .badge-comm {
+        background-color: #d1e7dd;
+        color: #0f5132;
+        border: 1px solid #a3cfbb;
+    }
+    .drag-handle {
+        cursor: grab;
+        color: #6c757d;
+        padding-right: 5px;
+    }
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+    .fields-list-item {
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s ease;
+    }
+    .fields-list-item:hover {
+        background-color: #f9fafb !important;
+        border-color: #d1d5db;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    .btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+        color: #212529;
+    }
+    .btn-warning:hover {
+        background-color: #ffca2c;
+        border-color: #ffc720;
+        color: #212529;
+    }
+    .btn-premium-action {
+        background: #f3f4f6;
+        border: 1px solid #e5e7eb;
+        color: #4b5563;
+        border-radius: 8px;
+        padding: 5px 10px;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    .btn-premium-action:hover {
+        background: #e5e7eb;
+        color: #111827;
+    }
+    .btn-premium-action-danger {
+        background: #fef2f2;
+        border: 1px solid #fee2e2;
+        color: #dc2626;
+        border-radius: 8px;
+        padding: 5px 10px;
+        font-size: 0.85rem;
+        transition: all 0.2s ease;
+    }
+    .btn-premium-action-danger:hover {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+    
+    /* Table column loading opacity */
+    #mainRecordsTable {
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+    }
+    #mainRecordsTable.loaded {
+        opacity: 1;
+    }
+
+    /* Dragging item visual feedback */
+    .fields-list-item.dragging {
+        opacity: 0.4;
+        border: 2px dashed #000;
+        background-color: #f3f4f6 !important;
+    }
 </style>
-</style>
+
+<!-- Guide Modal -->
+<div class="modal fade" id="fieldGuideModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-2xl">
+            <div class="modal-header border-bottom pb-3">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-journal-text text-primary"></i> Module Fields Guide</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3"><i class="bi bi-layout-text-sidebar-reverse"></i> 1. How to create Field Sections</h6>
+                        <p class="small text-muted mb-3">Field sections allow you to map out exactly what data you want to collect. You define the <strong>Attribute Name</strong> (e.g. "Customer Name") and the <strong>Data Logic Type</strong>.</p>
+                        
+                        <div class="p-3 bg-light rounded border mb-3">
+                            <span class="badge bg-secondary mb-2">Available Types</span>
+                            <ul class="small mb-0 text-dark">
+                                <li><strong>Standard Text</strong>: Regular text input</li>
+                                <li><strong>Number Value</strong>: Strictly numerical data</li>
+                                <li><strong>Phone / Mobile</strong>: Connects with WhatsApp automatically if <em>"Use for Communication"</em> is toggled</li>
+                                <li><strong>Email Address</strong>: Validates standard email formats</li>
+                                <li><strong>Date Picker</strong>: Calendar selection</li>
+                                <li><strong>Dropdown Selection</strong>: Enter comma-separated options (e.g. <em>Paid, Pending, Failed</em>)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3"><i class="bi bi-calculator"></i> 2. How to use Calculated Formulas</h6>
+                        <p class="small text-muted mb-3">Calculated formulas allow you to perform automatic mathematical operations on other fields in the same record.</p>
+                        
+                        <div class="alert alert-warning border-warning small mb-3">
+                            <strong>Note:</strong> You must reference other fields exactly by their name, enclosed in curly brackets <code>{}</code>.
+                        </div>
+
+                        <div class="p-3 bg-dark rounded text-light mb-0">
+                            <p class="mb-1 small text-muted"><strong>Example Scenario:</strong> You want to calculate a final invoice total based on "Hours Worked" and "Hourly Rate", plus a $50 fee.</p>
+                            <code class="text-warning fs-6">({Hours Worked} * {Hourly Rate}) + 50</code>
+                            <hr class="border-secondary my-2">
+                            <span class="small text-muted">Supported operators: <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>( )</code></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-0">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3"><i class="bi bi-play-circle text-primary"></i> 3. Animated Guide: Conditional Logic</h6>
+                        <p class="small text-muted mb-3">Watch the animation below to see exactly how to build rules using the UI. It will show you how the values you input are automatically evaluated.</p>
+                        
+                        <!-- Animated Mockup UI -->
+                        <div class="p-4 bg-light rounded border position-relative overflow-hidden shadow-sm" style="min-height: 220px;">
+                            <p class="small fw-bold text-dark mb-2">Conditional Logical Rule</p>
+                            
+                            <div class="mb-2">
+                                <select class="form-select form-select-sm w-auto d-inline-block shadow-sm">
+                                    <option>Match ALL (AND)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="d-flex align-items-center gap-2 mb-3 position-relative">
+                                <select class="form-select form-select-sm shadow-sm" style="width: 120px; font-size: 0.8rem;" id="demoField">
+                                    <option>marks</option>
+                                </select>
+                                <select class="form-select form-select-sm shadow-sm bg-white" style="width: 140px; font-size: 0.8rem; transition: background-color 0.2s;" id="demoOp">
+                                    <option>Equals (==)</option>
+                                    <option>Greater Than (>)</option>
+                                </select>
+                                <input type="text" class="form-control form-control-sm shadow-sm bg-white" style="width: 100px; font-size: 0.8rem; transition: background-color 0.2s;" id="demoVal" placeholder="Value">
+                                <button class="btn btn-sm btn-outline-danger shadow-sm px-2"><i class="bi bi-trash"></i></button>
+                            </div>
+                            
+                            <button class="btn btn-primary btn-sm shadow-sm px-3" style="font-size: 0.8rem;"><i class="bi bi-plus"></i> Add Condition</button>
+                            
+                            <!-- Result Overlay -->
+                            <div id="demoResult" class="position-absolute bottom-0 start-0 w-100 bg-success text-white text-center py-2 small fw-bold" style="opacity: 0; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); transform: translateY(100%);">
+                                <i class="bi bi-check-circle me-1"></i> If 'marks' is greater than 80, this evaluates to True!
+                            </div>
+
+                            <!-- The Animated Cursor -->
+                            <div id="demoCursor" class="position-absolute" style="top: 85%; left: 85%; width: 24px; height: 24px; z-index: 100; transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1); pointer-events: none; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3));">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M5.5 3.21V20.8C5.5 21.45 6.27 21.8 6.75 21.36L11.44 17H18.5C19.05 17 19.5 16.55 19.5 16V4.5C19.5 3.95 19.05 3.5 18.5 3.5H6.5C5.95 3.5 5.5 3.95 5.5 4.5V3.21Z" fill="#111827" stroke="#FFFFFF" stroke-width="2"/>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <ul class="small mb-0 mt-3 text-muted">
+                            <li><strong>Available Operators:</strong> <code>Equals (==)</code>, <code>Not Equals (!=)</code>, <code>Greater Than (>)</code>, <code>Less Than (<)</code>, <code>Contains</code></li>
+                            <li>You can combine multiple rules by clicking <strong>+ Add Condition</strong>.</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+            <div class="modal-footer bg-white border-top">
+                <button type="button" class="btn btn-dark w-100" data-bs-dismiss="modal">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}
 
 {% block scripts %}
 <script>
+    // Animated Guide Demo Script
+    function runLogicDemo() {
+        const cursor = document.getElementById('demoCursor');
+        const op = document.getElementById('demoOp');
+        const val = document.getElementById('demoVal');
+        const res = document.getElementById('demoResult');
+        
+        if (!cursor || !op || !val || !res) return;
+
+        // Reset state
+        val.value = '';
+        op.selectedIndex = 0;
+        res.style.opacity = '0';
+        res.style.transform = 'translateY(100%)';
+        cursor.style.top = '85%';
+        cursor.style.left = '85%';
+        cursor.style.transform = 'scale(1)';
+        
+        setTimeout(() => {
+            // Move to operator dropdown
+            cursor.style.top = '40%';
+            cursor.style.left = '35%';
+        }, 1000);
+        
+        setTimeout(() => {
+            // Click operator
+            cursor.style.transform = 'scale(0.8)';
+            setTimeout(() => {
+                cursor.style.transform = 'scale(1)';
+                op.selectedIndex = 1; // Changes to Greater Than (>)
+            }, 300);
+        }, 2000);
+        
+        setTimeout(() => {
+            // Move to value input
+            cursor.style.top = '40%';
+            cursor.style.left = '65%';
+        }, 3000);
+        
+        setTimeout(() => {
+            // Click value input
+            cursor.style.transform = 'scale(0.8)';
+            setTimeout(() => { cursor.style.transform = 'scale(1)'; }, 300);
+        }, 4000);
+        
+        // Type values
+        setTimeout(() => { val.value = '8'; }, 4600);
+        setTimeout(() => { val.value = '80'; }, 4900);
+        
+        setTimeout(() => {
+            // Move cursor away
+            cursor.style.top = '85%';
+            cursor.style.left = '85%';
+            
+            // Show success result banner sliding up
+            res.style.opacity = '1';
+            res.style.transform = 'translateY(0)';
+        }, 5500);
+        
+        // Loop the animation
+        setTimeout(runLogicDemo, 9000);
+    }
+
+    // Initialize animation when modal opens
+    document.getElementById('fieldGuideModal').addEventListener('shown.bs.modal', function () {
+        if(!window.logicDemoRunning) {
+            window.logicDemoRunning = true;
+            runLogicDemo();
+        }
+    });
+
     function toggleUniqueFilter() {
         const checkbox = document.getElementById('uniqueFilter');
         const group = document.getElementById('uniqueFilterGroup');
@@ -690,6 +989,9 @@
         {% endfor %}
     ];
 
+    let activeFieldsMap = {};
+    let draggedItem = null;
+
     function filterRecords() {
         const query = document.getElementById('recordSearch').value.toLowerCase();
         const uniqueOnly = document.getElementById('uniqueFilter').checked;
@@ -711,15 +1013,11 @@
             if (isVisible && uniqueOnly) {
                 let valToCompare = "";
                 if (uniqueFieldId === 'all') {
-                    // All fields except first 2 (CB, Date) and last (Actions)
-                    valToCompare = Array.from(row.querySelectorAll('td')).slice(2, -1).map(td => td.innerText.trim()).join('::');
+                    // All fields except first 1 (CB) and last (Actions)
+                    valToCompare = Array.from(row.querySelectorAll('td')).slice(1, -1).map(td => td.innerText.trim()).join('::');
                 } else {
-                    // Find field index
-                    const fieldIdx = fields.findIndex(f => f.id.toString() === uniqueFieldId.toString());
-                    if (fieldIdx !== -1) {
-                        const cell = row.querySelectorAll('td')[fieldIdx + 2];
-                        valToCompare = cell ? cell.innerText.trim() : "";
-                    }
+                    const cell = row.querySelector(`td[data-field-id="${uniqueFieldId}"]`);
+                    valToCompare = cell ? cell.innerText.trim() : "";
                 }
                 
                 if (seen.has(valToCompare)) {
@@ -738,76 +1036,454 @@
     }
 
     async function loadFields() {
-        const res = await fetch(`/worker/api/modules/{{ module.id }}/fields`);
+        const res = await fetch(`/worker/api/modules/{{ module.id }}/fields{% if active_group %}?group_id={{ active_group.id }}{% endif %}`);
         const data = await res.json();
         if (data.success) {
+            activeFieldsMap = {};
+            data.fields.forEach(f => {
+                activeFieldsMap[f.id] = f;
+            });
+            
+            // 1. Determine order
+            const moduleKey = `module_{{ module.id }}_field_order`;
+            let orderedFieldIds = [];
+            try {
+                const stored = localStorage.getItem(moduleKey);
+                if (stored) {
+                    orderedFieldIds = JSON.parse(stored);
+                }
+            } catch (e) {
+                console.error("Failed to parse field order from localStorage", e);
+            }
+            
+            // Filter out IDs that no longer exist
+            orderedFieldIds = orderedFieldIds.filter(id => activeFieldsMap[id] !== undefined);
+            
+            // Find any fields that are not in the ordered list (e.g. newly added) and append them
+            const remainingIds = Object.keys(activeFieldsMap).filter(id => !orderedFieldIds.includes(id.toString()));
+            orderedFieldIds = [...orderedFieldIds, ...remainingIds];
+            
+            // 2. Render Left Panel Formula helpers (badges)
+            updateFormulaHelper(Object.values(activeFieldsMap));
+            
+            // 3. Render Right Panel fields list
             const list = document.getElementById('fieldsList');
             list.innerHTML = '';
-            data.fields.forEach(f => {
-                const badge = document.createElement('div');
-                badge.className = 'field-tag animate__animated animate__fadeIn';
-                badge.innerHTML = `
+            
+            orderedFieldIds.forEach(fid => {
+                const f = activeFieldsMap[fid];
+                if (!f) return;
+                const item = document.createElement('div');
+                item.className = 'fields-list-item d-flex align-items-center justify-content-between p-3 mb-2 bg-white';
+                item.setAttribute('draggable', 'true');
+                item.setAttribute('data-id', f.id);
+                
+                const isUniqueBadge = f.is_unique ? '<span class="badge bg-secondary smaller">Unique</span>' : '';
+                const isCommBadge = (f.meta && f.meta.communication) ? '<span class="badge badge-comm smaller">Comm</span>' : '';
+                const isCalcBadge = (f.type === 'calculated') ? '<span class="badge bg-warning text-dark smaller">Calculated</span>' : '';
+                const isBoolBadge = (f.type === 'boolean') ? '<span class="badge bg-info text-dark smaller">Logic</span>' : '';
+                
+                item.innerHTML = `
                     <div class="d-flex align-items-center gap-2">
-                        <span class="fw-bold">${f.name}</span>
+                        <span class="drag-handle"><i class="bi bi-grip-vertical fs-5"></i></span>
+                        <span class="fw-bold text-dark">${f.name}</span>
                         <span class="type-indicator">${f.type}</span>
-                        <button class="btn-tag-delete ms-1" onclick="deleteField(${f.id})"><i class="bi bi-x-lg"></i></button>
+                        ${isUniqueBadge}
+                        ${isCommBadge}
+                        ${isCalcBadge}
+                        ${isBoolBadge}
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-premium-action" onclick="editField('${f.id}')" title="Edit Field">
+                            <i class="bi bi-pencil-square"></i>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-premium-action-danger" onclick="deleteField('${f.id}')" title="Delete Field">
+                            <i class="bi bi-trash3"></i>
+                        </button>
                     </div>
                 `;
-                list.appendChild(badge);
+                
+                // Add drag and drop listeners
+                item.addEventListener('dragstart', handleDragStart);
+                item.addEventListener('dragend', handleDragEnd);
+                
+                list.appendChild(item);
             });
+            
+            // Set up the container dragover listener
+            list.addEventListener('dragover', handleDragOver);
+            
+            // 4. Rearrange the table columns according to this order
+            applyTableColumnOrder(orderedFieldIds);
+            
+            // 5. Fade in table
+            const table = document.getElementById('mainRecordsTable');
+            if (table) {
+                table.classList.add('loaded');
+            }
         }
+    }
+
+    function handleDragStart(e) {
+        draggedItem = this;
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        const container = document.getElementById('fieldsList');
+        const afterElement = getDragAfterElement(container, e.clientY);
+        if (afterElement == null) {
+            container.appendChild(draggedItem);
+        } else {
+            container.insertBefore(draggedItem, afterElement);
+        }
+    }
+
+    function handleDragEnd() {
+        this.classList.remove('dragging');
+        draggedItem = null;
+        saveAndApplyNewFieldOrder();
+    }
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.fields-list-item:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, member: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).member;
+    }
+
+    function saveAndApplyNewFieldOrder() {
+        const listItems = [...document.querySelectorAll('#fieldsList .fields-list-item')];
+        const orderedFieldIds = listItems.map(item => item.getAttribute('data-id'));
+        
+        // Save to localStorage
+        const moduleKey = `module_{{ module.id }}_field_order`;
+        localStorage.setItem(moduleKey, JSON.stringify(orderedFieldIds));
+        
+        // Apply order to table columns
+        applyTableColumnOrder(orderedFieldIds);
+    }
+
+    function applyTableColumnOrder(orderedFieldIds) {
+        const table = document.getElementById('mainRecordsTable');
+        if (!table) return;
+        
+        // Sort table headers
+        const theadRow = table.querySelector('thead tr');
+        if (theadRow) {
+            const staticHeadersStart = []; // first 1 columns: select all
+            const staticHeadersEnd = []; // last column: actions
+            const fieldHeadersMap = {};
+            
+            Array.from(theadRow.children).forEach(th => {
+                const fid = th.getAttribute('data-field-id');
+                if (fid) {
+                    fieldHeadersMap[fid.toString()] = th;
+                } else {
+                    if (staticHeadersStart.length < 1) {
+                        staticHeadersStart.push(th);
+                    } else {
+                        staticHeadersEnd.push(th);
+                    }
+                }
+            });
+            
+            theadRow.innerHTML = '';
+            staticHeadersStart.forEach(th => theadRow.appendChild(th));
+            orderedFieldIds.forEach(fid => {
+                const th = fieldHeadersMap[fid.toString()];
+                if (th) {
+                    theadRow.appendChild(th);
+                }
+            });
+            staticHeadersEnd.forEach(th => theadRow.appendChild(th));
+        }
+        
+        // Sort cells for each row in tbody
+        const tbodyRows = table.querySelectorAll('tbody tr');
+        tbodyRows.forEach(row => {
+            if (row.querySelector('td[colspan]')) {
+                return;
+            }
+            
+            const staticCellsStart = [];
+            const staticCellsEnd = [];
+            const fieldCellsMap = {};
+            
+            Array.from(row.children).forEach(td => {
+                const fid = td.getAttribute('data-field-id');
+                if (fid) {
+                    fieldCellsMap[fid.toString()] = td;
+                } else {
+                    if (staticCellsStart.length < 1) {
+                        staticCellsStart.push(td);
+                    } else {
+                        staticCellsEnd.push(td);
+                    }
+                }
+            });
+            
+            row.innerHTML = '';
+            staticCellsStart.forEach(td => row.appendChild(td));
+            orderedFieldIds.forEach(fid => {
+                const td = fieldCellsMap[fid.toString()];
+                if (td) {
+                    row.appendChild(td);
+                }
+            });
+            staticCellsEnd.forEach(td => row.appendChild(td));
+        });
+    }
+
+    function updateFormulaHelper(fieldsList) {
+        const container = document.getElementById('availableFieldsFormula');
+        if (!container) return;
+        container.innerHTML = '';
+        
+        const currentEditingId = document.getElementById('editFieldId').value;
+        
+        fieldsList.forEach(f => {
+            if (currentEditingId && f.id.toString() === currentEditingId.toString()) {
+                return; // Skip self
+            }
+            const badge = document.createElement('span');
+            badge.className = 'badge bg-white text-dark border p-2 cursor-pointer me-1 mb-1 hover-dark transition-all';
+            badge.style.cursor = 'pointer';
+            badge.style.display = 'inline-block';
+            badge.innerHTML = `<i class="bi bi-tag-fill text-muted me-1"></i>${f.name}`;
+            
+            badge.onclick = () => {
+                const textarea = document.getElementById('fieldFormula');
+                if (!textarea) return;
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const text = textarea.value;
+                const insertText = `{${f.name}}`;
+                
+                textarea.value = text.substring(0, start) + insertText + text.substring(end);
+                textarea.focus();
+                textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+            };
+            
+            container.appendChild(badge);
+        });
+    }
+
+    function addConditionRow(initialData = null) {
+        const container = document.getElementById('conditionBuilder');
+        if (!container) return;
+        
+        const rowId = 'cond-row-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        const rowDiv = document.createElement('div');
+        rowDiv.className = 'condition-row d-flex gap-2 align-items-center mb-2';
+        rowDiv.id = rowId;
+        
+        let fieldOpts = '';
+        const currentEditingId = document.getElementById('editFieldId').value;
+        Object.values(activeFieldsMap).forEach(f => {
+            if (currentEditingId && f.id.toString() === currentEditingId.toString()) return;
+            const isSelected = initialData && initialData.field === f.name ? 'selected' : '';
+            fieldOpts += `<option value="${f.name}" ${isSelected}>${f.name}</option>`;
+        });
+        
+        const operators = [
+            { value: '==', label: 'Equals (==)' },
+            { value: '!=', label: 'Not Equals (!=)' },
+            { value: '>', label: 'Greater Than (>)' },
+            { value: '<', label: 'Less Than (<)' },
+            { value: 'contains', label: 'Contains' }
+        ];
+        
+        let opOpts = '';
+        operators.forEach(op => {
+            const isSelected = initialData && initialData.operator === op.value ? 'selected' : '';
+            opOpts += `<option value="${op.value}" ${isSelected}>${op.label}</option>`;
+        });
+        
+        const targetVal = initialData ? initialData.value : '';
+        
+        rowDiv.innerHTML = `
+            <select class="form-select form-select-sm cond-field" style="flex: 1;">
+                ${fieldOpts}
+            </select>
+            <select class="form-select form-select-sm cond-op" style="width: auto;">
+                ${opOpts}
+            </select>
+            <input type="text" class="form-control form-control-sm cond-val" placeholder="Value" value="${targetVal}" style="flex: 1;">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="document.getElementById('${rowDiv.id}').remove()">
+                <i class="bi bi-trash"></i>
+            </button>
+        `;
+        
+        container.appendChild(rowDiv);
+    }
+
+    function editField(fid) {
+        const f = activeFieldsMap[fid];
+        if (!f) return;
+        
+        document.getElementById('fieldFormTitle').innerHTML = `<i class="bi bi-pencil-square me-2"></i>Edit Attribute`;
+        document.getElementById('cancelFieldEditBtn').style.display = 'inline-block';
+        document.getElementById('fieldSubmitBtn').innerText = 'Save Changes';
+        
+        document.getElementById('editFieldId').value = f.id;
+        document.getElementById('newFieldName').value = f.name;
+        document.getElementById('newFieldType').value = f.type;
+        document.getElementById('newFieldUnique').checked = f.is_unique || false;
+        
+        document.getElementById('newFieldCommunication').checked = false;
+        document.getElementById('fieldOptions').value = '';
+        document.getElementById('fieldFormula').value = '';
+        document.getElementById('conditionBuilder').innerHTML = '';
+        
+        toggleFieldLogic();
+        
+        const meta = f.meta || {};
+        
+        if (f.type === 'phone') {
+            document.getElementById('newFieldCommunication').checked = meta.communication || false;
+        } else if (f.type === 'select') {
+            if (Array.isArray(meta.options)) {
+                document.getElementById('fieldOptions').value = meta.options.join(', ');
+            }
+        } else if (f.type === 'calculated') {
+            document.getElementById('fieldFormula').value = meta.formula || '';
+        } else if (f.type === 'boolean') {
+            const conditions = meta.conditions || [];
+            if (conditions.length > 0) {
+                const firstJoiner = conditions[0].joiner || 'AND';
+                document.getElementById('logicOperator').value = firstJoiner;
+                conditions.forEach(cond => {
+                    addConditionRow(cond);
+                });
+            } else {
+                addConditionRow();
+            }
+        }
+        
+        updateFormulaHelper(Object.values(activeFieldsMap));
+    }
+
+    function resetFieldForm() {
+        document.getElementById('fieldFormTitle').innerHTML = `<i class="bi bi-plus-circle me-2"></i>Deploy Attribute`;
+        document.getElementById('cancelFieldEditBtn').style.display = 'none';
+        document.getElementById('fieldSubmitBtn').innerText = 'Deploy Attribute';
+        
+        document.getElementById('editFieldId').value = '';
+        document.getElementById('newFieldName').value = '';
+        document.getElementById('newFieldType').value = 'text';
+        document.getElementById('newFieldUnique').checked = false;
+        
+        document.getElementById('newFieldCommunication').checked = false;
+        document.getElementById('fieldOptions').value = '';
+        document.getElementById('fieldFormula').value = '';
+        document.getElementById('conditionBuilder').innerHTML = '';
+        
+        toggleFieldLogic();
+        
+        updateFormulaHelper(Object.values(activeFieldsMap));
     }
 
     function toggleFieldLogic() {
         const type = document.getElementById('newFieldType').value;
-        const sections = {
-            'select': 'dropdownOptionsSection',
-            'calculated': 'calculatedFormulaSection',
-            'boolean': 'booleanConditionSection'
-        };
+        const commToggle = document.getElementById('communicationToggleSection');
+        const optsSection = document.getElementById('dropdownOptionsSection');
+        const formulaSection = document.getElementById('calculatedFormulaSection');
+        const boolSection = document.getElementById('booleanConditionSection');
         
-        Object.values(sections).forEach(id => document.getElementById(id).classList.add('d-none'));
-        if (sections[type]) document.getElementById(sections[type]).classList.remove('d-none');
+        commToggle.classList.add('d-none');
+        optsSection.classList.add('d-none');
+        formulaSection.classList.add('d-none');
+        boolSection.classList.add('d-none');
+        
+        if (type === 'phone') commToggle.classList.remove('d-none');
+        else if (type === 'select') optsSection.classList.remove('d-none');
+        else if (type === 'calculated') formulaSection.classList.remove('d-none');
+        else if (type === 'boolean') boolSection.classList.remove('d-none');
     }
 
-    async function addField() {
+    async function submitField() {
+        const editId = document.getElementById('editFieldId').value;
         const nameInput = document.getElementById('newFieldName');
         const typeInput = document.getElementById('newFieldType');
-        const name = nameInput.value;
+        const name = nameInput.value.trim();
         const type = typeInput.value;
         const isUnique = document.getElementById('newFieldUnique').checked;
         
         if (!name) return alert('Attribute name is required');
         
         const meta = {};
-        if (type === 'select') meta.options = document.getElementById('fieldOptions').value.split(',').map(o => o.trim());
-        if (type === 'calculated') meta.formula = document.getElementById('fieldFormula').value;
-        if (type === 'boolean') {
-            const row = document.querySelector('.condition-row');
-            meta.conditions = [{
-                field: row.querySelector('.cond-field').value,
-                operator: row.querySelector('.cond-op').value,
-                value: row.querySelector('.cond-val').value,
-                joiner: 'AND'
-            }];
+        if (type === 'phone') {
+            meta.communication = document.getElementById('newFieldCommunication').checked;
+        } else if (type === 'select') {
+            meta.options = document.getElementById('fieldOptions').value.split(',').map(o => o.trim()).filter(o => o.length > 0);
+        } else if (type === 'calculated') {
+            meta.formula = document.getElementById('fieldFormula').value.trim();
+        } else if (type === 'boolean') {
+            const conditionRows = document.querySelectorAll('#conditionBuilder .condition-row');
+            const conditions = [];
+            const logicOp = document.getElementById('logicOperator').value;
+            
+            conditionRows.forEach(row => {
+                const fName = row.querySelector('.cond-field').value;
+                const op = row.querySelector('.cond-op').value;
+                const val = row.querySelector('.cond-val').value.trim();
+                
+                conditions.push({
+                    field: fName,
+                    operator: op,
+                    value: val,
+                    joiner: logicOp
+                });
+            });
+            
+            meta.conditions = conditions;
         }
-
-        const res = await fetch(`/worker/api/modules/{{ module.id }}/fields`, {
+        
+        const action = editId ? 'update' : 'add';
+        const payload = {
+            action: action,
+            name: name,
+            field_type: type,
+            is_unique: isUnique,
+            meta: meta
+        };
+        {% if active_group %}
+        payload.group_id = {{ active_group.id }};
+        {% endif %}
+        if (editId) {
+            payload.field_id = parseInt(editId);
+        }
+        
+        const res = await fetch(`/worker/api/modules/{{ module.id }}/fields{% if active_group %}?group_id={{ active_group.id }}{% endif %}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
-            body: JSON.stringify({ action: 'add', name, field_type: type, is_unique: isUnique, meta })
+            body: JSON.stringify(payload)
         });
         
-        if ((await res.json()).success) {
+        const data = await res.json();
+        if (data.success) {
+            resetFieldForm();
             location.reload();
         } else {
-            alert('Failed to add attribute');
+            alert('Failed to save attribute: ' + (data.error || 'Unknown error'));
         }
     }
 
     async function deleteField(fid) {
         if (!confirm('This will purge all data associated with this attribute. Proceed?')) return;
-        const res = await fetch(`/worker/api/modules/{{ module.id }}/fields`, {
+        const res = await fetch(`/worker/api/modules/{{ module.id }}/fields{% if active_group %}?group_id={{ active_group.id }}{% endif %}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
             body: JSON.stringify({ action: 'delete', field_id: fid })
@@ -824,16 +1500,27 @@
             const row = container.firstChild;
             
             data.fields.forEach(f => {
-                if (['calculated', 'boolean'].includes(f.type)) return;
-                
                 const val = data.values[f.id] || '';
                 const col = document.createElement('div');
                 col.className = 'col-md-6';
                 col.innerHTML = `<label class="form-label small fw-bold text-muted">${f.name}</label>`;
                 
+                if (['calculated', 'boolean'].includes(f.type)) {
+                    col.innerHTML += `<input type="text" class="form-control bg-light" value="${val}" disabled>`;
+                    row.appendChild(col);
+                    return;
+                }
+                
                 if (f.type === 'select') {
                     let opts = `<option value="">Select Option...</option>`;
                     (f.options || []).forEach(opt => opts += `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`);
+                    col.innerHTML += `<select name="field_${f.id}" class="form-select">${opts}</select>`;
+                } else if (f.type === 'language') {
+                    const languages = ['English', 'Hindi', 'Kannada', 'Tamil', 'Marathi', 'Malayalam', 'Telugu'];
+                    let opts = '';
+                    languages.forEach(lang => {
+                        opts += `<option value="${lang}" ${val === lang ? 'selected' : ''}>${lang}</option>`;
+                    });
                     col.innerHTML += `<select name="field_${f.id}" class="form-select">${opts}</select>`;
                 } else if (f.type === 'file') {
                     col.innerHTML += `

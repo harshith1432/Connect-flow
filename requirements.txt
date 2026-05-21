@@ -16,3 +16,4 @@ edge-tts
 asyncio
 pyotp
 Flask-Limiter
+razorpay

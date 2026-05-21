@@ -10,38 +10,45 @@
         <p>Manage and monitor your active data modules</p>
     </div>
     <div class="header-right">
-        <a href="{{ url_for('worker.create_module') }}" class="btn-premium primary"><i class="bi bi-plus-lg"></i> Create Module</a>
     </div>
 </div>
 
 <div class="row g-4">
     {% for m in modules %}
     <div class="col-xl-4 col-md-6">
-        <div class="module-card-premium">
-            <div class="module-icon">
-                <i class="bi bi-cpu"></i>
+        <div class="module-card-premium" onclick="window.location.href='{{ url_for('worker.manage_groups', mid=m.id) }}'">
+            <div class="module-status {{ m.status|default('active') }}"></div>
+            <div class="module-header">
+                <div class="module-meta">
+                    <span class="badge-premium">{{ (m.status|default('active'))|capitalize }}</span>
+                </div>
             </div>
-            <div class="module-info">
-                <h3>{{ m.name }}</h3>
-                <p class="text-muted">Created: {{ m.created_at.strftime('%Y-%m-%d') if m.created_at else 'N/A' }}</p>
-                <div class="module-stats mt-3">
+            <div class="module-body">
+                <h4>{{ m.name }}</h4>
+                <div class="module-stats-mini">
                     <div class="m-stat">
-                        <span class="val">{{ m.records|length }}</span>
-                        <span class="lbl">Records</span>
+                        <span class="label">Records</span>
+                        <span class="value">{{ m.records|length }}</span>
                     </div>
                     <div class="m-stat">
-                        <span class="val">{{ m.campaigns|length }}</span>
-                        <span class="lbl">Campaigns</span>
+                        <span class="label">Campaigns</span>
+                        <span class="value">{{ m.campaigns|length }}</span>
                     </div>
                 </div>
             </div>
-            <div class="module-actions">
-                <button class="btn-action-premium" onclick="configureModule('{{ m.id }}', '{{ m.name }}')">
+            <div class="module-actions-premium mt-3 d-flex flex-wrap gap-2">
+                <button class="btn-action-premium" onclick="event.stopPropagation(); configureModule('{{ m.id }}', '{{ m.name }}')">
                     <i class="bi bi-gear"></i> Configure
                 </button>
-                <button class="btn-action-premium primary" onclick="viewReport('{{ m.id }}')">
-                    <i class="bi bi-bar-chart"></i> View Report
+                <button class="btn-action-premium primary" onclick="event.stopPropagation(); viewReport('{{ m.id }}')">
+                    <i class="bi bi-bar-chart"></i> Report
                 </button>
+                <button class="btn-action-premium danger" onclick="event.stopPropagation(); deleteModule('{{ m.id }}', '{{ m.name }}')">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </div>
+            <div class="module-footer">
+                <span class="last-activity">Created: {{ m.created_at.strftime('%Y-%m-%d') if m.created_at else 'N/A' }}</span>
             </div>
         </div>
     </div>
@@ -96,6 +103,29 @@
         window.location.href = `/worker/reports?module_id=${id}`;
     }
 
+    async function deleteModule(id, name) {
+        if (!confirm(`Are you sure you want to permanently delete the module "${name}"? This action cannot be undone.`)) {
+            return;
+        }
+        try {
+            const response = await fetch(`/worker/modules/${id}/delete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token() }}'
+                }
+            });
+            const res = await response.json();
+            if (res.success) {
+                location.reload();
+            } else {
+                alert(res.error || 'Failed to delete module');
+            }
+        } catch (err) {
+            alert('An error occurred while deleting the module');
+        }
+    }
+
     document.getElementById('configureForm').onsubmit = async (e) => {
         e.preventDefault();
         const id = document.getElementById('config-module-id').value;
@@ -104,7 +134,10 @@
         try {
             const response = await fetch(`/worker/api/modules/${id}/update`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': '{{ csrf_token() }}'
+                },
                 body: JSON.stringify({ name: name })
             });
             const res = await response.json();

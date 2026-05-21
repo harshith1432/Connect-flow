@@ -118,110 +118,413 @@ def _get_twilio_context(organization_id, channel="whatsapp", sender_number_id=No
     return client_instance, sender_number
 
 
+def resolve_whatsapp_sender(organization_id):
+    """
+    Resolve a WhatsApp-only sender for the given org.
+
+    Priority:
+      1. Org custom twilio_config → whatsapp → number
+      2. ENV: TWILIO_WHATSAPP_FROM / TWILIO_WHATSAPP_NUMBER
+      3. Raise ValueError — do NOT silently fall through to a voice number.
+
+    Always returns (client, sender_str) where sender_str starts with 'whatsapp:'.
+    Raises ValueError if no sender can be resolved.
+    """
+    org = db.session.get(Organization, organization_id)
+    custom_conf = org.twilio_config if org else None
+
+    client_instance = None
+    sender_number   = None
+
+    # 1. Org custom whatsapp config
+    if custom_conf:
+        wa_conf = custom_conf.get("whatsapp", {})
+        sid    = wa_conf.get("sid")
+        token  = wa_conf.get("token")
+        number = wa_conf.get("number")
+
+        if sid and token and number:
+            # Verify the number is active & approved
+            active_record = CommunicationNumber.query.filter_by(
+                organization_id=organization_id,
+                number=number,
+                active=True,
+                approved=True,
+            ).first()
+            if active_record:
+                try:
+                    client_instance = Client(sid, token)
+                    sender_number   = number
+                    logger.info(
+                        "[SENDER RESOLVED] org=%s custom whatsapp=%s",
+                        organization_id, number
+                    )
+                except Exception as e:
+                    logger.error("[SENDER RESOLVE] Custom client init failed: %s", e)
+
+    # 2. Platform default (env)
+    if not client_instance:
+        if org and not org.allow_default_whatsapp:
+            raise ValueError(
+                f"Org {organization_id} has disabled platform WhatsApp access. "
+                "Configure a custom WhatsApp sender or enable platform default."
+            )
+        if not default_client:
+            raise ValueError(
+                "Platform Twilio client not initialised — check TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN"
+            )
+        fallback_number = Config.TWILIO_WHATSAPP_NUMBER
+        if not fallback_number:
+            raise ValueError(
+                "TWILIO_WHATSAPP_FROM / TWILIO_WHATSAPP_NUMBER not set in environment."
+            )
+        client_instance = default_client
+        sender_number   = fallback_number
+        logger.info(
+            "[SENDER RESOLVED] org=%s using platform default=%s",
+            organization_id, sender_number
+        )
+
+    # Normalise to whatsapp: prefix
+    if not sender_number.startswith("whatsapp:"):
+        sender_number = f"whatsapp:{sender_number}"
+
+    return client_instance, sender_number
+
+
+def _validate_audio_url(url: str) -> tuple:
+    """
+    Pre-flight check before handing an audio URL to Twilio.
+
+    Verifies:
+      - URL returns HTTP 200
+      - Content-Type contains 'audio'
+      - File is under the 16 MB Twilio media limit
+
+    Returns (True, None) on pass, (False, reason) on fail.
+    BASE_URL is read from the .env file via Config.BASE_URL.
+    """
+    try:
+        import urllib.request
+        req = urllib.request.Request(url, method="HEAD")
+        req.add_header("User-Agent", "CampaignVoiceValidation/1.0")
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            status       = resp.status
+            content_type = resp.headers.get("Content-Type", "")
+            content_len  = resp.headers.get("Content-Length", "0")
+
+            if status != 200:
+                return False, f"HTTP {status} (expected 200)"
+
+            if "audio" not in content_type.lower():
+                return False, (
+                    f"Content-Type '{content_type}' is not audio — "
+                    "Ensure the server returns Content-Type: audio/mpeg for .mp3 files."
+                )
+
+            try:
+                size_mb = int(content_len) / (1024 * 1024)
+                if size_mb > 16:
+                    return False, f"File is {size_mb:.1f} MB — exceeds Twilio 16 MB limit"
+            except (ValueError, TypeError):
+                pass  # Content-Length absent — let Twilio decide
+
+            return True, None
+
+    except Exception as exc:
+        return False, f"URL unreachable ({type(exc).__name__}): {exc}"
+
+
 def send_whatsapp_text(
     organization_id,
-    contact_id,
+    contact_id=None,
     body=None,
     campaign_id=None,
     content_sid=None,
     content_variables=None,
     sender_number_id=None,
+    to_number=None,
+    record_id=None,
 ):
     """
-    Send a WhatsApp message using Twilio. Supports raw body or Content API templates.
-    """
-    # 1. Log Initial Status
-    log = DeliveryLog(
-        organization_id=organization_id,
-        campaign_id=campaign_id,
-        contact_id=contact_id,
-        channel="whatsapp",
-        status="queued",
-    )
-    db.session.add(log)
-    db.session.commit()
+    Send a WhatsApp TEXT message via Twilio (synchronous).
 
-    # 2. Get Client & Sender
+    Returns (success: bool, sid: str | None, error: str | None).
+
+    Priority for sender:
+      1. sender_number_id  → CommunicationNumber record
+      2. org custom twilio_config → whatsapp number
+      3. TWILIO_WHATSAPP_FROM env  (Config.TWILIO_WHATSAPP_NUMBER)
+      4. ERROR — do NOT silently block
+
+    Only client.messages.create() is called — no voice, no TwiML.
+    """
+    from app.core.logging_system import log_activity
+
+    log_activity("WHATSAPP_START",
+                 f"org={organization_id} to={to_number} campaign={campaign_id}")
+
+    # ── 1. Resolve phone ──────────────────────────────────────────
+    phone_str = to_number
+    if contact_id and not phone_str:
+        contact = db.session.get(Contact, contact_id)
+        if contact:
+            phone_str = contact.phone
+
+    if not phone_str:
+        err = f"No recipient phone for contact_id={contact_id}"
+        logger.error("[WHATSAPP FAILED] %s", err)
+        log_activity("WHATSAPP_FAILED", err)
+        return False, None, err
+
+    to_num = re.sub(r"\D", "", phone_str)
+    if len(to_num) == 10:
+        to_num = "91" + to_num
+    if not to_num.startswith("+"):
+        to_num = "+" + to_num
+    to = f"whatsapp:{to_num}"
+
+    # ── 2. Resolve client & sender ────────────────────────────────
     client, sender_number = _get_twilio_context(
         organization_id, channel="whatsapp", sender_number_id=sender_number_id
     )
 
-    if not client:
-        log.status = "failed"
-        log.error = "Twilio client not configured (Global or Custom)"
+    if not client or not sender_number:
+        err = (
+            "WhatsApp sender not configured — "
+            "set a WhatsApp number for this organization or enable platform default access."
+        )
+        logger.error("[WHATSAPP FAILED] org=%s  %s", organization_id, err)
+        log_activity("WHATSAPP_FAILED", f"org={organization_id} — {err}")
+        return False, None, err
+
+    from_ = (
+        sender_number
+        if sender_number.startswith("whatsapp:")
+        else f"whatsapp:{sender_number}"
+    )
+    log_activity("SENDER_VALIDATED", f"from={from_} to={to}")
+
+    # ── 3. Build request kwargs ───────────────────────────────────
+    callback_url = f"{Config.PUBLIC_BASE_URL.rstrip('/')}/api/twilio/message-status"
+    kwargs = {"from_": from_, "to": to, "status_callback": callback_url}
+
+    if content_sid:
+        kwargs["content_sid"] = content_sid
+        if content_variables:
+            kwargs["content_variables"] = content_variables
+    else:
+        kwargs["body"] = body or ""
+
+    log_activity("TWILIO_REQUEST",
+                 f"from={from_} to={to} content_sid={content_sid}")
+    logger.info("Twilio send request: %s (Org: %s)", kwargs, organization_id)
+
+    # ── 4. Send — ONLY messages.create(), no calls ────────────────
+    try:
+        msg = client.messages.create(**kwargs)
+    except Exception as exc:
+        err = str(exc)
+        logger.error("[WHATSAPP FAILED] Twilio exception: %s", err)
+        log_activity("WHATSAPP_FAILED", f"TwilioException: {err}")
+        return False, None, err
+
+    # ── 5. Evaluate result ────────────────────────────────────────
+    FAILURE_STATUSES = {"failed", "undelivered"}
+    if not msg.sid or msg.status in FAILURE_STATUSES:
+        err = f"Twilio returned sid={msg.sid} status={msg.status}"
+        logger.error("[WHATSAPP FAILED] %s", err)
+        log_activity("WHATSAPP_FAILED", err)
+        return False, msg.sid, err
+
+    logger.info("[TWILIO_SID] sid=%s status=%s to=%s", msg.sid, msg.status, to)
+    log_activity("TWILIO_SID", f"sid={msg.sid} status={msg.status} to={to}")
+
+    # ── 6. Write DeliveryLog (optional — campaign_runner may have its own) ──
+    try:
+        log = DeliveryLog(
+            organization_id=organization_id,
+            campaign_id=campaign_id,
+            contact_id=contact_id,
+            record_id=record_id,
+            channel="whatsapp",
+            recipient=to_num,
+            status=msg.status,
+            sid=msg.sid,
+            meta={"twilio_sid": msg.sid, "from": from_},
+        )
+        db.session.add(log)
         db.session.commit()
-        return log
+    except Exception as db_exc:
+        logger.warning("[WHATSAPP] DeliveryLog write failed: %s", db_exc)
 
-    app = current_app._get_current_object()
-    log_id = log.id
+    log_activity("DELIVERED", f"sid={msg.sid} to={to}")
+    return True, msg.sid, None
 
-    def _send():
-        with app.app_context():
-            # Re-fetch within thread's context/session
-            thread_log = db.session.get(DeliveryLog, log_id)
-            thread_contact = db.session.get(Contact, contact_id)
 
-            try:
-                if not thread_contact:
-                    raise ValueError(
-                        f"Contact {contact_id} not found in background thread"
-                    )
+def send_whatsapp_bundle(
+    organization_id,
+    to_number,
+    body,
+    campaign_id,
+    target_id,
+    language="English",
+    gender="female",
+    content_sid=None,
+    content_variables=None,
+    record_id=None,
+    sender_number_id=None,
+):
+    """
+    Send WhatsApp TEXT + WhatsApp VOICE NOTE as two separate messages.
 
-                to_num = re.sub(r"\D", "", thread_contact.phone)
-                if len(to_num) == 10:
-                    to_num = "91" + to_num
-                if not to_num.startswith("+"):
-                    to_num = "+" + to_num
-                to = f"whatsapp:{to_num}"
+    Steps:
+      1. Send text  via messages.create(body=...)
+      2. Generate MP3 via audio_generator.generate_voice_note()
+      3. Upload / serve MP3 and send via messages.create(media_url=[...])
 
-                # Ensure sender has whatsapp: prefix
-                from_ = (
-                    sender_number
-                    if sender_number and sender_number.startswith("whatsapp:")
-                    else f"whatsapp:{sender_number}"
-                )
+    Returns:
+      (text_success, text_sid, audio_success, audio_sid, error)
 
-                # Status Callback URL
-                callback_url = (
-                    f"{Config.BASE_URL.rstrip('/')}/api/twilio/message-status"
-                )
-                print(f"[DEBUG DISPATCH] Using Callback URL: {callback_url}")
+    Both messages are sent even if one fails so that the campaign runner
+    can decide the final status (completed / partial_success / failed).
 
-                kwargs = {"from_": from_, "to": to, "status_callback": callback_url}
+    IMPORTANT: Only client.messages.create() is used — no calls/TwiML.
+    """
+    from app.core.logging_system import log_activity
+    from app.services.audio_generator import generate_voice_note
+    from app.config import Config
 
-                if content_sid:
-                    kwargs["content_sid"] = content_sid
-                    if content_variables:
-                        kwargs["content_variables"] = content_variables
-                else:
-                    kwargs["body"] = body or ""
+    log_activity("BUNDLE_START", f"campaign={campaign_id} target={target_id} to={to_number}")
 
-                logger.info(
-                    "Twilio send request: %s (Org: %s)", kwargs, organization_id
-                )
-                msg = client.messages.create(**kwargs)
-                print(
-                    f"[DEBUG DISPATCH] Message Created! SID: {msg.sid}, Status: {msg.status}"
-                )
+    # ── 1. Resolve client & sender ────────────────────────────────────────────
+    client, sender_number = _get_twilio_context(
+        organization_id, channel="whatsapp", sender_number_id=sender_number_id
+    )
+    if not client or not sender_number:
+        err = (
+            "WhatsApp sender not configured — "
+            "set a WhatsApp number for this organization or enable platform default access."
+        )
+        logger.error("[BUNDLE FAILED] org=%s  %s", organization_id, err)
+        return False, None, False, None, err
 
-                if thread_log:
-                    thread_log.sid = msg.sid
-                    thread_log.recipient = to_num
-                    thread_log.status = msg.status
-                    thread_log.meta = {"twilio_sid": msg.sid}
-                    db.session.commit()
-                    print(f"[DEBUG DISPATCH] Log updated in DB for ID: {thread_log.id}")
-                logger.info("Sent WhatsApp to %s, SID: %s", to, msg.sid)
-            except Exception as e:
-                if thread_log:
-                    thread_log.status = "failed"
-                    thread_log.error = str(e)
-                logger.error("Failed sending WhatsApp to contact %s: %s", contact_id, e)
-            finally:
-                db.session.commit()
+    # Normalise phone
+    to_num = re.sub(r"\D", "", to_number)
+    if len(to_num) == 10:
+        to_num = "91" + to_num
+    if not to_num.startswith("+"):
+        to_num = "+" + to_num
+    to = f"whatsapp:{to_num}"
 
-    threading.Thread(target=_send, daemon=True).start()
-    return log
+    from_ = (
+        sender_number
+        if sender_number.startswith("whatsapp:")
+        else f"whatsapp:{sender_number}"
+    )
+    callback_url = f"{Config.PUBLIC_BASE_URL.rstrip('/')}/api/twilio/message-status"
+
+    # ── 2. Send TEXT ──────────────────────────────────────────────────────────
+    text_success = False
+    text_sid     = None
+    text_error   = None
+
+    logger.info("[WHATSAPP TEXT] sending to %s", to)
+    log_activity("WHATSAPP_TEXT", f"to={to}")
+
+    try:
+        text_kwargs = {"from_": from_, "to": to, "status_callback": callback_url}
+        if content_sid:
+            text_kwargs["content_sid"] = content_sid
+            if content_variables:
+                text_kwargs["content_variables"] = content_variables
+        else:
+            text_kwargs["body"] = body or ""
+
+        text_msg    = client.messages.create(**text_kwargs)
+        text_sid    = text_msg.sid
+        text_success = bool(text_sid) and text_msg.status not in {"failed", "undelivered"}
+        logger.info("[TEXT SENT] sid=%s status=%s", text_sid, text_msg.status)
+        log_activity("WHATSAPP_TEXT_SID", f"sid={text_sid} status={text_msg.status}")
+    except Exception as exc:
+        text_error = str(exc)
+        logger.error("[WHATSAPP TEXT FAILED] %s", text_error)
+        log_activity("WHATSAPP_TEXT_FAILED", text_error)
+
+    # ── 3. Generate audio ─────────────────────────────────────────────────────
+    audio_success = False
+    audio_sid     = None
+    audio_error   = None
+
+    speak_text = body or ""
+    logger.info("[AUDIO GENERATING] target=%s lang=%s", target_id, language)
+
+    audio_path = generate_voice_note(
+        text=speak_text,
+        campaign_id=campaign_id,
+        target_id=target_id,
+        language=language,
+        gender=gender,
+    )
+
+    if not audio_path:
+        audio_error = "TTS generation failed — no audio file produced"
+        logger.error("[AUDIO FAILED] target=%s", target_id)
+        log_activity("AUDIO_FAILED", f"target={target_id}")
+        return text_success, text_sid, False, None, audio_error or text_error
+
+    log_activity("AUDIO GENERATED", f"path={audio_path}")
+
+    # ── 4. Build public URL for the MP3 attachment ────────────────────────────
+    #    URL uses BASE_URL from .env — must be publicly reachable by Twilio.
+    filename  = os.path.basename(audio_path)   # campaign_<id>_target_<id>.mp3
+    audio_url = f"{Config.PUBLIC_BASE_URL.rstrip('/')}/static/audio/voice_notes/{filename}"
+    logger.info("[AUDIO URL] %s", audio_url)
+    log_activity("AUDIO URL", f"url={audio_url}")
+
+    # ── 5. Validate URL before sending to Twilio ──────────────────────────────
+    url_ok, url_err = _validate_audio_url(audio_url)
+    if not url_ok:
+        audio_error = f"Audio URL validation failed: {url_err}"
+        logger.error("[VOICE FAILED] %s", audio_error)
+        log_activity("VOICE_FAILED", audio_error)
+        final_error = audio_error or text_error
+        log_activity(
+            "BUNDLE_DONE",
+            f"text_ok={text_success}({text_sid}) audio_ok=False (url_invalid)"
+        )
+        return text_success, text_sid, False, None, final_error
+
+    logger.info("[MP3 SENT] Sending MP3 media_url=%s", audio_url)
+    log_activity("MP3 SENT", f"url={audio_url}")
+
+    # ── 6. Send AUDIO as WhatsApp media attachment ────────────────────────────
+    try:
+        audio_msg     = client.messages.create(
+            from_=from_,
+            to=to,
+            body="🎤 Audio Message",
+            media_url=[audio_url],
+            status_callback=callback_url,
+        )
+        audio_sid     = audio_msg.sid
+        audio_success = bool(audio_sid) and audio_msg.status not in {"failed", "undelivered"}
+        logger.info(
+            "[DELIVERED] sid=%s status=%s url=%s",
+            audio_sid, audio_msg.status, audio_url
+        )
+        log_activity("DELIVERED", f"sid={audio_sid} status={audio_msg.status}")
+    except Exception as exc:
+        audio_error = str(exc)
+        logger.error("[VOICE FAILED] %s", audio_error)
+        log_activity("VOICE_FAILED", audio_error)
+
+    final_error = audio_error or text_error
+    log_activity(
+        "BUNDLE_DONE",
+        f"text_ok={text_success}({text_sid}) audio_ok={audio_success}({audio_sid})"
+    )
+    return text_success, text_sid, audio_success, audio_sid, final_error
 
 
 def make_call(
@@ -302,7 +605,7 @@ def make_call(
                 }
                 twilio_lang = TWILIO_LANGUAGE_MAP.get(language, "en-IN")
 
-                callback_url = f"{Config.BASE_URL.rstrip('/')}/api/twilio/voice-status"
+                callback_url = f"{Config.PUBLIC_BASE_URL.rstrip('/')}/api/twilio/voice-status"
                 print(f"[DEBUG CALL] Using Callback URL: {callback_url}")
 
                 logger.info(

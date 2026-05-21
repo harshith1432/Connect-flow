@@ -1,0 +1,414 @@
+{% extends 'base_billing_premium.html' %}
+
+{% block title %}ConnectFlow | Invoices Ledger{% endblock %}
+{% block page_title %}Invoices{% endblock %}
+
+{% block content %}
+<!-- Compute Invoice aggregates dynamically -->
+{% set total_invoiced = namespace(value=0) %}
+{% for inv in invoices %}
+    {% if inv.status == 'completed' %}
+        {% set total_invoiced.value = total_invoiced.value + inv.amount %}
+    {% endif %}
+{% endfor %}
+
+<div class="kpi-grid">
+    <!-- Total Invoiced -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Invoiced</span>
+            <div class="kpi-icon"><i class="bi bi-receipt-cutoff text-primary"></i></div>
+        </div>
+        <div class="kpi-value">₹{{ total_invoiced.value|int }}</div>
+        <div class="kpi-trend text-muted" style="font-size: 0.75rem; font-weight: 600;">
+            Cumulative invoiced fees
+        </div>
+    </div>
+    
+    <!-- Total Paid -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Paid Invoices</span>
+            <div class="kpi-icon"><i class="bi bi-wallet2 text-success"></i></div>
+        </div>
+        <div class="kpi-value">₹{{ total_invoiced.value|int }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-check-circle-fill"></i> 100% Settlement Rate
+        </div>
+    </div>
+
+    <!-- Outstanding -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Outstanding Balance</span>
+            <div class="kpi-icon"><i class="bi bi-clock-history text-muted"></i></div>
+        </div>
+        <div class="kpi-value">₹0</div>
+        <div class="kpi-trend text-success" style="font-size: 0.8rem; font-weight: 700;">
+            <i class="bi bi-shield-check"></i> Account Clear
+        </div>
+    </div>
+
+    <!-- Active Invoices count -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Invoice Ledger Entries</span>
+            <div class="kpi-icon"><i class="bi bi-files text-info"></i></div>
+        </div>
+        <div class="kpi-value" style="font-size: 1.85rem;">{{ invoices|length }}</div>
+        <div class="kpi-trend text-muted" style="font-size: 0.75rem; font-weight: 600;">
+            All statements ready for print
+        </div>
+    </div>
+</div>
+
+<div class="premium-panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <h3>Billing Ledger & Receipts</h3>
+            <p>View, search, print, or download commercial tax receipts for business accounting purposes</p>
+        </div>
+    </div>
+
+    <div class="table-responsive mt-2">
+        <table class="activity-table">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--grey-100);">
+                    <th style="padding: 1.25rem 1rem;">Invoice ID</th>
+                    <th style="padding: 1.25rem 1rem;">Issue Date</th>
+                    <th style="padding: 1.25rem 1rem;">Due Date</th>
+                    <th style="padding: 1.25rem 1rem;">Billing Entity</th>
+                    <th style="padding: 1.25rem 1rem;">Plan Description</th>
+                    <th style="padding: 1.25rem 1rem;">Gross Amount</th>
+                    <th style="padding: 1.25rem 1rem; text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if invoices %}
+                    {% for inv in invoices %}
+                    {% set invoice_num = "INV-2026-" ~ "%04d"|format(invoices|length - loop.index0) %}
+                    <tr style="transition: var(--transition-base);">
+                        <td style="padding: 1.25rem 1rem; font-weight: 700; color: var(--black);">
+                            {{ invoice_num }}
+                        </td>
+                        <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--grey-800);">
+                            {{ inv.created_at.strftime('%b %d, %Y') }}
+                        </td>
+                        <td style="padding: 1.25rem 1rem; color: var(--grey-500); font-weight: 500;">
+                            {{ inv.created_at.strftime('%b %d, %Y') }} (Paid on receipt)
+                        </td>
+                        <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--grey-800);">
+                            {{ current_user.organization.name }}
+                        </td>
+                        <td style="padding: 1.25rem 1rem; font-weight: 700; color: var(--black);">
+                            ConnectFlow - {{ inv.meta.get('plan_name', 'Enterprise Tier') if inv.meta else 'Enterprise Tier' }}
+                        </td>
+                        <td style="padding: 1.25rem 1rem; font-family: var(--font-heading); font-weight: 800; color: var(--black); font-size: 0.95rem;">
+                            ₹{{ inv.amount|int }}
+                        </td>
+                        <td style="padding: 1.25rem 1rem; text-align: right;">
+                            <div class="d-flex justify-content-end gap-2">
+                                <button class="btn btn-dark btn-sm rounded-3 fw-bold d-flex align-items-center gap-1.5 px-3 py-2" 
+                                        onclick="showInvoiceModal({
+                                            invoiceId: '{{ invoice_num }}',
+                                            date: '{{ inv.created_at.strftime('%B %d, %Y') }}',
+                                            amount: {{ inv.amount }},
+                                            plan: '{{ inv.meta.get('plan_name', 'Enterprise Tier') if inv.meta else 'Enterprise Tier' }}',
+                                            gateway: '{{ inv.gateway_name or 'Razorpay Standard' }}',
+                                            provider: '{{ inv.gateway_provider or 'razorpay' }}',
+                                            mode: '{{ inv.gateway_mode or 'test' }}',
+                                            txnId: '{{ inv.transaction_id or 'TXN_DUMMY_8192' }}',
+                                            orgName: '{{ current_user.organization.name }}',
+                                            email: '{{ current_user.email }}',
+                                            address: '{{ current_user.organization.office_address or 'Kaveri Layout, Mandya' }}',
+                                            state: '{{ current_user.organization.office_address or 'Karnataka' }}',
+                                            country: '{{ current_user.organization.country or 'India' }}'
+                                        })" 
+                                        style="font-size: 0.8rem; background: var(--black); color: var(--white); border: none;">
+                                    <i class="bi bi-eye"></i> View Invoice
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <div class="py-4">
+                                <i class="bi bi-receipt fs-1 d-block mb-3 text-grey-300"></i>
+                                <span class="fw-semibold" style="font-size: 1.1rem; color: var(--black);">No invoice records found</span>
+                                <p class="small text-muted mt-2 max-width-400 mx-auto">No invoices exist. Upgrade your organization plan to see generated tax statements.</p>
+                                <a href="{{ url_for('org.browse_plans') }}" class="btn btn-dark mt-4 fw-bold rounded-3" style="padding: 0.65rem 1.5rem; font-size: 0.85rem;">Upgrade Plan</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Interactive High-Fidelity Tax Invoice Viewer Modal -->
+<div id="invoiceModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px); overflow-y: auto; padding: 2rem 0;">
+    <div class="premium-panel bg-white shadow-2xl position-relative w-100" style="max-width: 800px; border-radius: 24px; border: 1px solid var(--grey-200); margin: auto;">
+        
+        <!-- Modal Controls -->
+        <div class="modal-controls d-flex justify-content-end gap-2 p-3 border-bottom position-sticky top-0 bg-white" style="border-radius: 24px 24px 0 0; z-index: 10;">
+            <button class="btn btn-dark d-flex align-items-center gap-1.5 rounded-3 fw-bold px-3" onclick="printInvoice()" style="font-size: 0.85rem; background: var(--black); border: none;">
+                <i class="bi bi-printer"></i> Print Invoice
+            </button>
+            <button class="btn btn-light d-flex align-items-center gap-1 rounded-3 fw-bold px-3 border" onclick="hideInvoiceModal()" style="font-size: 0.85rem;">
+                Close
+            </button>
+        </div>
+
+        <!-- PRINTABLE INVOICE SHEET AREA -->
+        <div id="printableInvoiceArea" class="p-5" style="font-family: 'Inter', sans-serif; color: #111827; background: #ffffff;">
+            
+            <!-- Invoice Header Block -->
+            <div class="d-flex justify-content-between align-items-start mb-5" style="border-bottom: 2px solid #f3f4f6; padding-bottom: 2.5rem;">
+                <div>
+                    <!-- ConnectFlow Branding -->
+                    <div style="font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; color: #000000; line-height: 1;">
+                        Connect<span style="color: #6b7280; font-weight: 600;">Flow</span>
+                    </div>
+                    <small class="d-block mt-2 text-muted fw-semibold" style="font-size: 0.75rem; letter-spacing: 0.5px;">COMMERCIAL BILLING & TAX INVOICE</small>
+                </div>
+                <div class="text-end">
+                    <h2 class="fw-extrabold text-uppercase text-dark" style="font-family: 'Outfit', sans-serif; font-size: 1.5rem; letter-spacing: 0.5px; margin: 0;">Tax Invoice</h2>
+                    <span class="badge bg-success mt-2 text-uppercase font-extrabold px-3 py-1.5 rounded-pill" style="font-size: 0.7rem; font-weight: 800; background-color: #10b981 !important; color: #ffffff;">PAID RECEIPT</span>
+                </div>
+            </div>
+
+            <!-- Double-Column Address and Details Block -->
+            <div class="row mb-5" style="font-size: 0.875rem; line-height: 1.6;">
+                <!-- Company Details -->
+                <div class="col-sm-6 mb-4 mb-sm-0">
+                    <span class="text-uppercase text-muted fw-bold d-block mb-2" style="font-size: 0.725rem; letter-spacing: 0.5px;">Issuer Details</span>
+                    <strong class="d-block text-dark mb-1" style="font-size: 0.95rem;">ConnectFlow Technologies Pvt. Ltd.</strong>
+                    <div class="text-muted">
+                        Suite 402, Delta Tower Tech Park<br>
+                        Outer Ring Road, Bangalore, KA - 560103<br>
+                        Email: billing@connectflow.io<br>
+                        GSTIN: 29AAFCC1039K1ZM (Mock)
+                    </div>
+                </div>
+
+                <!-- Customer Details -->
+                <div class="col-sm-6">
+                    <span class="text-uppercase text-muted fw-bold d-block mb-2" style="font-size: 0.725rem; letter-spacing: 0.5px;">Billing To</span>
+                    <strong class="d-block text-dark mb-1" style="font-size: 0.95rem;" id="invOrgName">Organization Client</strong>
+                    <div class="text-muted">
+                        <span id="invOrgAddress">Billing Office Address</span><br>
+                        Country: <span id="invOrgCountry">India</span><br>
+                        Email: <span id="invOrgEmail">billing@organization.com</span><br>
+                        GSTIN: Optional / Business Customer
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoice Details Metadata panel -->
+            <div class="p-4 rounded-4 mb-5" style="background: #f9fafb; border: 1px solid #f3f4f6; font-size: 0.85rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem;">
+                <div>
+                    <span class="text-muted d-block fw-semibold mb-1" style="font-size: 0.725rem; text-transform: uppercase;">Invoice Reference</span>
+                    <strong class="text-dark" id="invRefNum">#INV-2026-0001</strong>
+                </div>
+                <div>
+                    <span class="text-muted d-block fw-semibold mb-1" style="font-size: 0.725rem; text-transform: uppercase;">Date of Issue</span>
+                    <strong class="text-dark" id="invIssueDate">May 22, 2026</strong>
+                </div>
+                <div>
+                    <span class="text-muted d-block fw-semibold mb-1" style="font-size: 0.725rem; text-transform: uppercase;">Transaction ID</span>
+                    <strong class="text-dark" id="invTxnId" style="font-family: monospace;">txn_razor_82098</strong>
+                </div>
+                <div>
+                    <span class="text-muted d-block fw-semibold mb-1" style="font-size: 0.725rem; text-transform: uppercase;">Gateway Method</span>
+                    <strong class="text-dark" id="invGatewayName">Razorpay Standard</strong>
+                </div>
+            </div>
+
+            <!-- Line Items Table -->
+            <table class="w-100 mb-5" style="border-collapse: collapse; font-size: 0.875rem; line-height: 1.6;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #e5e7eb;">
+                        <th style="padding: 1rem 0; text-align: left; text-transform: uppercase; font-size: 0.725rem; color: #6b7280; font-weight: 700;">License Description</th>
+                        <th style="padding: 1rem; text-align: right; text-transform: uppercase; font-size: 0.725rem; color: #6b7280; font-weight: 700; width: 120px;">Net Unit Price</th>
+                        <th style="padding: 1rem; text-align: right; text-transform: uppercase; font-size: 0.725rem; color: #6b7280; font-weight: 700; width: 120px;">Qty</th>
+                        <th style="padding: 1rem 0; text-align: right; text-transform: uppercase; font-size: 0.725rem; color: #6b7280; font-weight: 700; width: 140px;">Gross Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom: 1px solid #f3f4f6;">
+                        <td style="padding: 1.5rem 0; text-align: left; vertical-align: top;">
+                            <strong class="text-dark" id="invLineItemPlan">ConnectFlow Premium Subscription - Enterprise Plan</strong>
+                            <p class="text-muted mb-0 small mt-1">Full automated marketing campaigns, reports, multi-worker logins, twilio configurations, voice calling pipeline, and live audit tracking.</p>
+                        </td>
+                        <td style="padding: 1.5rem; text-align: right; vertical-align: top; font-weight: 600; color: #111827;" id="invUnitCost">₹846</td>
+                        <td style="padding: 1.5rem; text-align: right; vertical-align: top; font-weight: 600; color: #111827;">1</td>
+                        <td style="padding: 1.5rem 0; text-align: right; vertical-align: top; font-weight: 700; color: #111827; font-family: var(--font-heading);" id="invBaseCost">₹846</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Tax Breakdowns and Totals -->
+            <div class="d-flex justify-content-end">
+                <div style="width: 100%; max-width: 320px; font-size: 0.875rem; line-height: 1.8;">
+                    
+                    <div class="d-flex justify-content-between text-muted mb-2">
+                        <span>Net Base Amount</span>
+                        <strong class="text-dark" id="invBaseVal">₹846.61</strong>
+                    </div>
+
+                    <!-- CGST 9% -->
+                    <div class="d-flex justify-content-between text-muted mb-2">
+                        <span>CGST (9.0%)</span>
+                        <strong class="text-dark" id="invCgstVal">₹76.19</strong>
+                    </div>
+
+                    <!-- SGST 9% -->
+                    <div class="d-flex justify-content-between text-muted mb-3" style="border-bottom: 1px dashed #e5e7eb; padding-bottom: 0.75rem;">
+                        <span>SGST (9.0%)</span>
+                        <strong class="text-dark" id="invSgstVal">₹76.19</strong>
+                    </div>
+
+                    <div class="d-flex justify-content-between text-dark mb-4" style="font-size: 1.2rem;">
+                        <strong style="font-family: 'Outfit', sans-serif;">Invoice Total</strong>
+                        <strong style="font-family: 'Outfit', sans-serif; font-weight: 800;" id="invTotalVal">₹999.00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tax Declarations & Stamp -->
+            <div class="mt-5 p-4 rounded-4 d-flex flex-column flex-sm-row align-items-center justify-content-between gap-3 text-muted" style="background: #fdfdfd; border: 1px dashed #e5e7eb; font-size: 0.75rem; line-height: 1.5;">
+                <div style="max-width: 480px;">
+                    <strong class="text-dark d-block mb-1">Declaration & Terms</strong>
+                    This is a digitally generated tax invoice and does not require a physical signature. The base fee is subject to an eighteen percent Integrated Goods and Services Tax (GST) in accordance with Section 9 of the CGST Act. Mode of payment: secure digital gateway settlement.
+                </div>
+                <div class="text-center" style="border: 2px solid #10b981; color: #10b981; border-radius: 12px; padding: 0.5rem 1rem; font-weight: 800; font-family: 'Outfit', sans-serif; transform: rotate(-3deg); flex-shrink: 0;">
+                    PAID IN FULL
+                    <small class="d-block text-uppercase text-muted fw-bold" style="font-size: 0.55rem; letter-spacing: 0.5px; margin-top: 2px;">RAZORPAY SECURE</small>
+                </div>
+            </div>
+
+        </div> <!-- PRINTABLE END -->
+
+    </div>
+</div>
+
+<script>
+    function showInvoiceModal(data) {
+        // Compute base, CGST and SGST from total
+        // Total = Base * 1.18  => Base = Total / 1.18
+        const total = parseFloat(data.amount);
+        const base = total / 1.18;
+        const taxTotal = total - base;
+        const gstHalf = taxTotal / 2;
+
+        document.getElementById('invOrgName').innerText = data.orgName;
+        document.getElementById('invOrgEmail').innerText = data.email;
+        document.getElementById('invOrgAddress').innerText = data.address || 'Kaveri Layout, Mandya';
+        document.getElementById('invOrgCountry').innerText = data.country || 'India';
+        
+        document.getElementById('invRefNum').innerText = data.invoiceId;
+        document.getElementById('invIssueDate').innerText = data.date;
+        document.getElementById('invTxnId').innerText = data.txnId;
+        document.getElementById('invGatewayName').innerText = data.gateway + ' (' + data.mode.toUpperCase() + ')';
+        
+        document.getElementById('invLineItemPlan').innerText = 'ConnectFlow Subscription - ' + data.plan;
+        
+        document.getElementById('invUnitCost').innerText = '₹' + Math.round(base);
+        document.getElementById('invBaseCost').innerText = '₹' + Math.round(base);
+        
+        document.getElementById('invBaseVal').innerText = '₹' + base.toFixed(2);
+        document.getElementById('invCgstVal').innerText = '₹' + gstHalf.toFixed(2);
+        document.getElementById('invSgstVal').innerText = '₹' + gstHalf.toFixed(2);
+        document.getElementById('invTotalVal').innerText = '₹' + total.toFixed(2);
+
+        document.getElementById('invoiceModal').style.display = 'flex';
+    }
+
+    function hideInvoiceModal() {
+        document.getElementById('invoiceModal').style.display = 'none';
+    }
+
+    function printInvoice() {
+        window.print();
+    }
+</script>
+
+<style>
+.activity-table tbody tr:hover {
+    background-color: var(--grey-50);
+}
+
+/* HIGH FIDELITY STANDALONE CSS MEDIA PRINT SYSTEM */
+@media print {
+    /* Hide all core web dashboard elements completely */
+    .premium-sidebar, 
+    .premium-topbar, 
+    .modal-controls, 
+    .kpi-grid, 
+    .premium-panel:not(#invoiceModal .premium-panel),
+    button,
+    footer {
+        display: none !important;
+    }
+    
+    /* Reset html and body layouts for standard document flow */
+    html, body {
+        background: #ffffff !important;
+        color: #111827 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        overflow: visible !important;
+    }
+    
+    /* Flatten the fixed modal wrapper */
+    #invoiceModal {
+        display: block !important;
+        position: static !important;
+        background: none !important;
+        backdrop-filter: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        height: auto !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+    }
+    
+    /* Flatten the inner premium card */
+    #invoiceModal .premium-panel {
+        display: block !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        background: #ffffff !important;
+        overflow: visible !important;
+    }
+    
+    /* Format the print sheet area to layout naturally */
+    #printableInvoiceArea {
+        padding: 0 !important;
+        margin: 0 !important;
+        background: #ffffff !important;
+        width: 100% !important;
+        display: block !important;
+    }
+    
+    /* Force high contrast details and prevent table row splits */
+    tr {
+        page-break-inside: avoid !important;
+    }
+    
+    @page {
+        size: A4;
+        margin: 15mm;
+    }
+}
+</style>
+{% endblock %}

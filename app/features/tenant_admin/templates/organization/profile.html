@@ -14,7 +14,7 @@
                     <img id="logoPreview" src="{{ url_for('static', filename=org.logo_url) }}" style="width: 100%; height: 100%; object-fit: cover;">
                     {% else %}
                     <div id="logoPlaceholder" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-family: var(--font-heading); font-weight: 800; color: var(--grey-200);">
-                        {{ org.name[0].upper() }}
+                        {{ (org.name or 'O')[0].upper() }}
                     </div>
                     {% endif %}
                     <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: var(--transition-base); border-radius: 32px;" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
@@ -55,11 +55,23 @@
             </div>
             <div style="margin-bottom: 1.25rem;">
                 <div style="font-size: 0.75rem; color: var(--grey-500); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.35rem;">Next Renewal</div>
-                <div style="font-weight: 700; color: var(--black); font-size: 1rem;">June 15, 2026</div>
+                <div style="font-weight: 700; color: var(--black); font-size: 1rem;">
+                    {% if subscription and subscription.expires_at %}
+                        {{ subscription.expires_at.strftime('%B %d, %Y') }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
             </div>
             <div style="margin-bottom: 2rem;">
                 <div style="font-size: 0.75rem; color: var(--grey-500); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.35rem;">Current Cycle</div>
-                <div style="font-weight: 700; color: var(--black); font-size: 1rem;">Monthly Business Plan</div>
+                <div style="font-weight: 700; color: var(--black); font-size: 1rem;">
+                    {% if subscription %}
+                        {{ (subscription.billing_interval or 'monthly') | capitalize }} {{ subscription.plan }}
+                    {% else %}
+                        No Active Plan
+                    {% endif %}
+                </div>
             </div>
             <a href="{{ url_for('org.browse_plans') }}" class="view-all-link" style="width: 100%; justify-content: center; padding: 0.875rem;">
                 Manage Subscription <i class="bi bi-arrow-right"></i>
@@ -124,6 +136,28 @@
                     <div class="form-group">
                         <label class="form-label">Support Email</label>
                         <input type="email" name="support_email" class="form-input" value="{{ org.support_email or '' }}" placeholder="support@yourcompany.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Theme Mode</label>
+                        <select name="theme" class="form-input">
+                            <option value="system" {% if current_user.preferences and current_user.preferences.get('theme') == 'system' %}selected{% endif %}>System Default</option>
+                            <option value="light" {% if not current_user.preferences or current_user.preferences.get('theme') == 'light' %}selected{% endif %}>Light Mode</option>
+                            <option value="dark" {% if current_user.preferences and current_user.preferences.get('theme') == 'dark' %}selected{% endif %}>Dark Mode</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Platform Language</label>
+                        <select name="language" class="form-input">
+                            <option value="English" {% if not current_user.preferences or current_user.preferences.get('language') == 'English' %}selected{% endif %}>English</option>
+                            <option value="Hindi" {% if current_user.preferences and current_user.preferences.get('language') == 'Hindi' %}selected{% endif %}>Hindi</option>
+                            <option value="Kannada" {% if current_user.preferences and current_user.preferences.get('language') == 'Kannada' %}selected{% endif %}>Kannada</option>
+                            <option value="Tamil" {% if current_user.preferences and current_user.preferences.get('language') == 'Tamil' %}selected{% endif %}>Tamil</option>
+                            <option value="Marathi" {% if current_user.preferences and current_user.preferences.get('language') == 'Marathi' %}selected{% endif %}>Marathi</option>
+                            <option value="Malayalam" {% if current_user.preferences and current_user.preferences.get('language') == 'Malayalam' %}selected{% endif %}>Malayalam</option>
+                            <option value="Telugu" {% if current_user.preferences and current_user.preferences.get('language') == 'Telugu' %}selected{% endif %}>Telugu</option>
+                        </select>
                     </div>
                     
                     <div class="form-group full-width">

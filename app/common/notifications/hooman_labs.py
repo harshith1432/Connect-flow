@@ -39,18 +39,18 @@ def _get_base_url(app) -> str:
     Load and validate BASE_URL from Flask app config.
     Must be a non-empty, non-localhost public URL.
     """
-    base_url = app.config.get("BASE_URL", "").strip().rstrip("/")
+    base_url = app.config.get("PUBLIC_BASE_URL", app.config.get("BASE_URL", "")).strip().rstrip("/")
 
     if not base_url:
         raise ValueError(
-            "BASE_URL is not configured in .env. "
+            "PUBLIC_BASE_URL is not configured in .env. "
             "Set it to your Cloudflare tunnel domain, e.g. "
-            "BASE_URL=https://usd-infectious-table-nec.trycloudflare.com"
+            "PUBLIC_BASE_URL=https://usd-infectious-table-nec.trycloudflare.com"
         )
 
     if "localhost" in base_url or "127.0.0.1" in base_url:
         raise ValueError(
-            f"BASE_URL is set to a local address ({base_url}). "
+            f"PUBLIC_BASE_URL is set to a local address ({base_url}). "
             "Hooman Labs requires a publicly accessible URL."
         )
 
@@ -190,7 +190,7 @@ def make_hooman_call(
                 except ValueError:
                     status_callback_url = None
                     logger.warning(
-                        "[HoomanLabs] BASE_URL not available — "
+                        "[HoomanLabs] PUBLIC_BASE_URL not available — "
                         "status_callback_url will not be sent."
                     )
 

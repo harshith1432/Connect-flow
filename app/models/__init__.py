@@ -16,10 +16,16 @@ from .modules import Module, ModuleGroup, ModuleField, ModuleRecord, ModuleRecor
 from .scripts import Script
 
 # Call/SMS campaigns models
-from .campaigns import Campaign, CampaignTarget, DeliveryLog
+from .campaigns import Campaign, CampaignTarget, DeliveryLog, CallTargetResult
 
 # Administrative audits and alert logs
 from .change_requests import ChangeRequest, PlatformNotification
+
+# Real-time chat and custom notification models
+from .chat import ChatMessage, DashboardNotification
+
+# Platform Helpdesk tickets model
+from .helpdesk import HelpdeskQuery
 
 # Security infrastructure models
 from .security import (

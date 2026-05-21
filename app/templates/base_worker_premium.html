@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+{% set user_theme = current_user.preferences.get('theme', 'system') if current_user.is_authenticated and current_user.preferences else 'system' %}
+{% set user_lang = current_user.preferences.get('language', 'English') if current_user.is_authenticated and current_user.preferences else 'English' %}
+<html lang="{{ user_lang }}" data-theme="{{ user_theme }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>{% block title %}ConnectFlow | Worker Workspace{% endblock %}</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link class="tour-nav-target" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_premium.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_extensions.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
@@ -23,12 +27,19 @@
     </style>
     {% block head_extra %}{% endblock %}
 </head>
-<body>
+<body data-user-id="{{ current_user.id if (current_user.is_authenticated and current_user.id) else '' }}"
+      data-user-role="{{ current_user.role if (current_user.is_authenticated and current_user.role) else '' }}"
+      data-onboarding-completed="{{ 'true' if (current_user.is_authenticated and ((current_user.onboarding_completed is defined and current_user.onboarding_completed) or (current_user.role is defined and current_user.role == 'platform_owner'))) else 'false' }}">
 
     <!-- Premium Sidebar -->
     <aside class="premium-sidebar">
-        <div class="sidebar-logo">
-            Connect<span>Flow</span>
+        <div class="sidebar-logo" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div>
+                Connect<span>Flow</span>
+            </div>
+            <button class="btn-close-sidebar" id="close-sidebar-btn">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
         
         <nav class="sidebar-nav">
@@ -38,21 +49,21 @@
             <a href="{{ url_for('worker.reports') }}" class="nav-item {% if request.endpoint == 'worker.reports' %}active{% endif %}">
                 <i class="bi bi-bar-chart"></i> Reports
             </a>
-            <a href="{{ url_for('worker.profile') }}" class="nav-item {% if request.endpoint in ['worker.profile', 'worker.preferences'] %}active{% endif %}">
-                <i class="bi bi-person-circle"></i> Profile
+            <a href="#" id="sidebar-support-trigger" class="nav-item">
+                <i class="bi bi-headset"></i> Customer Support
             </a>
         </nav>
         
         <div class="sidebar-footer">
-            <div class="user-profile">
-                <div class="user-avatar">
-                    {{ current_user.email[0].upper() }}
+            <a href="{{ url_for('worker.profile') }}" class="user-profile" style="text-decoration: none; color: inherit; display: flex; align-items: center; gap: 1rem; cursor: pointer; padding: 0.5rem; border-radius: 12px; transition: background 0.2s;" onmouseover="this.style.background='var(--grey-800)'" onmouseout="this.style.background='transparent'">
+                <div class="user-avatar" style="{% if current_user.profile_photo %}background: url('{{ url_for('static', filename=current_user.profile_photo) }}') center/cover; color: transparent;{% endif %}">
+                    {% if not current_user.profile_photo %}{{ current_user.email[0].upper() }}{% endif %}
                 </div>
                 <div class="user-info">
-                    <h6>{{ current_user.full_name or "Worker" }}</h6>
-                    <p>{{ current_user.email }}</p>
+                    <h6 style="color: white; margin-bottom: 2px;">{{ current_user.full_name or "Worker" }}</h6>
+                    <p style="color: var(--grey-400); margin: 0;">{{ current_user.email }}</p>
                 </div>
-            </div>
+            </a>
             <a href="{{ url_for('worker.logout') }}" class="nav-item" style="margin-top: 1rem; color: #ef4444;">
                 <i class="bi bi-box-arrow-right"></i> Logout
             </a>
@@ -62,7 +73,10 @@
     <!-- Main Wrapper -->
     <main class="main-wrapper">
         <header class="premium-topbar">
-            <div class="topbar-left">
+            <div class="topbar-left" style="display: flex; align-items: center; gap: 1rem;">
+                <button class="btn-hamburger" id="toggle-sidebar-btn">
+                    <i class="bi bi-list"></i>
+                </button>
                 <h1>{% block page_title %}Worker Dashboard{% endblock %}</h1>
             </div>
             
@@ -72,7 +86,11 @@
                     <input type="text" placeholder="Search modules or records...">
                 </div>
                 <div class="topbar-actions">
-                    <!-- Removed Bell and Question icons for cleaner UI -->
+                    <button class="btn-icon">
+                        <i class="bi bi-bell"></i>
+                        <span class="notification-badge" style="display: none;">0</span>
+                    </button>
+                    <button class="btn-icon"><i class="bi bi-chat-left-dots"></i></button>
                 </div>
             </div>
         </header>
@@ -95,6 +113,45 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('toggle-sidebar-btn');
+            const closeBtn = document.getElementById('close-sidebar-btn');
+            const sidebar = document.querySelector('.premium-sidebar');
+            const mainWrapper = document.querySelector('.main-wrapper');
+
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    sidebar.classList.add('active');
+                    let overlay = document.querySelector('.sidebar-overlay');
+                    if (!overlay) {
+                        overlay = document.createElement('div');
+                        overlay.className = 'sidebar-overlay';
+                        document.body.appendChild(overlay);
+                        overlay.addEventListener('click', function() {
+                            sidebar.classList.remove('active');
+                            overlay.classList.remove('active');
+                        });
+                    }
+                    setTimeout(() => {
+                        overlay.classList.add('active');
+                    }, 50);
+                });
+            }
+
+            if (closeBtn && sidebar) {
+                closeBtn.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    const overlay = document.querySelector('.sidebar-overlay');
+                    if (overlay) {
+                        overlay.classList.remove('active');
+                    }
+                });
+            }
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/dashboard_extensions.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

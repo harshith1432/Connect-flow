@@ -4,104 +4,132 @@
 {% block page_title %}Account Profile{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-xl-8">
-        <!-- Profile Overview Card -->
-        <div class="premium-card mb-4">
-            <div class="card-header-premium">
-                <div class="header-left">
-                    <h2>Personal Information</h2>
-                    <p>Update your account details and profile identity</p>
+<div class="premium-layout-grid">
+    <!-- Left Column: Identity & Plan -->
+    <div class="identity-column">
+        <div class="premium-panel mb-4" style="text-align: center; padding: 3rem 2rem;">
+            <div style="position: relative; width: 140px; height: 140px; margin: 0 auto 2rem; cursor: pointer;" onclick="document.getElementById('profile-upload-input').click()">
+                <div style="width: 100%; height: 100%; border-radius: 50%; overflow: hidden; background: var(--grey-50); border: 2px solid var(--grey-100); box-shadow: var(--shadow-premium);">
+                    {% if user.profile_photo %}
+                    <img id="avatar-preview" src="{{ url_for('static', filename=user.profile_photo) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% else %}
+                    <div id="avatar-preview" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 3.5rem; font-family: var(--font-heading); font-weight: 800; color: var(--grey-300); background: var(--grey-100);">
+                        {{ user.email[0].upper() }}
+                    </div>
+                    {% endif %}
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: var(--transition-base);" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0">
+                        <i class="bi bi-camera-fill text-white fs-3"></i>
+                    </div>
                 </div>
             </div>
-            <div class="card-body-premium p-4">
-                <div class="row align-items-center mb-4">
-                    <div class="col-auto">
-                        <div class="profile-avatar-large" style="width: 100px; height: 100px; background: var(--black); color: var(--white); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; font-family: var(--heading-font); font-weight: 700; border: 4px solid var(--grey-50);">
-                            {{ user.email[0].upper() }}
-                        </div>
-                    </div>
-                    <div class="col">
-                        <h3 class="mb-1">{{ user.full_name or 'Worker' }}</h3>
-                        <p class="text-muted mb-0">{{ user.role|capitalize }} • {{ user.organization.name }}</p>
-                    </div>
+            
+            <h2 style="font-size: 1.75rem; margin-bottom: 0.5rem;">{{ user.full_name or 'Worker' }}</h2>
+            <div style="display: flex; justify-content: center; gap: 0.75rem; margin-bottom: 2rem;">
+                <span class="status-badge" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                    {{ user.role|replace('_', ' ')|title }}
+                </span>
+                <span class="status-badge" style="background: var(--grey-900); color: var(--white);">
+                    <i class="bi bi-building me-1"></i> {{ user.organization.name }}
+                </span>
+            </div>
+
+            <div style="text-align: left; background: var(--grey-50); border-radius: 20px; padding: 1.5rem; margin-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
+                    <span style="font-size: 0.815rem; color: var(--grey-500); font-weight: 600;">Account Health</span>
+                    <span style="font-size: 0.815rem; font-weight: 800; color: var(--black);">100/100</span>
                 </div>
-
-                <form action="{{ url_for('worker.profile') }}" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="row g-4">
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">Full Name</label>
-                                <input type="text" name="full_name" class="form-control premium-input" value="{{ user.full_name }}" placeholder="Your name">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">Email Address</label>
-                                <input type="email" class="form-control premium-input" value="{{ user.email }}" disabled>
-                                <p class="small text-muted mt-1"><i class="bi bi-info-circle"></i> Email is managed by organization admin.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">Phone Number</label>
-                                <input type="text" name="phone" class="form-control premium-input" value="{{ user.phone }}" placeholder="10 digit mobile number">
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label class="form-label">Designation</label>
-                                <input type="text" class="form-control premium-input" value="{{ user.designation }}" disabled>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="divider-premium my-4"></div>
-
-                    <div class="d-flex justify-content-end gap-3">
-                        <button type="reset" class="btn-premium secondary">Discard Changes</button>
-                        <button type="submit" class="btn-premium primary">Update Profile</button>
-                    </div>
-                </form>
+                <div style="height: 8px; background: var(--grey-200); border-radius: 10px; overflow: hidden; margin-bottom: 1.25rem;">
+                    <div style="width: 100%; height: 100%; background: var(--black);"></div>
+                </div>
+                <div style="font-size: 0.815rem; color: var(--grey-500); line-height: 1.5;">
+                    <i class="bi bi-shield-check me-1"></i> Your account is fully secured and verified by your organization.
+                </div>
             </div>
         </div>
 
-        <!-- Security & Preferences Card -->
-        <div class="row">
-            <div class="col-md-6">
-                <div class="premium-card">
-                    <div class="card-header-premium">
-                        <div class="header-left">
-                            <h3>Security</h3>
-                            <p>Manage your password</p>
-                        </div>
-                    </div>
-                    <div class="card-body-premium p-4">
-                        <p class="small text-muted">To change your password, you must submit a verification request to your organization's security team.</p>
-                        <a href="{{ url_for('worker.forgot_password') }}" class="btn-premium secondary w-100">
-                            Request Password Reset <i class="bi bi-shield-lock ms-2"></i>
-                        </a>
-                    </div>
+        <div class="premium-panel">
+            <div class="panel-header" style="margin-bottom: 1.5rem;">
+                <div class="panel-title">
+                    <h3 style="font-size: 1.15rem;">Security & Preferences</h3>
                 </div>
             </div>
-            <div class="col-md-6">
-                <div class="premium-card">
-                    <div class="card-header-premium">
-                        <div class="header-left">
-                            <h3>Preferences</h3>
-                            <p>Workspace settings</p>
-                        </div>
-                    </div>
-                    <div class="card-body-premium p-4">
-                        <a href="{{ url_for('worker.preferences') }}" class="btn-premium secondary w-100 mb-3">
-                            Customize Workspace <i class="bi bi-palette ms-2"></i>
-                        </a>
-                        <p class="small text-muted mb-0">Configure your notification and display preferences.</p>
-                    </div>
-                </div>
-            </div>
+            
+            <a href="{{ url_for('worker.forgot_password') }}" class="view-all-link" style="width: 100%; justify-content: center; padding: 0.875rem; margin-bottom: 1rem;">
+                <i class="bi bi-shield-lock me-2"></i> Request Password Reset
+            </a>
+            
+            <a href="{{ url_for('worker.preferences') }}" class="view-all-link" style="width: 100%; justify-content: center; padding: 0.875rem;">
+                <i class="bi bi-sliders me-2"></i> Manage App Preferences
+            </a>
         </div>
     </div>
+
+    <!-- Right Column: Forms -->
+    <div class="forms-column">
+        <form action="{{ url_for('worker.profile') }}" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="file" name="profile_photo" id="profile-upload-input" style="display: none !important;" accept="image/*" onchange="previewImage(event)">
+            
+            <div class="premium-panel mb-4">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <h3>Personal Information</h3>
+                        <p>Manage your core identity and contact details.</p>
+                    </div>
+                    <button type="submit" class="btn-black" style="width: auto; padding: 0.75rem 2rem; margin-bottom: 0;">
+                        Save Changes
+                    </button>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="full_name" class="form-input" value="{{ user.full_name }}" placeholder="Your legal name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" name="phone" class="form-input" value="{{ user.phone }}" placeholder="Your mobile number">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input" value="{{ user.email }}" disabled>
+                        <div style="font-size: 0.75rem; color: var(--grey-500); margin-top: 0.5rem;"><i class="bi bi-building me-1"></i> Managed by your organization</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Designation</label>
+                        <input type="text" class="form-input" value="{{ user.designation }}" disabled placeholder="No designation">
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function previewImage(event) {
+        var reader = new FileReader();
+        reader.onload = function() {
+            var output = document.getElementById('avatar-preview');
+            if (output.tagName.toLowerCase() === 'div') {
+                const img = document.createElement('img');
+                img.src = reader.result;
+                img.id = 'avatar-preview';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+                output.parentNode.replaceChild(img, output);
+            } else {
+                output.src = reader.result;
+            }
+        }
+        if(event.target.files[0]) {
+            reader.readAsDataURL(event.target.files[0]);
+        }
+    }
+</script>
 {% endblock %}

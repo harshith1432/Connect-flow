@@ -133,24 +133,45 @@ def hooman_call_status():
     )
 
     # -- Update DeliveryLog --
+    from app.models import CampaignTarget
+    target = None
     delivery_log = None
 
-    if call_uuid:
-        delivery_log = DeliveryLog.query.filter_by(sid=call_uuid).first()
+    w_conv_id = data.get("conversationId") or ""
+    w_task_id = data.get("taskId") or call_info.get("task") or ""
+    w_phone = phone or ""
 
-    if not delivery_log and call_uuid:
-        # Try matching by call_uuid stored in meta JSON (fallback)
-        delivery_log = DeliveryLog.query.filter(
-            DeliveryLog.meta["call_uuid"].astext == call_uuid
-        ).first()
+    # 1. By conversationId
+    if w_conv_id:
+        target = CampaignTarget.query.filter_by(conversation_id=w_conv_id).first()
+        if not target:
+            delivery_log = DeliveryLog.query.filter_by(sid=w_conv_id).first()
 
-    if not delivery_log and phone:
-        # Fallback: Match by phone number for recent hooman_voice calls
-        delivery_log = (
-            DeliveryLog.query.filter_by(recipient=phone, channel="hooman_voice")
-            .order_by(DeliveryLog.created_at.desc())
-            .first()
-        )
+    # 2. By taskId
+    if not target and not delivery_log and w_task_id:
+        target = CampaignTarget.query.filter_by(conversation_id=w_task_id).first()
+        if not target:
+            delivery_log = DeliveryLog.query.filter_by(sid=w_task_id).first()
+
+    # 3. By normalized phone
+    if not target and not delivery_log and w_phone:
+        import re
+        n_phone = re.sub(r'\D', '', w_phone)
+        if n_phone.startswith('91') and len(n_phone) == 12:
+            n_phone = n_phone[2:]
+        elif len(n_phone) > 10:
+            n_phone = n_phone[-10:]
+
+        if n_phone:
+            delivery_log = DeliveryLog.query.filter(
+                DeliveryLog.recipient.like(f"%{n_phone}")
+            ).order_by(DeliveryLog.created_at.desc()).first()
+
+    if target and not delivery_log:
+        delivery_log = DeliveryLog.query.filter_by(
+            campaign_id=target.campaign_id,
+            record_id=target.record_id
+        ).order_by(DeliveryLog.created_at.desc()).first()
 
     if not delivery_log:
         logger.warning(
@@ -176,6 +197,21 @@ def hooman_call_status():
             f"[Webhook/Hooman] DeliveryLog #{delivery_log.id} updated: "
             f"status={normalised}, duration={duration}s"
         )
+        # Trigger CampaignExecutionService for retry and fallback logic
+        from flask import current_app
+        from app.services.campaign_runner import CampaignExecutionService
+        app_obj = current_app._get_current_object()
+        webhook_payload = {
+            "conversationId": call_uuid,
+            "connected": normalised in ("completed", "in-progress"),
+            "duration": int(duration) if duration else 0,
+            "outcome": normalised,
+            "endReason": raw_status,
+            "taskCompleted": normalised == "completed",
+            "callInfo": {"to": phone}
+        }
+        CampaignExecutionService.handle_webhook(app_obj, webhook_payload)
+        
     except Exception as e:
         db.session.rollback()
         logger.error(f"[Webhook/Hooman] DB commit failed: {e}")

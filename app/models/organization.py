@@ -90,6 +90,22 @@ class Subscription(db.Model):
             return "EXPIRED"
         return self.status.upper()
 
+    @property
+    def price(self):
+        from app.models.platform import Plan
+        plan_obj = Plan.query.filter_by(name=self.plan).first()
+        if plan_obj:
+            return float(plan_obj.price) if plan_obj.price else 0.0
+        return 0.0
+
+    @property
+    def days_left(self):
+        from datetime import datetime
+        if not self.expires_at:
+            return 0
+        diff = (self.expires_at - datetime.utcnow()).days
+        return max(0, diff)
+
 
 class Payment(db.Model):
     __tablename__ = "payments"
@@ -99,6 +115,15 @@ class Payment(db.Model):
     )
     amount = db.Column(db.Numeric)
     status = db.Column(db.String(50))
+    
+    # Gateway info
+    gateway_id = db.Column(db.Integer, db.ForeignKey("payment_gateways.id", ondelete="SET NULL"), nullable=True)
+    gateway_name = db.Column(db.String(100))
+    gateway_provider = db.Column(db.String(50))
+    gateway_mode = db.Column(db.String(20))
+    gateway_response = db.Column(db.JSON)
+    transaction_id = db.Column(db.String(255))
+    
     meta = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 

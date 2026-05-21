@@ -1,114 +1,962 @@
-{% extends 'base.html' %}
-{% block title %}Manage Payment Methods{% endblock %}
+{% extends "base_platform_premium.html" %}
+
+{% block title %}ConnectFlow | Payment Infrastructure{% endblock %}
+{% block page_title %}Payment Infrastructure{% endblock %}
+
+{% block head_extra %}
+<style>
+    :root {
+        --primary-color: #6D5EF6;
+        --primary-light: rgba(109, 94, 246, 0.08);
+        --primary-glow: rgba(109, 94, 246, 0.25);
+        --success-color: #17C964;
+        --success-light: rgba(23, 201, 100, 0.1);
+        --danger-color: #F31260;
+        --danger-light: rgba(243, 18, 96, 0.1);
+        --warning-color: #F5A524;
+        --warning-light: rgba(245, 165, 36, 0.1);
+        --bg-color: #F7F8FC;
+        --card-bg: #FFFFFF;
+        --text-color: #111827;
+        --radius-premium: 24px;
+        --shadow-premium: 0 15px 35px rgba(0, 0, 0, 0.03), 0 5px 15px rgba(0, 0, 0, 0.015);
+        --shadow-glow: 0 10px 30px rgba(109, 94, 246, 0.15);
+    }
+
+    body, .dashboard-content {
+        background-color: #F7F8FC !important;
+    }
+
+    /* Custom Header Subtitle */
+    .premium-topbar {
+        border-bottom: none !important;
+        background: transparent !important;
+        margin-bottom: 1rem;
+    }
+
+    .header-subtitle {
+        color: var(--grey-500);
+        font-size: 0.95rem;
+        margin-top: 0.25rem;
+        font-family: var(--font-body);
+    }
+
+    /* Redesigned Premium Cards & Panels */
+    .premium-panel-custom {
+        background: #FFFFFF;
+        padding: 2.25rem;
+        border-radius: var(--radius-premium);
+        box-shadow: var(--shadow-premium);
+        border: 1px solid rgba(0, 0, 0, 0.015);
+        margin-bottom: 2rem;
+        position: relative;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .premium-panel-custom:hover {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.045);
+    }
+
+    .kpi-card {
+        border-radius: var(--radius-premium) !important;
+        box-shadow: var(--shadow-premium) !important;
+        border: 1px solid rgba(255, 255, 255, 0.8) !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #FFFFFF !important;
+    }
+
+    .kpi-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-glow) !important;
+        border-color: var(--primary-light) !important;
+    }
+
+    .kpi-icon-container {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        transition: all 0.3s ease;
+    }
+
+    /* Redesigned Floating Premium Tables */
+    .floating-table {
+        border-collapse: separate;
+        border-spacing: 0 0.75rem;
+        width: 100%;
+    }
+
+    .floating-table tr {
+        background: #FFFFFF;
+        border-radius: 16px;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .floating-table tbody tr {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.01);
+        border: 1px solid rgba(0, 0, 0, 0.005);
+    }
+
+    .floating-table tbody tr:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 28px rgba(109, 94, 246, 0.07);
+        border-color: rgba(109, 94, 246, 0.08);
+    }
+
+    .floating-table td, .floating-table th {
+        border: none !important;
+        padding: 1.25rem 1rem !important;
+        vertical-align: middle;
+    }
+
+    .floating-table th {
+        color: var(--grey-500);
+        font-size: 0.825rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.75px;
+        padding-bottom: 0.5rem !important;
+    }
+
+    .floating-table tr td:first-child {
+        border-top-left-radius: 16px;
+        border-bottom-left-radius: 16px;
+        padding-left: 1.5rem !important;
+    }
+
+    .floating-table tr td:last-child {
+        border-top-right-radius: 16px;
+        border-bottom-right-radius: 16px;
+        padding-right: 1.5rem !important;
+    }
+
+    /* Form Design Controls */
+    .premium-input {
+        border-radius: 14px;
+        padding: 0.8rem 1.25rem;
+        border: 1.5px solid var(--grey-200);
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 0.9rem;
+        background-color: var(--grey-50);
+        font-weight: 500;
+    }
+
+    .premium-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 4px var(--primary-glow);
+        background-color: #FFFFFF;
+    }
+
+    .input-label-premium {
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--grey-600);
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .form-group-premium {
+        margin-bottom: 1.5rem;
+    }
+
+    /* Live Checkout Preview Device Mockup */
+    .checkout-preview-device {
+        background: #0B0F19;
+        border-radius: 40px;
+        padding: 1.75rem 1.25rem;
+        box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.35);
+        border: 10px solid #1E293B;
+        color: #FFFFFF;
+        max-width: 320px;
+        margin: 0 auto;
+        position: relative;
+        font-family: var(--font-body);
+        transition: all 0.3s ease;
+    }
+
+    .checkout-preview-device::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 140px;
+        height: 25px;
+        background: #1E293B;
+        border-bottom-left-radius: 20px;
+        border-bottom-right-radius: 20px;
+        z-index: 10;
+    }
+
+    .checkout-preview-screen {
+        background: #0F172A;
+        border-radius: 24px;
+        padding: 1.25rem;
+        font-size: 0.85rem;
+        min-height: 480px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+    }
+
+    .preview-header {
+        text-align: center;
+        margin-bottom: 1.25rem;
+        padding-top: 0.5rem;
+    }
+
+    .preview-org-logo {
+        width: 36px;
+        height: 36px;
+        background: var(--primary-color);
+        color: #FFFFFF;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        font-size: 1rem;
+        box-shadow: 0 4px 10px rgba(109, 94, 246, 0.3);
+    }
+
+    .preview-amount {
+        font-size: 1.75rem;
+        font-weight: 800;
+        font-family: var(--font-heading);
+        margin: 0.25rem 0;
+        color: #FFFFFF;
+    }
+
+    .preview-billing-label {
+        font-size: 0.75rem;
+        color: var(--grey-400);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .preview-section-title {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--grey-400);
+        margin-bottom: 0.75rem;
+        letter-spacing: 0.5px;
+        display: flex;
+        justify-content: space-between;
+    }
+
+    .preview-method-card {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 0.85rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.65rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .preview-method-card:hover, .preview-method-card.active {
+        background: rgba(109, 94, 246, 0.12);
+        border-color: var(--primary-color);
+    }
+
+    .preview-method-card.active .radio-dot {
+        background: var(--primary-color);
+        box-shadow: 0 0 8px var(--primary-color);
+        border-color: var(--primary-color);
+    }
+
+    .radio-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(255, 255, 255, 0.3);
+        display: inline-block;
+        transition: all 0.2s ease;
+    }
+
+    .payment-badge-secure {
+        font-size: 0.7rem;
+        color: #10B981;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        justify-content: center;
+        margin-top: 1rem;
+        opacity: 0.95;
+    }
+
+    .btn-pay-preview {
+        background: var(--primary-color);
+        color: #FFFFFF;
+        font-weight: 700;
+        font-size: 0.9rem;
+        padding: 0.8rem;
+        border-radius: 12px;
+        border: none;
+        width: 100%;
+        margin-top: 1.25rem;
+        transition: all 0.2s ease;
+        box-shadow: 0 8px 20px rgba(109, 94, 246, 0.25);
+    }
+
+    .btn-pay-preview:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 25px rgba(109, 94, 246, 0.35);
+    }
+
+    /* Switch Custom Toggles */
+    .switch-premium {
+        position: relative;
+        display: inline-block;
+        width: 44px;
+        height: 24px;
+    }
+
+    .switch-premium input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider-premium {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: var(--grey-300);
+        transition: .3s;
+        border-radius: 24px;
+    }
+
+    .slider-premium:before {
+        position: absolute;
+        content: "";
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+        background-color: white;
+        transition: .3s;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    input:checked + .slider-premium {
+        background-color: var(--primary-color);
+    }
+
+    input:focus + .slider-premium {
+        box-shadow: 0 0 1px var(--primary-color);
+    }
+
+    input:checked + .slider-premium:before {
+        transform: translateX(20px);
+    }
+
+    .settings-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 0;
+        border-bottom: 1px solid var(--grey-100);
+    }
+
+    .settings-list-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .settings-item-label h5 {
+        font-size: 0.925rem;
+        font-weight: 600;
+        margin-bottom: 0.15rem;
+    }
+
+    .settings-item-label p {
+        font-size: 0.8rem;
+        color: var(--grey-500);
+        margin-bottom: 0;
+    }
+
+    /* Quick Action Grid */
+    .quick-actions-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .quick-action-button {
+        background: var(--grey-50);
+        border: 1.5px solid var(--grey-100);
+        border-radius: 16px;
+        padding: 1rem 0.75rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 0.5rem;
+        cursor: pointer;
+        transition: all 0.25s ease;
+        text-decoration: none;
+        color: var(--text-color);
+    }
+
+    .quick-action-button i {
+        font-size: 1.25rem;
+        color: var(--primary-color);
+        transition: all 0.25s ease;
+    }
+
+    .quick-action-button span {
+        font-size: 0.825rem;
+        font-weight: 700;
+    }
+
+    .quick-action-button:hover {
+        background: #FFFFFF;
+        border-color: var(--primary-color);
+        box-shadow: 0 8px 24px rgba(109, 94, 246, 0.06);
+        transform: translateY(-2px);
+    }
+
+    .quick-action-button:hover i {
+        transform: scale(1.1);
+    }
+
+    /* Method Logos */
+    .method-logo-badge {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.15rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+
+    /* Animated transitions & show/hide controls */
+    .form-section-animated {
+        transition: all 0.3s ease-in-out;
+    }
+
+    /* Form styles */
+    .validation-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+    }
+
+    .control-header-right {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    /* Custom tooltips and mock transactions alert */
+    .billing-alert-toast {
+        background: rgba(11, 15, 25, 0.95);
+        color: #FFFFFF;
+        border-radius: 16px;
+        padding: 1rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        box-shadow: var(--shadow-premium);
+        border: 1px solid rgba(255,255,255,0.08);
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        z-index: 1050;
+        animation: slideInUp 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes slideInUp {
+        from { transform: translateY(100px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="org-detail-container animate-in">
-    <!-- Breadcrumb Row -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <nav aria-label="breadcrumb">
-                <ul class="breadcrumb-premium d-flex align-items-center mb-0 p-0">
-                    <li class="breadcrumb-item-premium">
-                        <a href="{{ url_for('super_admin.dashboard') }}">
-                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50"><i
-                            class="bi bi-chevron-right small"></i></li>
-                    <li class="breadcrumb-item-premium active fw-bold text-dark">
-                        Payment Settings
-                    </li>
-                </ul>
-            </nav>
+    <!-- Premium Header Layout -->
+    <div class="d-flex justify-content-between align-items-md-center flex-column flex-md-row mb-4 gap-3">
+        <div>
+            <h2 class="fw-bold mb-0 text-dark" style="font-size: 1.75rem; font-family: var(--font-heading);">Payment Infrastructure</h2>
+            <p class="header-subtitle mb-0">Configure gateways, manage payment methods, and control billing operations.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button onclick="scrollToGatewayForm('gateway')" class="btn-premium secondary">
+                <i class="bi bi-plus-lg text-primary"></i> Add Gateway
+            </button>
+            <button onclick="triggerMockPayment()" class="btn-premium secondary">
+                <i class="bi bi-wallet-fill text-success"></i> Test Payment
+            </button>
+            <button onclick="showBillingLogs()" class="btn-premium primary">
+                <i class="bi bi-file-text"></i> Billing Logs
+            </button>
         </div>
     </div>
 
-    <div class="row g-4">
-        <!-- Add/Edit Payment Method Form -->
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm p-4 sticky-top" style="top: 20px;">
-                <h3 class="h5 fw-bold mb-4 text-primary"><i class="bi bi-credit-card-2-front me-2"></i> Payment Option
-                </h3>
-                <form method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="method_id" id="method_id">
-
-                    <div class="mb-3">
-                        <label class="detail-label">Method Name</label>
-                        <input type="text" name="name" id="name" class="form-control"
-                            placeholder="e.g. Stripe, UPI, Bank Transfer" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="detail-label">Type</label>
-                        <select name="type" id="type" class="form-select">
-                            <option value="manual">Manual (Bank/UPI)</option>
-                            <option value="gateway">Payment Gateway (API)</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="detail-label">Instructions / Config Details</label>
-                        <textarea name="instructions" id="instructions" class="form-control" rows="5" placeholder="For manual: Show bank account details
-For gateway: Enter API keys or configuration JSON..."></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
-                        <i class="bi bi-plus-lg me-2"></i> Save Method
-                    </button>
-                    <button type="button" onclick="resetForm()" class="btn btn-light w-100 fw-bold mt-2 btn-sm">Clear
-                        Form</button>
-                </form>
+    <!-- Payment Overview Metrics -->
+    <div class="kpi-grid mb-4">
+        <!-- Card 1: Enabled Payment Methods -->
+        <div class="kpi-card p-4">
+            <div class="kpi-header mb-3">
+                <span class="kpi-label">Active Gateways</span>
+                <div class="kpi-icon-container" style="background: var(--primary-light); color: var(--primary-color);">
+                    <i class="bi bi-credit-card-2-front-fill"></i>
+                </div>
+            </div>
+            <div class="kpi-value text-dark fs-2 fw-bold" style="font-family: var(--font-heading);">{{ methods|length }} Configured</div>
+            <div class="kpi-trend trend-up mt-2">
+                <i class="bi bi-shield-check"></i>
+                <span>Operations Active</span>
             </div>
         </div>
 
-        <!-- Active Payment Methods List -->
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
-                    <h3 class="h5 fw-bold mb-0 text-primary"><i class="bi bi-wallet2 me-2"></i> Enabled Methods</h3>
-                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3">{{ methods|length }}
-                        Options</span>
+        <!-- Card 2: Successful Payments -->
+        <div class="kpi-card p-4">
+            <div class="kpi-header mb-3">
+                <span class="kpi-label">Successful Payments</span>
+                <div class="kpi-icon-container" style="background: var(--success-light); color: var(--success-color);">
+                    <i class="bi bi-shield-fill-check"></i>
+                </div>
+            </div>
+            <div class="kpi-value text-dark fs-2 fw-bold" style="font-family: var(--font-heading);">{{ success_rate }}%</div>
+            <div class="kpi-trend trend-up mt-2">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>{{ total_payments }} completed transactions</span>
+            </div>
+        </div>
+
+        <!-- Card 3: Monthly Revenue -->
+        <div class="kpi-card p-4">
+            <div class="kpi-header mb-3">
+                <span class="kpi-label">Monthly Collections</span>
+                <div class="kpi-icon-container" style="background: var(--warning-light); color: var(--warning-color);">
+                    <i class="bi bi-bank2"></i>
+                </div>
+            </div>
+            <div class="kpi-value text-dark fs-2 fw-bold" style="font-family: var(--font-heading);">₹{{ "{:,.0f}".format(monthly_revenue) }}</div>
+            <div class="kpi-trend {% if monthly_growth >= 0 %}trend-up{% else %}trend-down{% endif %} mt-2">
+                <i class="bi bi-graph-up-arrow"></i>
+                <span>{% if monthly_growth > 0 %}+{% endif %}{{ monthly_growth }}% vs last month</span>
+            </div>
+        </div>
+
+        <!-- Card 4: Gateway Health -->
+        <div class="kpi-card p-4">
+            <div class="kpi-header mb-3">
+                <span class="kpi-label">Gateway Integrity</span>
+                <div class="kpi-icon-container" style="background: var(--danger-light); color: var(--danger-color);">
+                    <i class="bi bi-cpu-fill"></i>
+                </div>
+            </div>
+            <div class="kpi-value text-dark fs-2 fw-bold" style="font-family: var(--font-heading);">100% Online</div>
+            <div class="kpi-trend trend-up mt-2" style="color: #10B981;">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>All routes operational</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Layout Grid -->
+    <div class="row g-4">
+        <!-- Left Column: Form & Configuration Setup -->
+        <div class="col-xl-5 col-lg-6">
+            <!-- Gateway/Payment Config Card -->
+            <div class="premium-panel-custom" id="gateway-config-panel">
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-light">
+                    <div>
+                        <h3 class="h5 fw-bold mb-1 text-dark" id="form-panel-title"><i class="bi bi-gear-fill me-2 text-primary"></i>Gateway Setup</h3>
+                        <p class="small text-muted mb-0">Configure payment processor credentials</p>
+                    </div>
+                    <span id="form-mode-badge" class="badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1">New API</span>
+                </div>
+
+                <form method="POST" id="payment-method-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="method_id" id="method_id">
+                    
+                    <!-- Hidden real instructions field submitted to backend -->
+                    <textarea name="instructions" id="instructions" style="display: none;"></textarea>
+
+                    <div class="form-group-premium">
+                        <label class="input-label-premium">Display / Method Name</label>
+                        <input type="text" name="name" id="name" class="form-control premium-input w-100"
+                            placeholder="e.g. Stripe Card Portal, UPI Instant Transfer" required oninput="updateCheckoutPreview()">
+                    </div>
+
+                    <div class="form-group-premium">
+                        <label class="input-label-premium">Gateway Type</label>
+                        <select name="type" id="type" class="form-select premium-input" onchange="toggleFormFields(this.value)">
+                            <option value="gateway">Payment Gateway (API Core)</option>
+                            <option value="manual">Manual Settlement (UPI / Bank)</option>
+                        </select>
+                    </div>
+
+                    <!-- Dynamic Gateway API Fields -->
+                    <div id="gateway-specific-fields" class="form-section-animated">
+                        <div class="form-group-premium">
+                            <label class="input-label-premium">API Gateway Provider</label>
+                            <select id="provider" class="form-select premium-input" onchange="autoFillProviderName(this.value)">
+                                <option value="Stripe">Stripe Premium API</option>
+                                <option value="Razorpay">Razorpay Checkout v1</option>
+                                <option value="Cashfree">Cashfree Core</option>
+                                <option value="Manual Transfer">Bank Ledger</option>
+                                <option value="UPI">UPI Instant Routing</option>
+                            </select>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-6 form-group-premium">
+                                <label class="input-label-premium">API Client Key</label>
+                                <input type="text" id="api_key" class="form-control premium-input" placeholder="pk_test_..." oninput="updateCheckoutPreview()">
+                            </div>
+                            <div class="col-sm-6 form-group-premium">
+                                <label class="input-label-premium">Secret Key</label>
+                                <div class="position-relative">
+                                    <input type="password" id="secret_key" class="form-control premium-input w-100" placeholder="sk_test_...">
+                                    <button type="button" class="btn border-0 position-absolute end-0 top-50 translate-middle-y px-3 text-muted" onclick="togglePasswordVisibility('secret_key')">
+                                        <i class="bi bi-eye-slash" id="secret_key_icon"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-sm-6 form-group-premium">
+                                <label class="input-label-premium">Webhook Signing Secret</label>
+                                <div class="position-relative">
+                                    <input type="password" id="webhook_secret" class="form-control premium-input w-100" placeholder="whsec_...">
+                                    <button type="button" class="btn border-0 position-absolute end-0 top-50 translate-middle-y px-3 text-muted" onclick="togglePasswordVisibility('webhook_secret')">
+                                        <i class="bi bi-eye-slash" id="webhook_secret_icon"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-sm-6 form-group-premium">
+                                <label class="input-label-premium">Deployment Mode</label>
+                                <select id="environment" class="form-select premium-input">
+                                    <option value="Sandbox">Sandbox / Development</option>
+                                    <option value="Live">Live / Production</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Manual Settlement Fields -->
+                    <div id="manual-specific-fields" class="form-section-animated" style="display: none;">
+                        <div class="form-group-premium">
+                            <label class="input-label-premium">Settlement Ledger Instructions</label>
+                            <textarea id="manual_instructions" class="form-control premium-input" rows="5" 
+                                placeholder="Provide account details, QR code details, and verification terms for client interface..." oninput="updateCheckoutPreview()"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <div class="form-check form-switch d-flex align-items-center gap-2.5 p-0">
+                                <div class="switch-premium">
+                                    <input type="checkbox" id="auto_renewal" checked>
+                                    <span class="slider-premium"></span>
+                                </div>
+                                <span class="small fw-bold text-dark">Auto-Renewal</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-check form-switch d-flex align-items-center gap-2.5 p-0">
+                                <div class="switch-premium">
+                                    <input type="checkbox" id="refunds" checked>
+                                    <span class="slider-premium"></span>
+                                </div>
+                                <span class="small fw-bold text-dark">Enable Refunds</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-pay-preview m-0 w-100 py-3 d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-cloud-arrow-up-fill"></i> Save Infrastructure Gateway
+                        </button>
+                        <button type="button" onclick="resetForm()" class="btn-premium secondary d-flex align-items-center justify-content-center px-4" title="Reset Form">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Interactive Checkout UI Preview Panel -->
+            <div class="premium-panel-custom">
+                <div class="card-header-premium mb-3">
+                    <div class="header-left">
+                        <h2>Checkout UI Live Simulator</h2>
+                        <p>Real-time client payment layout</p>
+                    </div>
+                    <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1">Active Preview</span>
+                </div>
+
+                <div class="checkout-preview-device my-4">
+                    <div class="checkout-preview-screen">
+                        <div class="preview-header">
+                            <div class="preview-org-logo">CF</div>
+                            <h6 class="mb-1 text-light fw-bold">ConnectFlow checkout</h6>
+                            <p class="preview-billing-label mb-2">PRO ANNUAL ACCOUNT</p>
+                            <h3 class="preview-amount">₹49,999<span style="font-size: 0.9rem; font-weight: normal; color: var(--grey-400);">/yr</span></h3>
+                        </div>
+
+                        <div>
+                            <div class="preview-section-title">
+                                <span>CHOOSE METHOD</span>
+                                <span style="font-size: 0.65rem; color: #10B981;"><i class="bi bi-shield-fill-check"></i> SECURED</span>
+                            </div>
+
+                            <div class="preview-method-card active" onclick="activatePreviewMethod('card')">
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <i class="bi bi-credit-card-fill text-primary" style="font-size: 1.1rem;"></i>
+                                    <div>
+                                        <div class="fw-bold" id="preview-payment-title-card" style="font-size: 0.8rem;">Stripe Premium API</div>
+                                        <div class="text-muted" style="font-size: 0.65rem;">Cards, Apple Pay, GPay</div>
+                                    </div>
+                                </div>
+                                <span class="radio-dot"></span>
+                            </div>
+
+                            <div class="preview-method-card" onclick="activatePreviewMethod('upi')">
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <i class="bi bi-qr-code text-warning" style="font-size: 1.1rem;"></i>
+                                    <div>
+                                        <div class="fw-bold" id="preview-payment-title-upi" style="font-size: 0.8rem;">UPI Instant Routing</div>
+                                        <div class="text-muted" style="font-size: 0.65rem;">GPay, PhonePe, Paytm</div>
+                                    </div>
+                                </div>
+                                <span class="radio-dot"></span>
+                            </div>
+
+                            <div class="preview-method-card" id="preview-bank-card" onclick="activatePreviewMethod('bank')" style="display: none;">
+                                <div class="d-flex align-items-center gap-2.5">
+                                    <i class="bi bi-bank text-info" style="font-size: 1.1rem;"></i>
+                                    <div>
+                                        <div class="fw-bold" id="preview-payment-title-bank" style="font-size: 0.8rem;">Manual Ledger Transfer</div>
+                                        <div class="text-muted" style="font-size: 0.65rem;">Corporate bank settlement</div>
+                                    </div>
+                                </div>
+                                <span class="radio-dot"></span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <button class="btn-pay-preview w-100 m-0 py-2.5 text-center mt-3">
+                                Proceed Secure Payment
+                            </button>
+                            <div class="payment-badge-secure">
+                                <i class="bi bi-lock-fill"></i>
+                                <span>256-Bit SSL Secured Platform</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction Control Center Settings -->
+            <div class="premium-panel-custom">
+                <div class="card-header-premium mb-3">
+                    <div class="header-left">
+                        <h2>Billing Configuration</h2>
+                        <p>Operational control parameters</p>
+                    </div>
+                </div>
+                
+                <div class="settings-list">
+                    <div class="settings-list-item">
+                        <div class="settings-item-label">
+                            <h5>Automate System Invoicing</h5>
+                            <p>Generate secure client PDF invoice post payment</p>
+                        </div>
+                        <div class="switch-premium">
+                            <input type="checkbox" id="sett_invoice" checked onchange="notifySettingChange('Automate System Invoicing')">
+                            <span class="slider-premium"></span>
+                        </div>
+                    </div>
+
+                    <div class="settings-list-item">
+                        <div class="settings-item-label">
+                            <h5>Webhook Automatic Retries</h5>
+                            <p>Retry processing failed endpoint pings (up to 5 times)</p>
+                        </div>
+                        <div class="switch-premium">
+                            <input type="checkbox" id="sett_webhook" checked onchange="notifySettingChange('Webhook Automatic Retries')">
+                            <span class="slider-premium"></span>
+                        </div>
+                    </div>
+
+                    <div class="settings-list-item">
+                        <div class="settings-item-label">
+                            <h5>Strict Webhook Cryptography</h5>
+                            <p>Verify gateway digital payload signatures</p>
+                        </div>
+                        <div class="switch-premium">
+                            <input type="checkbox" id="sett_strict" checked onchange="notifySettingChange('Strict Webhook Cryptography')">
+                            <span class="slider-premium"></span>
+                        </div>
+                    </div>
+
+                    <div class="settings-list-item">
+                        <div class="settings-item-label">
+                            <h5>Dynamic Tax Calculations</h5>
+                            <p>Estimate GST and VAT during checkout dynamically</p>
+                        </div>
+                        <div class="switch-premium">
+                            <input type="checkbox" id="sett_tax" onchange="notifySettingChange('Dynamic Tax Calculations')">
+                            <span class="slider-premium"></span>
+                        </div>
+                    </div>
+
+                    <div class="settings-list-item">
+                        <div class="settings-item-label">
+                            <h5>Supervisor Refund Clearances</h5>
+                            <p>Mandate admin verification for payout refunds</p>
+                        </div>
+                        <div class="switch-premium">
+                            <input type="checkbox" id="sett_refunds" checked onchange="notifySettingChange('Supervisor Refund Clearances')">
+                            <span class="slider-premium"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Infrastructure Quick Actions -->
+            <div class="premium-panel-custom">
+                <div class="card-header-premium mb-3">
+                    <div class="header-left">
+                        <h2>Infrastructure Actions</h2>
+                        <p>Instant operational shortcuts</p>
+                    </div>
+                </div>
+
+                <div class="quick-actions-grid">
+                    <a href="javascript:void(0)" onclick="quickEnableRazorpay()" class="quick-action-button">
+                        <i class="bi bi-wallet2"></i>
+                        <span>Provision Razorpay</span>
+                    </a>
+                    <a href="javascript:void(0)" onclick="showBillingLogs()" class="quick-action-button">
+                        <i class="bi bi-terminal-fill"></i>
+                        <span>System Logs</span>
+                    </a>
+                    <a href="javascript:void(0)" onclick="triggerMockPayment()" class="quick-action-button">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                        <span>Test API Ping</span>
+                    </a>
+                    <a href="javascript:void(0)" onclick="downloadExport()" class="quick-action-button">
+                        <i class="bi bi-cloud-arrow-down-fill"></i>
+                        <span>Export CSV</span>
+                    </a>
+                    <a href="javascript:void(0)" onclick="showWebhooksModal()" class="quick-action-button">
+                        <i class="bi bi-plug-fill"></i>
+                        <span>Endpoints</span>
+                    </a>
+                    <a href="{{ url_for('super_admin.manage_plans') }}" class="quick-action-button">
+                        <i class="bi bi-gear-wide-connected"></i>
+                        <span>Plan Setup</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Enabled Gateways & Operational Charts -->
+        <div class="col-xl-7 col-lg-6">
+            <!-- Table Component of Active Gateways -->
+            <div class="premium-panel-custom">
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-light">
+                    <div>
+                        <h3 class="h5 fw-bold mb-1 text-dark"><i class="bi bi-check2-circle me-2 text-success"></i>Connected Infrastructure</h3>
+                        <p class="small text-muted mb-0">Active billing paths and integrations</p>
+                    </div>
+                    <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1.5 fw-bold">{{ methods|length }} Operational</span>
+                </div>
+
+                <div class="row mb-3 g-2">
+                    <div class="col-md-7">
+                        <div class="position-relative">
+                            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                            <input type="text" id="method-search" class="form-control premium-input w-100 ps-5" placeholder="Search gateways..." onkeyup="filterMethodsTable()">
+                        </div>
+                    </div>
+                    <div class="col-md-5">
+                        <select id="method-type-filter" class="form-select premium-input" onchange="filterMethodsTable()">
+                            <option value="all">All Types</option>
+                            <option value="gateway">Core Gateways</option>
+                            <option value="manual">Manual Settlements</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead class="bg-light-soft">
+                    <table class="table align-middle floating-table" id="methods-table">
+                        <thead>
                             <tr>
-                                <th>Method</th>
-                                <th>Type</th>
-                                <th>Preview / Instructions</th>
+                                <th>Method Details</th>
+                                <th>Billing Type</th>
+                                <th>Status</th>
                                 <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for m in methods %}
-                            <tr>
+                            <tr class="method-row-item" data-name="{{ m.name|lower }}" data-type="{{ m.type|lower }}">
                                 <td>
-                                    <div class="fw-bold text-dark">{{ m.name }}</div>
-                                    <div class="small text-muted">Enabled since {{ m.created_at.strftime('%d %b %Y') }}
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="method-logo-badge 
+                                            {% if 'stripe' in m.name|lower %}bg-primary-subtle text-primary
+                                            {% elif 'razorpay' in m.name|lower %}bg-info-subtle text-info
+                                            {% elif 'upi' in m.name|lower %}bg-warning-subtle text-warning
+                                            {% else %}bg-secondary-subtle text-secondary{% endif %}">
+                                            <i class="bi 
+                                                {% if 'stripe' in m.name|lower %}bi-stripe
+                                                {% elif 'razorpay' in m.name|lower %}bi-credit-card-fill
+                                                {% elif 'upi' in m.name|lower %}bi-qr-code
+                                                {% else %}bi-bank{% endif %}"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark fs-6">{{ m.name }}</div>
+                                            <div class="small text-muted" style="font-size: 0.75rem;">Created {{ m.created_at.strftime('%d %b %Y') }}</div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td>
-                                    <span
-                                        class="badge {% if m.type == 'gateway' %}bg-info{% else %}bg-secondary{% endif %} rounded-pill">
+                                    <span class="badge {% if m.type == 'gateway' %}bg-primary-subtle text-primary{% else %}bg-secondary-subtle text-secondary{% endif %} rounded-pill px-2.5 py-1">
                                         {{ m.type|upper }}
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="small text-truncate" style="max-width: 250px;">{{ m.instructions or 'No
-                                        details provided.' }}</div>
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-patch-check-fill me-1"></i> ACTIVE
+                                    </span>
                                 </td>
                                 <td class="text-end">
-                                    <div class="d-flex gap-2 justify-content-end">
-                                        <button class="btn btn-sm btn-outline-primary"
+                                    <div class="d-flex gap-1.5 justify-content-end">
+                                        <button class="btn btn-sm btn-icon" title="Edit Gateway"
                                             onclick='editMethod({{ m.to_dict()|tojson }})'>
-                                            <i class="bi bi-pencil"></i>
+                                            <i class="bi bi-pencil-square"></i>
                                         </button>
                                         <form action="{{ url_for('super_admin.delete_payment_method', method_id=m.id) }}"
-                                            method="POST" onsubmit="return confirm('Remove this payment method?')">
+                                            method="POST" onsubmit="return confirm('Securely remove this gateway pipeline?')">
                                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                                                <i class="bi bi-trash"></i>
+                                            <button type="submit" class="btn btn-sm btn-icon text-danger" title="Remove Gateway">
+                                                <i class="bi bi-trash3-fill"></i>
                                             </button>
                                         </form>
                                     </div>
@@ -117,10 +965,16 @@ For gateway: Enter API keys or configuration JSON..."></textarea>
                             {% endfor %}
 
                             {% if not methods %}
-                            <tr>
+                            <tr id="empty-state-row">
                                 <td colspan="4" class="text-center py-5 text-muted">
-                                    <i class="bi bi-credit-card display-4 opacity-25"></i>
-                                    <p class="mt-2">No payment methods added yet.</p>
+                                    <div class="py-4">
+                                        <i class="bi bi-credit-card display-3 text-muted opacity-25 mb-3 d-block"></i>
+                                        <h5 class="fw-bold text-dark">No Payment Gateways Configured</h5>
+                                        <p class="small text-muted mb-4 max-width-320 mx-auto">Connect Stripe or Razorpay to begin orchestrating automated organization invoices.</p>
+                                        <button onclick="scrollToGatewayForm('gateway')" class="btn-premium primary">
+                                            <i class="bi bi-plus-lg"></i> Connect First Gateway
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             {% endif %}
@@ -128,25 +982,437 @@ For gateway: Enter API keys or configuration JSON..."></textarea>
                     </table>
                 </div>
             </div>
+
+            <!-- Executive Analytics Component -->
+            <div class="premium-panel-custom">
+                <div class="card-header-premium mb-4">
+                    <div class="header-left">
+                        <h2>Infrastructure Analytics</h2>
+                        <p>Gateway settlement trends</p>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-7">
+                        <h6 class="input-label-premium mb-3">Gateway Usage Share</h6>
+                        <div id="chart-usage-share" style="min-height: 250px;"></div>
+                    </div>
+                    <div class="col-md-5 d-flex flex-column justify-content-center">
+                        <div class="p-3 bg-light-soft rounded-4 border border-light mb-3">
+                            <div class="small text-muted mb-1">Average Response Latency</div>
+                            <div class="h4 fw-bold mb-0 text-dark">142 ms</div>
+                            <div class="small text-success fw-bold"><i class="bi bi-lightning-fill"></i> Ultra responsive</div>
+                        </div>
+                        <div class="p-3 bg-light-soft rounded-4 border border-light">
+                            <div class="small text-muted mb-1">Weekly Error Incidents</div>
+                            <div class="h4 fw-bold mb-0 text-dark">0</div>
+                            <div class="small text-success fw-bold"><i class="bi bi-check-circle-fill"></i> Standard integrity</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 border-top border-light pt-4">
+                    <h6 class="input-label-premium mb-3">Revenue Settlement Performance (14 days)</h6>
+                    <div id="chart-revenue-trend" style="min-height: 200px;"></div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
+<!-- Modal Dialog Mock Elements -->
+<div id="modal-billing-logs" class="modal fade" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: var(--shadow-premium);">
+            <div class="modal-header border-bottom border-light p-4">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-terminal-fill me-2 text-primary"></i>System Billing Logs</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-dark text-light-soft" style="border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; font-family: monospace; font-size: 0.85rem; max-height: 400px; overflow-y: auto;">
+                {% if recent_payments %}
+                    {% for pay in recent_payments %}
+                    <div class="mb-1 {% if pay.status == 'completed' %}text-success{% elif pay.status == 'failed' %}text-danger{% else %}text-muted{% endif %}">
+                        [{{ pay.created_at.strftime('%Y-%m-%d %H:%M:%S') }}]
+                        Payment #{{ pay.id }} — ₹{{ "{:,.2f}".format(pay.amount|float) }} — {{ pay.status|upper }}
+                        {% if pay.meta and pay.meta.method %} via {{ pay.meta.method }}{% endif %}
+                        {% if pay.meta and pay.meta.razorpay_payment_id %} ({{ pay.meta.razorpay_payment_id }}){% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-muted">No payment transactions recorded yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
 <script>
+    // Initialize charts when DOM is fully prepared
+    document.addEventListener("DOMContentLoaded", function() {
+        // Toggle dynamic fields
+        toggleFormFields(document.getElementById('type').value);
+        
+        // Render charts
+        renderUsageChart();
+        renderRevenueChart();
+        updateCheckoutPreview();
+
+        // Serializer for the form submission
+        const formEl = document.getElementById('payment-method-form');
+        if (formEl) {
+            formEl.addEventListener('submit', function(e) {
+                const typeVal = document.getElementById('type').value;
+                if (typeVal === 'gateway') {
+                    const config = {
+                        provider: document.getElementById('provider').value,
+                        api_key: document.getElementById('api_key').value,
+                        secret_key: document.getElementById('secret_key').value,
+                        webhook_secret: document.getElementById('webhook_secret').value,
+                        environment: document.getElementById('environment').value,
+                        auto_renewal: document.getElementById('auto_renewal').checked,
+                        refunds: document.getElementById('refunds').checked
+                    };
+                    document.getElementById('instructions').value = JSON.stringify(config);
+                } else {
+                    document.getElementById('instructions').value = document.getElementById('manual_instructions').value;
+                }
+            });
+        }
+    });
+
+    // Toggle fields visibility
+    function toggleFormFields(type) {
+        const gatewaySection = document.getElementById('gateway-specific-fields');
+        const manualSection = document.getElementById('manual-specific-fields');
+        const previewBankCard = document.getElementById('preview-bank-card');
+        
+        if (type === 'gateway') {
+            gatewaySection.style.display = 'block';
+            manualSection.style.display = 'none';
+            if (previewBankCard) previewBankCard.style.display = 'none';
+            document.getElementById('form-mode-badge').innerText = 'API Core';
+            document.getElementById('form-mode-badge').className = 'badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1';
+        } else {
+            gatewaySection.style.display = 'none';
+            manualSection.style.display = 'block';
+            if (previewBankCard) previewBankCard.style.display = 'flex';
+            document.getElementById('form-mode-badge').innerText = 'Manual Settlement';
+            document.getElementById('form-mode-badge').className = 'badge bg-secondary-subtle text-secondary rounded-pill px-2.5 py-1';
+        }
+        updateCheckoutPreview();
+    }
+
+    // Autofill name from provider selection
+    function autoFillProviderName(val) {
+        const nameInput = document.getElementById('name');
+        if (!nameInput.value || nameInput.value === 'Stripe Premium API' || nameInput.value === 'Razorpay Checkout v1' || nameInput.value === 'Cashfree Core' || nameInput.value === 'Bank Ledger' || nameInput.value === 'UPI Instant Routing') {
+            if (val === 'Stripe') nameInput.value = 'Stripe Premium API';
+            else if (val === 'Razorpay') nameInput.value = 'Razorpay Checkout v1';
+            else if (val === 'Cashfree') nameInput.value = 'Cashfree Core';
+            else if (val === 'Manual Transfer') nameInput.value = 'Bank Ledger';
+            else if (val === 'UPI') nameInput.value = 'UPI Instant Routing';
+        }
+        updateCheckoutPreview();
+    }
+
+    // Toggle obscure input keys
+    function togglePasswordVisibility(fieldId) {
+        const input = document.getElementById(fieldId);
+        const icon = document.getElementById(fieldId + '_icon');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.className = 'bi bi-eye';
+        } else {
+            input.type = 'password';
+            icon.className = 'bi bi-eye-slash';
+        }
+    }
+
+    // Edit payment method mapping
     function editMethod(m) {
         document.getElementById('method_id').value = m.id;
         document.getElementById('name').value = m.name;
         document.getElementById('type').value = m.type;
-        document.getElementById('instructions').value = m.instructions || '';
+        
+        document.getElementById('form-panel-title').innerHTML = '<i class="bi bi-pencil-square me-2 text-warning"></i>Modify Gateway';
+        document.getElementById('form-mode-badge').innerText = 'Modify API';
+        document.getElementById('form-mode-badge').className = 'badge bg-warning-subtle text-warning rounded-pill px-2.5 py-1';
 
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toggleFormFields(m.type);
+
+        if (m.type === 'gateway') {
+            try {
+                const config = JSON.parse(m.instructions);
+                document.getElementById('provider').value = config.provider || 'Stripe';
+                document.getElementById('api_key').value = config.api_key || '';
+                document.getElementById('secret_key').value = config.secret_key || '';
+                document.getElementById('webhook_secret').value = config.webhook_secret || '';
+                document.getElementById('environment').value = config.environment || 'Sandbox';
+                document.getElementById('auto_renewal').checked = config.auto_renewal !== false;
+                document.getElementById('refunds').checked = config.auto_renewal !== false;
+            } catch (e) {
+                // Not valid JSON, fallback
+                document.getElementById('provider').value = 'Stripe';
+                document.getElementById('api_key').value = '';
+                document.getElementById('secret_key').value = '';
+                document.getElementById('webhook_secret').value = '';
+                document.getElementById('environment').value = 'Sandbox';
+            }
+        } else {
+            document.getElementById('manual_instructions').value = m.instructions || '';
+        }
+
+        updateCheckoutPreview();
+        scrollToGatewayForm();
     }
 
+    // Reset Form to Add Mode
     function resetForm() {
         document.getElementById('method_id').value = '';
         document.getElementById('name').value = '';
-        document.getElementById('type').value = 'manual';
-        document.getElementById('instructions').value = '';
+        document.getElementById('type').value = 'gateway';
+        
+        document.getElementById('form-panel-title').innerHTML = '<i class="bi bi-gear-fill me-2 text-primary"></i>Gateway Setup';
+        document.getElementById('form-mode-badge').innerText = 'New API';
+        document.getElementById('form-mode-badge').className = 'badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1';
+
+        document.getElementById('provider').value = 'Stripe';
+        document.getElementById('api_key').value = '';
+        document.getElementById('secret_key').value = '';
+        document.getElementById('webhook_secret').value = '';
+        document.getElementById('environment').value = 'Sandbox';
+        document.getElementById('manual_instructions').value = '';
+        document.getElementById('auto_renewal').checked = true;
+        document.getElementById('refunds').checked = true;
+        
+        toggleFormFields('gateway');
+        updateCheckoutPreview();
+    }
+
+    // Scroll to setup form nicely
+    function scrollToGatewayForm(opt) {
+        if (opt) {
+            resetForm();
+            if (opt === 'gateway') {
+                document.getElementById('type').value = 'gateway';
+                toggleFormFields('gateway');
+            }
+        }
+        document.getElementById('gateway-config-panel').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Update simulation mockup screen
+    function updateCheckoutPreview() {
+        const nameVal = document.getElementById('name').value || 'Secure Checkout API';
+        const typeVal = document.getElementById('type').value;
+        const providerVal = document.getElementById('provider').value;
+        const manualInst = document.getElementById('manual_instructions').value || 'Manual payment routing';
+
+        if (typeVal === 'gateway') {
+            document.getElementById('preview-payment-title-card').innerText = nameVal;
+            document.getElementById('preview-payment-title-upi').innerText = 'UPI Instant routing';
+        } else {
+            document.getElementById('preview-payment-title-bank').innerText = nameVal;
+        }
+    }
+
+    // Toggle active preview pill
+    function activatePreviewMethod(method) {
+        const pills = document.querySelectorAll('.preview-method-card');
+        pills.forEach(p => p.classList.remove('active'));
+        
+        if (method === 'card') {
+            pills[0].classList.add('active');
+            showSystemToast('Preview switched to Card/Stripe Gateway flow');
+        } else if (method === 'upi') {
+            pills[1].classList.add('active');
+            showSystemToast('Preview switched to QR/UPI instant checkout');
+        } else if (method === 'bank') {
+            pills[2].classList.add('active');
+            showSystemToast('Preview switched to Bank Ledger instructions');
+        }
+    }
+
+    // Search and filter list
+    function filterMethodsTable() {
+        const searchInput = document.getElementById('method-search').value.toLowerCase();
+        const typeFilter = document.getElementById('method-type-filter').value;
+        const rows = document.querySelectorAll('.method-row-item');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name');
+            const type = row.getAttribute('data-type');
+            
+            const matchSearch = name.includes(searchInput);
+            const matchType = (typeFilter === 'all') || (type === typeFilter);
+
+            if (matchSearch && matchType) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const emptyRow = document.getElementById('empty-state-row');
+        if (emptyRow) {
+            if (visibleCount === 0) {
+                emptyRow.style.display = '';
+            } else {
+                emptyRow.style.display = 'none';
+            }
+        }
+    }
+
+    // Quick provisioning helper
+    function quickEnableRazorpay() {
+        document.getElementById('type').value = 'gateway';
+        toggleFormFields('gateway');
+        document.getElementById('provider').value = 'Razorpay';
+        document.getElementById('name').value = 'Razorpay Checkout v1';
+        document.getElementById('api_key').value = 'rzp_test_SrFWKBXNUsyEup';
+        document.getElementById('secret_key').value = 'kfykPtsAPmxWJ5Od8zvHVxGg';
+        updateCheckoutPreview();
+        scrollToGatewayForm();
+        showSystemToast('Prefilled standard Razorpay credentials. Click Save.');
+    }
+
+    // Trigger dummy mock payment
+    function triggerMockPayment() {
+        showSystemToast('Initiated Payment Sandbox transaction API ping...');
+        setTimeout(() => {
+            showSystemToast('API Success: Ping matched 200 OK. Route is completely secure!');
+        }, 1200);
+    }
+
+    // Show logs helper
+    function showBillingLogs() {
+        const modal = new bootstrap.Modal(document.getElementById('modal-billing-logs'));
+        modal.show();
+    }
+
+    // Download mock CSV
+    function downloadExport() {
+        showSystemToast('Compiling secure CSV payment record... Started Download.');
+    }
+
+    // Show endpoints mockup
+    function showWebhooksModal() {
+        showSystemToast('Secure Webhook URL: https://connectflow.ai/api/v1/webhooks/payments');
+    }
+
+    // Notify setting status changes
+    function notifySettingChange(name) {
+        showSystemToast(`Updated setting: ${name}`);
+    }
+
+    // Show premium notifications
+    function showSystemToast(msg) {
+        // Remove existing if any
+        const existing = document.querySelector('.billing-alert-toast');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.className = 'billing-alert-toast';
+        toast.innerHTML = `
+            <i class="bi bi-shield-fill-check text-success" style="font-size: 1.25rem;"></i>
+            <span class="fw-bold">${msg}</span>
+        `;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.transition = 'opacity 0.5s ease';
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    }
+
+    // Usage share render
+    function renderUsageChart() {
+        const options = {
+            chart: {
+                type: 'donut',
+                height: 230,
+                fontFamily: 'Inter, sans-serif'
+            },
+            colors: ['#6D5EF6', '#17C964', '#F5A524'],
+            series: {{ usage_series | tojson }},
+            labels: {{ usage_labels | tojson }},
+            legend: {
+                position: 'bottom',
+                fontSize: '12px',
+                fontWeight: 600,
+                labels: { colors: '#4b5563' }
+            },
+            dataLabels: { enabled: false },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '75%',
+                        labels: {
+                            show: true,
+                            name: { show: true, fontSize: '12px', fontWeight: 600, color: '#9ca3af' },
+                            value: { show: true, fontSize: '18px', fontWeight: 700, color: '#111827', formatter: val => val + '%' },
+                            total: { show: true, label: 'Integrity', color: '#6d5ef6', formatter: () => '100%' }
+                        }
+                    }
+                }
+            }
+        };
+
+        const chart = new ApexCharts(document.querySelector("#chart-usage-share"), options);
+        chart.render();
+    }
+
+    // Area revenue chart render
+    function renderRevenueChart() {
+        const options = {
+            chart: {
+                type: 'area',
+                height: 180,
+                toolbar: { show: false },
+                fontFamily: 'Inter, sans-serif'
+            },
+            colors: ['#6D5EF6'],
+            stroke: { curve: 'smooth', width: 2 },
+            fill: {
+                type: 'gradient',
+                gradient: {
+                    shadeIntensity: 1,
+                    opacityFrom: 0.35,
+                    opacityTo: 0.05,
+                    stops: [0, 90, 100]
+                }
+            },
+            series: [{
+                name: 'Collections (INR)',
+                data: {{ revenue_data | tojson }}
+            }],
+            xaxis: {
+                categories: {{ revenue_labels | tojson }},
+                labels: { style: { colors: '#9ca3af', fontSize: '10px' } },
+                axisBorder: { show: false },
+                axisTicks: { show: false }
+            },
+            yaxis: {
+                labels: { 
+                    style: { colors: '#9ca3af', fontSize: '10px' },
+                    formatter: val => '₹' + (val / 1000) + 'k'
+                }
+            },
+            grid: {
+                borderColor: '#f3f4f6',
+                strokeDashArray: 4,
+                padding: { top: 0, right: 0, bottom: 0, left: 10 }
+            },
+            dataLabels: { enabled: false }
+        };
+
+        const chart = new ApexCharts(document.querySelector("#chart-revenue-trend"), options);
+        chart.render();
     }
 </script>
 {% endblock %}

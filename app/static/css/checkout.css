@@ -1,0 +1,361 @@
+/* ConnectFlow Premium Checkout Styles */
+
+:root {
+    --primary-color: #111827;
+    --primary-light: rgba(17, 24, 39, 0.03);
+    --primary-glow: rgba(17, 24, 39, 0.08);
+    --card-bg: #ffffff;
+    --text-main: #111827;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --bg-light: #f9fafb;
+    --radius-card: 24px;
+    --radius-input: 12px;
+    --shadow-premium: 0 10px 30px rgba(0, 0, 0, 0.03);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Checkout Layout Grid */
+.checkout-grid {
+    display: flex;
+    gap: 2rem;
+    align-items: flex-start;
+    width: 100%;
+}
+
+.checkout-left {
+    flex: 0 0 65%;
+    max-width: 65%;
+    min-width: 0;
+}
+
+.checkout-right {
+    flex: 0 0 35%;
+    max-width: 35%;
+    position: sticky;
+    top: calc(80px + 2rem); /* Sticks below the topbar */
+}
+
+/* Premium Card wrapper */
+.checkout-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-premium);
+    padding: 2.5rem;
+    border: 1px solid var(--grey-100);
+}
+
+/* Elegant Section Titles */
+.section-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.75rem;
+}
+
+.section-number {
+    background: var(--text-main);
+    color: #ffffff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Payment Gateway Selector Grid */
+.gateway-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2.5rem;
+}
+
+.gateway-option {
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    background: #ffffff;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.gateway-option:hover {
+    border-color: var(--text-main);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.04);
+}
+
+.gateway-input {
+    display: none;
+}
+
+.gateway-input:checked + .gateway-option {
+    border-color: var(--text-main);
+    background: var(--primary-light);
+    box-shadow: 0 0 0 4px var(--primary-glow);
+}
+
+.gateway-input:checked + .gateway-option::after {
+    content: '\F26A'; /* Bootstrap Icon: check-circle-fill */
+    font-family: 'bootstrap-icons';
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    color: var(--text-main);
+    font-size: 1.35rem;
+    line-height: 1;
+}
+
+/* Rebuilt Form Layout & Input Styling */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.form-group.full-width {
+    grid-column: span 2;
+}
+
+.form-label {
+    display: block;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-main);
+    text-transform: uppercase;
+    letter-spacing: 0.75px;
+    margin: 0;
+}
+
+.form-input {
+    width: 100%;
+    height: 50px;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-input);
+    background: var(--bg-light);
+    color: var(--text-main);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: var(--transition-smooth);
+}
+
+.form-input::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--text-main);
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(17, 24, 39, 0.05);
+}
+
+/* Beautiful Readonly Inputs */
+.readonly-input {
+    background-color: #f3f4f6 !important;
+    color: #4b5563 !important;
+    border-color: #e5e7eb !important;
+    cursor: not-allowed;
+    font-weight: 600;
+}
+
+.readonly-input:focus {
+    box-shadow: none !important;
+    border-color: #e5e7eb !important;
+}
+
+/* Premium Custom Select Fields */
+select.form-input {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23111827' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 14px;
+    padding-right: 2.5rem;
+    cursor: pointer;
+}
+
+/* Payment Method Pills */
+.payment-methods {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: none; /* Hide scrollbar Firefox */
+}
+
+.payment-methods::-webkit-scrollbar {
+    display: none; /* Hide scrollbar Chrome/Safari */
+}
+
+.method-pill {
+    padding: 0.65rem 1.25rem;
+    background: var(--bg-light);
+    border: 1px solid var(--border-color);
+    border-radius: 100px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: var(--transition-smooth);
+}
+
+.method-pill:hover {
+    color: var(--text-main);
+    border-color: var(--text-main);
+}
+
+.method-pill.active {
+    background: var(--text-main);
+    color: #ffffff;
+    border-color: var(--text-main);
+    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.15);
+}
+
+/* Order Summary (Right Column) */
+.summary-sticky {
+    position: sticky;
+    top: calc(80px + 2rem);
+}
+
+.summary-card {
+    background: var(--card-bg);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-premium);
+    padding: 2.5rem;
+    border: 1px solid var(--grey-100);
+}
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.15rem;
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.summary-row .price-val {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.summary-row.total {
+    border-top: 1px solid var(--border-color);
+    padding-top: 1.5rem;
+    margin-top: 1.5rem;
+    color: var(--text-main);
+    font-weight: 800;
+    font-size: 1.65rem;
+}
+
+.summary-row.total span:last-child {
+    font-family: 'Outfit', sans-serif;
+    color: var(--text-main);
+}
+
+/* Solid Black Primary CTA Button */
+.btn-cta {
+    background: var(--text-main);
+    color: #ffffff;
+    height: 52px;
+    border-radius: 12px;
+    border: none;
+    width: 100%;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    box-shadow: 0 4px 12px rgba(17, 24, 39, 0.1);
+}
+
+.btn-cta:hover:not(:disabled) {
+    background: #1f2937;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(17, 24, 39, 0.2);
+}
+
+.btn-cta:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.btn-cta:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* Elegant Secured Badge */
+.secure-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #10b981;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 1.5rem;
+}
+
+/* Responsive CSS Overrides */
+@media (max-width: 1024px) {
+    .checkout-grid {
+        flex-direction: column;
+    }
+    .checkout-left, .checkout-right {
+        flex: 100%;
+        max-width: 100%;
+        width: 100%;
+    }
+    .checkout-right {
+        position: static;
+        margin-top: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .checkout-card, .summary-card {
+        padding: 1.5rem;
+    }
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    .form-group.full-width {
+        grid-column: span 1;
+    }
+    .gateway-grid {
+        grid-template-columns: 1fr;
+    }
+}

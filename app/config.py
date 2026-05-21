@@ -46,6 +46,8 @@ class Config:
     else:
         SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = False  # Disabled — terminal monitor tracks DB queries via events
+
 
     # Twilio
     TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
@@ -65,6 +67,7 @@ class Config:
     DEFAULT_ADMIN_PASSWORD = os.environ.get("DEFAULT_ADMIN_PASSWORD", "")
 
     BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
+    PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", BASE_URL)
 
     # Session / security
     from datetime import timedelta
@@ -85,6 +88,8 @@ class Config:
         "https://accounts.google.com/.well-known/openid-configuration",
     )
 
+    # Hooman Labs — API Key & From Number are per-org (DB only, not in config)
+
     # Hooman Labs Agents
     HOOMAN_AGENT_HINDI = os.environ.get("HOOMAN_AGENT_HINDI", "")
     HOOMAN_AGENT_ENGLISH = os.environ.get("HOOMAN_AGENT_ENGLISH", "")
@@ -92,6 +97,13 @@ class Config:
     HOOMAN_AGENT_KANNADA = os.environ.get("HOOMAN_AGENT_KANNADA", "")
     HOOMAN_AGENT_TELUGU = os.environ.get("HOOMAN_AGENT_TELUGU", "")
     HOOMAN_CAMPAIGN_ID = os.environ.get("HOOMAN_CAMPAIGN_ID", "AvltYGFZt3IDKEsX9uO7")
+    HOOMAN_CAMPAIGN_ID_TELUGU = os.environ.get("HOOMAN_CAMPAIGN_ID_TELUGU", "")
+    HOOMAN_CAMPAIGN_ID_MALAYALAM = os.environ.get("HOOMAN_CAMPAIGN_ID_MALAYALAM", "")
+    HOOMAN_CAMPAIGN_ID_MARATHI = os.environ.get("HOOMAN_CAMPAIGN_ID_MARATHI", "")
+    HOOMAN_CAMPAIGN_ID_TAMIL = os.environ.get("HOOMAN_CAMPAIGN_ID_TAMIL", "")
+    HOOMAN_CAMPAIGN_ID_KANNADA = os.environ.get("HOOMAN_CAMPAIGN_ID_KANNADA", "")
+    HOOMAN_CAMPAIGN_ID_HINDI = os.environ.get("HOOMAN_CAMPAIGN_ID_HINDI", "")
+    HOOMAN_CAMPAIGN_ID_ENGLISH = os.environ.get("HOOMAN_CAMPAIGN_ID_ENGLISH", "")
 
     HOOMAN_AGENT_MARATHI = os.environ.get("HOOMAN_AGENT_MARATHI", "")
     HOOMAN_AGENT_PUNJABI = os.environ.get("HOOMAN_AGENT_PUNJABI", "")
@@ -99,3 +111,7 @@ class Config:
     HOOMAN_AGENT_MALAYALAM = os.environ.get("HOOMAN_AGENT_MALAYALAM", "")
     HOOMAN_AGENT_VOICE_CALL = os.environ.get("HOOMAN_AGENT_VOICE_CALL", "")
     HOOMAN_ORGANIZATION_ID = os.environ.get("HOOMAN_ORGANIZATION_ID", "")
+
+    # Razorpay
+    RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
+    RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")

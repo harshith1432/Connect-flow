@@ -1,152 +1,265 @@
-{% extends 'base.html' %}
-{% block title %}Manage Subscription Plans{% endblock %}
+{% extends "base_platform_premium.html" %}
+
+{% block title %}ConnectFlow | Plan Settings{% endblock %}
+{% block page_title %}Plan Settings{% endblock %}
+
 {% block content %}
-<div class="org-detail-container animate-in">
-    <!-- Breadcrumb Row -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <nav aria-label="breadcrumb">
-                <ul class="breadcrumb-premium d-flex align-items-center mb-0 p-0">
-                    <li class="breadcrumb-item-premium">
-                        <a href="{{ url_for('super_admin.dashboard') }}">
-                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50"><i
-                            class="bi bi-chevron-right small"></i></li>
-                    <li class="breadcrumb-item-premium active fw-bold text-dark">
-                        Plan Settings
-                    </li>
-                </ul>
-            </nav>
+<!-- KPI Summary Row -->
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Plans</span>
+            <div class="kpi-icon">
+                <i class="bi bi-gem"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ plans|length }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-stack"></i>
+            <span>Configured</span>
         </div>
     </div>
-
-    <div class="row g-4">
-        <!-- Add/Edit Plan Form -->
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm p-4 sticky-top" style="top: 20px;">
-                <h3 class="h5 fw-bold mb-4 text-primary"><i class="bi bi-plus-circle me-2"></i> Configure Plan</h3>
-                <form method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="plan_id" id="plan_id">
-
-                    <div class="mb-3">
-                        <label class="detail-label">Plan Name</label>
-                        <input type="text" name="name" id="name" class="form-control" placeholder="e.g. Pro Monthly"
-                            required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="detail-label">Price (INR)</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-0 text-muted">₹</span>
-                            <input type="number" step="0.01" name="price" id="price" class="form-control"
-                                placeholder="0.00" required>
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="detail-label">Billing Interval</label>
-                        <select name="billing_interval" id="billing_interval" class="form-select">
-                            <option value="monthly">Monthly</option>
-                            <option value="yearly">Yearly</option>
-                            <option value="one-time">One-time</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="detail-label">Description</label>
-                        <textarea name="description" id="description" class="form-control" rows="2"
-                            placeholder="Brief tagline..."></textarea>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="detail-label">Features (Comma separated)</label>
-                        <textarea name="features" id="features" class="form-control" rows="3"
-                            placeholder="Feature 1, Feature 2, ..."></textarea>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 fw-bold py-2 shadow-sm">
-                        <i class="bi bi-save me-2"></i> Save Plan
-                    </button>
-                    <button type="button" onclick="resetForm()" class="btn btn-light w-100 fw-bold mt-2 btn-sm">Clear
-                        Form</button>
-                </form>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Lowest Price</span>
+            <div class="kpi-icon">
+                <i class="bi bi-tag"></i>
             </div>
         </div>
-
-        <!-- Active Plans List -->
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm p-4">
-                <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
-                    <h3 class="h5 fw-bold mb-0 text-primary"><i class="bi bi-stack me-2"></i> Active Plans</h3>
-                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3">{{ plans|length }} Tiers</span>
-                </div>
-
-                <div class="row g-3">
-                    {% for plan in plans %}
-                    <div class="col-md-6 col-xl-4">
-                        <div class="stats-card-premium p-4 h-100 position-relative 
-                            {% if 'pro' in plan.name|lower %}plan-card-pro
-                            {% elif 'enterprise' in plan.name|lower %}plan-card-enterprise
-                            {% else %}plan-card-basic{% endif %}">
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div class="stats-icon-circle bg-primary-subtle text-primary">
-                                    <i class="bi bi-gem"></i>
-                                </div>
-                                <div class="dropdown">
-                                    <button class="btn btn-link text-muted p-0" data-bs-toggle="dropdown">
-                                        <i class="bi bi-three-dots-vertical"></i>
-                                    </button>
-                                    <ul class="dropdown-menu dropdown-menu-end shadow border-0">
-                                        <li><a class="dropdown-item" href="javascript:void(0)"
-                                                onclick='editPlan({{ plan.to_dict()|tojson }})'><i
-                                                    class="bi bi-pencil me-2"></i>Edit</a></li>
-                                        <li>
-                                            <hr class="dropdown-divider">
-                                        </li>
-                                        <li>
-                                            <form action="{{ url_for('super_admin.delete_plan', plan_id=plan.id) }}"
-                                                method="POST" onsubmit="return confirm('Delete this plan?')">
-                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                <button type="submit" class="dropdown-item text-danger"><i
-                                                        class="bi bi-trash me-2"></i>Delete</button>
-                                            </form>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-
-                            <h4 class="h5 fw-bold mb-1">{{ plan.name }}</h4>
-                            <div class="display-6 fw-bold text-dark mb-0">₹{{ "%.2f"|format(plan.price) }}</div>
-                            <div class="text-muted small text-uppercase fw-bold mb-3">/ {{ plan.billing_interval }}
-                            </div>
-
-                            <p class="small text-muted mb-3">{{ plan.description or 'No description provided.' }}</p>
-
-                            <div class="plan-features">
-                                <label class="detail-label x-small">Included Features:</label>
-                                {% for feat in plan.features %}
-                                <div class="small fw-semibold text-dark mb-1"><i
-                                        class="bi bi-check2 text-success me-2"></i>{{ feat }}</div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-
-                    {% if not plans %}
-                    <div class="col-12 text-center py-5">
-                        <i class="bi bi-clipboard-x display-1 text-muted opacity-25"></i>
-                        <p class="text-muted mt-3">No subscription plans created yet.</p>
-                    </div>
-                    {% endif %}
-                </div>
+        <div class="kpi-value">{% if plans %}₹{{ "%.0f"|format(lowest_price) }}{% else %}—{% endif %}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-arrow-down-right"></i>
+            <span>Entry Tier</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Highest Price</span>
+            <div class="kpi-icon">
+                <i class="bi bi-trophy"></i>
             </div>
+        </div>
+        <div class="kpi-value">{% if plans %}₹{{ "%.0f"|format(highest_price) }}{% else %}—{% endif %}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-arrow-up-right"></i>
+            <span>Premium Tier</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Billing Types</span>
+            <div class="kpi-icon">
+                <i class="bi bi-calendar-range"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ billing_types }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-check-circle"></i>
+            <span>Active</span>
         </div>
     </div>
 </div>
+
+<!-- Main Content Grid -->
+<div class="premium-layout-grid">
+    <!-- Left: Configure Plan Form -->
+    <div>
+        <div class="premium-panel" style="position: sticky; top: calc(var(--topbar-height) + 2rem);">
+            <div class="card-header-premium" style="margin-bottom: 1.5rem;">
+                <div class="header-left">
+                    <h2 id="form-title"><i class="bi bi-plus-circle me-2" style="font-size: 1rem;"></i>Create Plan</h2>
+                    <p>Configure subscription tiers</p>
+                </div>
+            </div>
+
+            <form method="POST" id="plan-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="plan_id" id="plan_id">
+
+                <div class="form-group">
+                    <label class="form-label">Plan Name</label>
+                    <input type="text" name="name" id="name" class="form-input" placeholder="e.g. Pro Monthly" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Price (INR)</label>
+                    <div style="position: relative;">
+                        <span style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--grey-400); font-weight: 700; font-size: 0.95rem;">₹</span>
+                        <input type="number" step="0.01" name="price" id="price" class="form-input" style="padding-left: 2.25rem;" placeholder="0.00" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Billing Interval</label>
+                    <select name="billing_interval" id="billing_interval" class="form-input" style="cursor: pointer;">
+                        <option value="monthly">Monthly</option>
+                        <option value="yearly">Yearly</option>
+                        <option value="one-time">One-time</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <textarea name="description" id="description" class="form-input" rows="2" placeholder="Brief tagline..." style="resize: vertical;"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Features (Comma separated)</label>
+                    <textarea name="features" id="features" class="form-input" rows="3" placeholder="Feature 1, Feature 2, ..." style="resize: vertical;"></textarea>
+                </div>
+
+                <button type="submit" class="btn-black" style="width: 100%; justify-content: center;">
+                    <i class="bi bi-save"></i> Save Plan
+                </button>
+                <button type="button" onclick="resetForm()" class="btn-secondary-premium" style="width: 100%; justify-content: center; margin-top: 0.75rem;">
+                    <i class="bi bi-x-lg"></i> Clear Form
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right: Plans List -->
+    <div>
+        <div class="premium-panel">
+            <div class="card-header-premium">
+                <div class="header-left">
+                    <h2>Active Plans</h2>
+                    <p>All configured subscription tiers</p>
+                </div>
+                <span class="badge-premium">{{ plans|length }} Tiers</span>
+            </div>
+
+            {% if plans %}
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem;">
+                {% for plan in plans %}
+                <div class="plan-tier-card" style="
+                    background: var(--white);
+                    border: 1px solid var(--grey-100);
+                    border-radius: 20px;
+                    padding: 1.5rem;
+                    transition: var(--transition-base);
+                    position: relative;
+                    overflow: hidden;
+                ">
+                    <!-- Accent Strip -->
+                    <div style="
+                        position: absolute; top: 0; left: 0; right: 0; height: 4px;
+                        background: {% if 'enterprise' in plan.name|lower %}linear-gradient(90deg, #6366f1, #8b5cf6){% elif 'pro' in plan.name|lower %}linear-gradient(90deg, #f59e0b, #ef4444){% else %}linear-gradient(90deg, #10b981, #22c55e){% endif %};
+                    "></div>
+
+                    <!-- Card Header -->
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.25rem;">
+                        <div class="kpi-icon" style="
+                            background: {% if 'enterprise' in plan.name|lower %}rgba(99, 102, 241, 0.1){% elif 'pro' in plan.name|lower %}rgba(245, 158, 11, 0.1){% else %}rgba(16, 185, 129, 0.1){% endif %};
+                            color: {% if 'enterprise' in plan.name|lower %}#6366f1{% elif 'pro' in plan.name|lower %}#f59e0b{% else %}#10b981{% endif %};
+                        ">
+                            <i class="bi {% if 'enterprise' in plan.name|lower %}bi-building{% elif 'pro' in plan.name|lower %}bi-rocket-takeoff{% else %}bi-box{% endif %}"></i>
+                        </div>
+                        <div class="dropdown">
+                            <button class="btn-icon" data-bs-toggle="dropdown" style="border: none; cursor: pointer;">
+                                <i class="bi bi-three-dots-vertical"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="javascript:void(0)" onclick='editPlan({{ plan.to_dict()|tojson }})'>
+                                        <i class="bi bi-pencil"></i> Edit Plan
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider" style="margin: 0.25rem 0; border-color: var(--grey-100);"></li>
+                                <li>
+                                    <form action="{{ url_for('super_admin.delete_plan', plan_id=plan.id) }}" method="POST" onsubmit="return confirm('Delete this plan permanently?')">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="dropdown-item" style="color: #ef4444 !important; width: 100%; border: none; background: none; cursor: pointer;">
+                                            <i class="bi bi-trash" style="color: #ef4444 !important;"></i> Delete Plan
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Plan Name -->
+                    <h4 style="font-family: var(--font-heading); font-size: 1.125rem; font-weight: 800; margin-bottom: 0.5rem; color: var(--black);">{{ plan.name }}</h4>
+
+                    <!-- Price -->
+                    <div style="margin-bottom: 0.25rem;">
+                        <span style="font-family: var(--font-heading); font-size: 2rem; font-weight: 800; color: var(--black); letter-spacing: -0.03em;">₹{{ "%.2f"|format(plan.price) }}</span>
+                    </div>
+                    <div style="font-size: 0.75rem; font-weight: 700; color: var(--grey-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem;">/ {{ plan.billing_interval }}</div>
+
+                    <!-- Description -->
+                    <p style="font-size: 0.875rem; color: var(--grey-500); line-height: 1.5; margin-bottom: 1.25rem; min-height: 2.5rem;">{{ plan.description or 'No description provided.' }}</p>
+
+                    <!-- Features -->
+                    {% if plan.features %}
+                    <div style="border-top: 1px solid var(--grey-100); padding-top: 1rem;">
+                        <div style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--grey-400); margin-bottom: 0.75rem;">Included</div>
+                        {% for feat in plan.features %}
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <i class="bi bi-check-circle-fill" style="color: #10b981; font-size: 0.85rem; flex-shrink: 0;"></i>
+                            <span style="font-size: 0.85rem; font-weight: 600; color: var(--grey-700);">{{ feat }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <!-- Quick Edit Button -->
+                    <button onclick='editPlan({{ plan.to_dict()|tojson }})' class="btn-secondary-premium" style="width: 100%; justify-content: center; margin-top: 1.25rem; padding: 0.5rem 1rem; font-size: 0.815rem;">
+                        <i class="bi bi-pencil-square"></i> Edit Plan
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align: center; padding: 4rem 2rem;">
+                <div style="width: 80px; height: 80px; background: var(--grey-50); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem;">
+                    <i class="bi bi-gem" style="font-size: 2rem; color: var(--grey-300);"></i>
+                </div>
+                <h4 style="font-family: var(--font-heading); font-weight: 800; margin-bottom: 0.5rem; color: var(--black);">No Plans Created</h4>
+                <p style="color: var(--grey-400); font-size: 0.9rem; max-width: 300px; margin: 0 auto;">Use the form on the left to configure your first subscription tier.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .plan-tier-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--grey-200) !important;
+        box-shadow: var(--shadow-premium);
+    }
+
+    .plan-tier-card .btn-secondary-premium {
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    .plan-tier-card:hover .btn-secondary-premium {
+        opacity: 1;
+    }
+
+    /* Editing state highlight */
+    .plan-form-editing {
+        border: 2px solid var(--black) !important;
+        box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .plan-tier-card {
+        animation: slideIn 0.4s ease forwards;
+    }
+
+    {% for plan in plans %}
+    .plan-tier-card:nth-child({{ loop.index }}) {
+        animation-delay: {{ loop.index * 0.08 }}s;
+    }
+    {% endfor %}
+</style>
 
 <script>
     function editPlan(plan) {
@@ -157,7 +270,13 @@
         document.getElementById('description').value = plan.description || '';
         document.getElementById('features').value = plan.features ? plan.features.join(', ') : '';
 
-        // Scroll to form
+        // Update form title to indicate editing mode
+        document.getElementById('form-title').innerHTML = '<i class="bi bi-pencil-square me-2" style="font-size: 1rem;"></i>Edit Plan';
+
+        // Visual highlight
+        document.querySelector('.premium-panel').classList.add('plan-form-editing');
+
+        // Scroll to form on mobile
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -168,6 +287,12 @@
         document.getElementById('billing_interval').value = 'monthly';
         document.getElementById('description').value = '';
         document.getElementById('features').value = '';
+
+        // Reset form title
+        document.getElementById('form-title').innerHTML = '<i class="bi bi-plus-circle me-2" style="font-size: 1rem;"></i>Create Plan';
+
+        // Remove editing highlight
+        document.querySelector('.premium-panel').classList.remove('plan-form-editing');
     }
 </script>
 {% endblock %}

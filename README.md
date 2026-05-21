@@ -30,6 +30,17 @@ Featuring a modern, feature-based modular architecture, the system enforces comp
 - **Dual TTS Engine**: Dynamic high-fidelity speech synthesis utilizing gTTS (Google Text-to-Speech) and Microsoft Edge-TTS interfaces.
 - **Real-Time Delivery Auditing**: Interactive call log tracking with webhook-driven status synchronization.
 
+### 💳 Real-Time Billing & High-Fidelity Invoicing (NEW)
+- **Live Payments Ledger**: Automated, dynamically populated payment history tailored per organization tier.
+- **Commercial Tax Invoicing**: Generates live, printable, high-fidelity digital tax invoices (featuring CGST/SGST breakdowns and secure gateway declarations).
+- **Checkout Infrastructure**: Interactive enterprise checkout interface supporting multi-provider integration (e.g., Razorpay Standard).
+
+### 🎨 Modernized User Experience & Core UI (NEW)
+- **Dynamic Theme System**: Fully integrated Dark Mode and Light Mode switching applied seamlessly across all dashboard views.
+- **Premium User Profiles**: State-of-the-art dual-pane split UI standardizations deployed across both Organization Admin and Worker dashboards for maximum clarity.
+- **Real-Time Resource KPIs**: Live tracking of plan limits (worker seats, message volumes, active campaigns) with visual utilization progress bars and dynamic usage scoring.
+- **Responsive Navigation Structure**: Modular sidebars and layouts adapted specifically for Premium Billing, Subscription management, and operative dashboards.
+
 ---
 
 ## 🔐 Enterprise SaaS Security Architecture
@@ -128,12 +139,12 @@ CUSTOMER CARE (connectflow)
     │   │   ├── templates/          # Platform Admin specific templates (platform/, auth/)
     │   │   └── routes.py           # Platform Owner controls, plans configuration, organization verification
     │   ├── tenant_admin/
-    │   │   ├── templates/          # Tenant Admin specific templates (organization/, auth/)
-    │   │   └── routes.py           # Org admin workspace, workers management, billing checkout
+    │   │   ├── templates/          # Tenant Admin specific templates (organization/, auth/, billing, invoices, checkout)
+    │   │   └── routes.py           # Org admin workspace, workers management, premium plans, dynamic billing
     │   ├── webhooks/
     │   │   └── routes.py           # Webhook response ingestion APIs for Twilio status callbacks
     │   └── workforce/
-    │       ├── templates/          # Worker specific templates (worker/, auth/)
+    │       ├── templates/          # Worker specific templates (worker profiles, modules, scripts)
     │       └── routes.py           # Worker operative campaigns setup, dynamic spreadsheet modifications
     │
     ├── static/                     # Global Shared Static Assets

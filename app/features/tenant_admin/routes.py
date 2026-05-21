@@ -871,16 +871,62 @@ def delete_number(nid):
 @org_bp.route("/plans")
 @login_required
 def browse_plans():
+    org = current_user.organization
     plans = Plan.query.filter_by(is_active=True).all()
-    return render_template("organization/plans.html", plans=plans)
+    
+    # Get active subscription
+    subscription = Subscription.query.filter_by(organization_id=org.id).first()
+    
+    # Calculate usage and limits
+    limits = {"workers": 10, "messages": 1000, "campaigns": 3}
+    if subscription:
+        if subscription.plan.lower() == "pro":
+            limits = {"workers": 50, "messages": 50000, "campaigns": 20}
+        elif subscription.plan.lower() == "enterprise":
+            limits = {"workers": 999, "messages": 999999, "campaigns": 100}
+            
+    workers_count = OrganizationUser.query.filter_by(organization_id=org.id, role="worker").count()
+    campaigns_count = Campaign.query.filter_by(organization_id=org.id).count()
+    
+    return render_template(
+        "organization/plans.html", 
+        plans=plans,
+        subscription=subscription,
+        limits=limits,
+        workers_count=workers_count,
+        campaigns_count=campaigns_count,
+        delivery_logs_count=0,
+        payments=[]
+    )
+
+
+@org_bp.route("/payments")
+@login_required
+def payments():
+    # Render payments ledger
+    from app.models.organization import Payment
+    payments_list = Payment.query.filter_by(organization_id=current_user.organization_id).order_by(Payment.created_at.desc()).all()
+    return render_template("organization/payments.html", payments=payments_list)
+
+
+@org_bp.route("/invoices")
+@login_required
+def invoices():
+    # Render invoices ledger
+    # Reuse payments for invoices dummy data if Invoice model doesn't exist yet
+    from app.models.organization import Payment
+    invoices_list = Payment.query.filter_by(organization_id=current_user.organization_id).order_by(Payment.created_at.desc()).all()
+    return render_template("organization/invoices.html", invoices=invoices_list)
 
 
 @org_bp.route("/checkout/<int:plan_id>")
 @login_required
 def checkout(plan_id):
+    from app.models.platform import PaymentGateway
     plan = db.get_or_404(Plan, plan_id)
     org = current_user.organization
-    return render_template("organization/checkout.html", plan=plan, org=org)
+    gateways = PaymentGateway.query.filter_by(active=True).order_by(PaymentGateway.priority.desc()).all()
+    return render_template("organization/checkout.html", plan=plan, org=org, gateways=gateways)
 
 
 @org_bp.route("/payment/process", methods=["POST"])
@@ -1069,6 +1115,8 @@ def campaigns_dashboard():
 @active_subscription_required
 def reports_dashboard():
     org_id = current_user.organization_id
+    ChangeRequest.log(org_id, current_user.id, "Viewed Reports Dashboard")
+
     workers = (
         OrganizationUser.query.filter_by(org_id, role="worker").all()
         if hasattr(OrganizationUser, "org_id")
@@ -1257,6 +1305,11 @@ def export_module_activity(mid):
     from flask import Response
 
     m = db.get_or_404(Module, mid)
+    if m.organization_id != current_user.organization_id:
+        abort(403)
+        
+    ChangeRequest.log(m.organization_id, current_user.id, f"Exported Module Data: {m.name}")
+
     campaigns = (
         Campaign.query.filter_by(module_id=mid)
         .order_by(Campaign.created_at.desc())
@@ -1311,6 +1364,58 @@ def export_module_activity(mid):
     )
 
 
+@org_bp.route("/api/chart-data")
+@login_required
+def get_chart_data():
+    # Simple chart data reconstruction since it was lost in git restore
+    from datetime import datetime, timedelta
+    
+    org_id = current_user.organization_id if hasattr(current_user, 'organization_id') else None
+    if not org_id:
+        return jsonify({"categories": [], "messages": [], "calls": []})
+        
+    range_param = request.args.get("range", "last_7d")
+    days = 7
+    if range_param == "last_30d":
+        days = 30
+        
+    categories = []
+    messages = []
+    calls = []
+    
+    today = datetime.utcnow().date()
+    for i in range(days-1, -1, -1):
+        d = today - timedelta(days=i)
+        categories.append(d.strftime("%b %d"))
+        
+        # We can either do real queries or dummy data if real query is too complex
+        # Real query would be:
+        start_dt = datetime.combine(d, datetime.min.time())
+        end_dt = start_dt + timedelta(days=1)
+        
+        msg_count = DeliveryLog.query.filter(
+            DeliveryLog.organization_id == org_id,
+            DeliveryLog.created_at >= start_dt,
+            DeliveryLog.created_at < end_dt,
+            DeliveryLog.channel.in_(["sms", "whatsapp", "email"])
+        ).count()
+        
+        call_count = DeliveryLog.query.filter(
+            DeliveryLog.organization_id == org_id,
+            DeliveryLog.created_at >= start_dt,
+            DeliveryLog.created_at < end_dt,
+            DeliveryLog.channel.in_(["call", "voice", "hooman_voice", "twilio_voice"])
+        ).count()
+        
+        messages.append(msg_count)
+        calls.append(call_count)
+        
+    return jsonify({
+        "categories": categories,
+        "messages": messages,
+        "calls": calls
+    })
+
 @org_bp.route("/api/recent-activities")
 @login_required
 def get_recent_activities():
@@ -1327,8 +1432,9 @@ def get_recent_activities():
 
     activities = (
         ChangeRequest.query.filter_by(organization_id=org_id)
+        .filter(~ChangeRequest.field_name.ilike('%message%'))
         .order_by(ChangeRequest.created_at.desc())
-        .limit(10)
+        .limit(15)
         .all()
     )
     data = []
@@ -1374,6 +1480,8 @@ def update_module(mid):
 @active_subscription_required
 def analytics_dashboard():
     org_id = current_user.organization_id
+    ChangeRequest.log(org_id, current_user.id, "Viewed Analytics Dashboard")
+
     subscription = Subscription.query.filter_by(organization_id=org_id).first()
 
     # Real-time Volume Aggregation

@@ -16,7 +16,7 @@
   <nav class="navbar mb-5 sticky-top-mobile">
     <div class="container">
       <!-- Brand/Logo -->
-      <a href="{% if current_user.is_authenticated %}{% if current_user.role == 'platform_owner' %}{{ url_for('admin.dashboard') }}{% elif current_user.role == 'org_admin' %}{{ url_for('org.profile') }}{% elif current_user.role == 'worker' %}{{ url_for('worker.dashboard') }}{% else %}{{ url_for('main.index') }}{% endif %}{% else %}{{ url_for('main.index') }}{% endif %}"
+      <a href="{% if current_user.is_authenticated %}{% if current_user.role == 'platform_owner' %}{{ url_for('super_admin.dashboard') }}{% elif current_user.role == 'org_admin' %}{{ url_for('org.profile') }}{% elif current_user.role == 'worker' %}{{ url_for('worker.dashboard') }}{% else %}{{ url_for('main.index') }}{% endif %}{% else %}{{ url_for('main.index') }}{% endif %}"
         class="brand-link d-flex align-items-center"
         style="font-size: clamp(1.2rem, 4vw, 1.5rem); font-weight: 800; color: var(--secondary-color); text-decoration: none;">
         {% if current_user.is_authenticated and current_user.organization and current_user.organization.logo_url %}
@@ -48,7 +48,7 @@
           <!-- Logout Button - Full Right -->
           <div class="d-flex gap-2 w-100-mobile ms-auto">
             {% if current_user.role == 'platform_owner' %}
-            <a href="{{ url_for('admin.logout') }}" class="btn btn-sm btn-outline-danger w-100-mobile"
+            <a href="{{ url_for('super_admin.logout') }}" class="btn btn-sm btn-outline-danger w-100-mobile"
               style="border-radius: 20px;">Logout</a>
             {% elif current_user.role == 'worker' %}
             <a href="{{ url_for('worker.logout') }}" class="btn btn-sm btn-outline-danger w-100-mobile"

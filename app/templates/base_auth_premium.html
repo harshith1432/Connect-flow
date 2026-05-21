@@ -43,11 +43,15 @@
 
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
+                    {% set shown_msgs = [] %}
                     {% for category, msg in messages %}
-                        <div class="premium-alert premium-alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' or category == 'danger' else 'info' }}">
-                            <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'danger' or category == 'error' else 'info-circle' }}"></i>
-                            {{msg}}
-                        </div>
+                        {% if msg not in shown_msgs %}
+                            <div class="premium-alert premium-alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' or category == 'danger' else 'info' }}">
+                                <i class="bi bi-{{ 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'danger' or category == 'error' else 'info-circle' }}"></i>
+                                {{msg}}
+                            </div>
+                            {% set _ = shown_msgs.append(msg) %}
+                        {% endif %}
                     {% endfor %}
                 {% endif %}
             {% endwith %}

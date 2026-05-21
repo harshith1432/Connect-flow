@@ -1,194 +1,169 @@
-{% extends "base.html" %}
+{% extends 'base_billing_premium.html' %}
 
-{% block title %}Checkout - {{ plan.name }}{% endblock %}
+{% block title %}Checkout - {{ plan.name }} | ConnectFlow Premium{% endblock %}
+{% block page_title %}Checkout{% endblock %}
+
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/checkout.css') }}">
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-    <nav aria-label="breadcrumb">
-        <ul class="breadcrumb-premium d-flex align-items-center mb-0 p-0">
-            <li class="breadcrumb-item-premium">
-                <a href="{{ url_for('org.dashboard') }}">
-                    <i class="bi bi-speedometer2 me-1"></i> Dashboard
-                </a>
-            </li>
-            <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50">
-                <i class="bi bi-chevron-right small"></i>
-            </li>
-            <li class="breadcrumb-item-premium">
-                <a href="{{ url_for('org.browse_plans') }}">
-                    Subscription Plans
-                </a>
-            </li>
-            <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50">
-                <i class="bi bi-chevron-right small"></i>
-            </li>
-            <li class="breadcrumb-item-premium active fw-bold text-dark">
-                Checkout
-            </li>
-        </ul>
-    </nav>
-</div>
+<div class="checkout-grid">
+    <!-- LEFT PANEL (70%) -->
+    <div class="checkout-left">
+        <div class="checkout-card">
+            <form id="payment-form">
+                <!-- Hidden Fields -->
+                <input type="hidden" id="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" id="plan_id" value="{{ plan.id }}">
+                <input type="hidden" id="plan_name" value="{{ plan.name }}">
+                <input type="hidden" id="org_name" value="{{ org.name }}">
+                <input type="hidden" id="org_email" value="{{ current_user.email }}">
 
-<div class="py-5">
-    <div class="row g-5">
-        <!-- Order Summary -->
-        <div class="col-md-5 order-md-last">
-            <h4 class="d-flex justify-content-between align-items-center mb-4">
-                <span class="fw-bold">Order Summary</span>
-            </h4>
-            <div class="card border-0 shadow-sm p-4"
-                style="border-radius: 20px; background: #fdfbff; border: 1px solid #eee !important;">
-                <div class="d-flex justify-content-between mb-3">
-                    <div>
-                        <h5 class="fw-bold mb-1">{{ plan.name }} Plan</h5>
-                        <p class="text-muted small mb-0">{{ plan.billing_interval|capitalize }} Subscription</p>
-                    </div>
-                    <span class="fw-bold fs-4">₹{{ plan.price|int }}</span>
+                <!-- 1. Select Payment Gateway -->
+                <div class="section-title">
+                    <span class="section-number">1</span> Select Payment Gateway
                 </div>
-
-                <hr class="my-3">
-
-                <ul class="list-unstyled mb-4">
-                    {% for feature in plan.features %}
-                    <li class="small mb-2 d-flex align-items-center">
-                        <i class="bi bi-check-circle-fill text-success me-2" style="font-size: 0.8rem;"></i>
-                        <span>{{ feature }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
-
-                <div class="d-flex justify-content-between fw-bold pt-2 border-top">
-                    <span>Total Amount</span>
-                    <span class="text-primary fs-3">₹{{ plan.price|int }}</span>
-                </div>
-            </div>
-
-            <div class="mt-4 p-3 bg-light rounded" style="border: 1px dashed #ccc;">
-                <small class="text-muted">
-                    <i class="bi bi-shield-lock-fill me-1"></i> Secure 256-bit SSL Encrypted Payment
-                </small>
-            </div>
-        </div>
-
-        <!-- Billing Info -->
-        <div class="col-md-7">
-            <h4 class="fw-bold mb-4">Billing Information</h4>
-            <div class="card border-0 shadow-sm p-4" style="border-radius: 20px;">
-                <form action="{{ url_for('org.process_payment') }}" method="POST" id="payment-form">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="plan_id" value="{{ plan.id }}">
-
-                    <div class="row g-3">
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Organization Name</label>
-                            <input type="text" class="form-control" value="{{ org.name }}" readonly>
-                        </div>
-
-                        <div class="col-sm-6">
-                            <label class="form-label fw-bold">Billing Email</label>
-                            <input type="email" class="form-control" placeholder="billing@email.com" required>
-                        </div>
-
-                        <div class="col-sm-6">
-                            <label class="form-label fw-bold">GST Number (Optional)</label>
-                            <input type="text" class="form-control" placeholder="22AAAAA0000A1Z5">
-                        </div>
-
-                        <div class="col-12">
-                            <label class="form-label fw-bold">Address</label>
-                            <input type="text" class="form-control" value="{{ org.office_address or '' }}" required>
-                        </div>
-
-                        <div class="col-md-5">
-                            <label class="form-label fw-bold">Country</label>
-                            <input type="text" class="form-control" value="{{ org.country or '' }}" readonly>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">State</label>
-                            <select class="form-select" required>
-                                <option value="">Choose...</option>
-                                <option>Karnataka</option>
-                                <option>Maharashtra</option>
-                                <option>Delhi</option>
-                            </select>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label class="form-label fw-bold">Zip</label>
-                            <input type="text" class="form-control" required>
-                        </div>
-                    </div>
-
-                    <hr class="my-4">
-
-                    <h5 class="fw-bold mb-3">Payment Method</h5>
-                    <div class="my-3">
-                        <div class="form-check border p-3 rounded mb-2 d-flex align-items-center gap-3"
-                            style="cursor: pointer;" onclick="document.getElementById('credit').checked = true">
-                            <input id="credit" name="paymentMethod" type="radio" class="form-check-input mt-0" checked
-                                required>
-                            <label class="form-check-label flex-grow-1" for="credit">Credit / Debit Card</label>
-                            <div class="d-flex gap-2">
-                                <i class="bi bi-credit-card text-muted fs-4"></i>
+                
+                <div class="gateway-grid">
+                    {% if gateways %}
+                        {% for gw in gateways %}
+                        <label class="w-100 m-0">
+                            <input type="radio" name="gateway_id" value="{{ gw.id }}" class="gateway-input" {% if loop.first %}checked{% endif %} data-provider="{{ gw.provider }}">
+                            <div class="gateway-option">
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    {% if gw.provider == 'razorpay' %}
+                                        <i class="bi bi-credit-card-fill fs-3" style="color: #3399cc;"></i>
+                                    {% elif gw.provider == 'stripe' %}
+                                        <i class="bi bi-stripe fs-3" style="color: #635bff;"></i>
+                                    {% else %}
+                                        <i class="bi bi-wallet2 fs-3 text-secondary"></i>
+                                    {% endif %}
+                                    <h5 class="mb-0 fw-bold">{{ gw.name }}</h5>
+                                </div>
+                                <div class="mt-auto">
+                                    <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Provider: {{ gw.provider }}</small>
+                                    <small class="text-muted d-block text-uppercase fw-bold" style="font-size: 0.7rem; letter-spacing: 0.5px;">Mode: <span class="text-primary">{{ gw.deployment_mode }}</span></small>
+                                </div>
                             </div>
+                        </label>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-warning w-100 rounded-4 border-0">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i> No active payment gateways found.
                         </div>
-                        <div class="form-check border p-3 rounded mb-2 d-flex align-items-center gap-3"
-                            style="cursor: pointer;" onclick="document.getElementById('upi').checked = true">
-                            <input id="upi" name="paymentMethod" type="radio" class="form-check-input mt-0" required>
-                            <label class="form-check-label flex-grow-1" for="upi">UPI / Net Banking</label>
-                            <i class="bi bi-qr-code text-muted fs-4"></i>
-                        </div>
+                    {% endif %}
+                </div>
+
+                <!-- 2. Billing Information -->
+                <div class="section-title mt-5">
+                    <span class="section-number">2</span> Billing Information
+                </div>
+                
+                <div class="form-grid mb-5">
+                    <div class="form-group full-width">
+                        <label for="billOrg" class="form-label">Organization Name</label>
+                        <input type="text" class="form-input readonly-input" id="billOrg" value="{{ org.name }}" readonly placeholder="Organization Name">
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="billEmail" class="form-label">Billing Email</label>
+                        <input type="email" class="form-input" id="billEmail" value="{{ current_user.email }}" required placeholder="e.g. billing@company.com">
+                    </div>
+                    
+                    <div class="form-group full-width">
+                        <label for="billAddress" class="form-label">Billing Address</label>
+                        <input type="text" class="form-input" id="billAddress" value="{{ org.office_address or '' }}" required placeholder="e.g. 123 Main Street, Suite 200">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="billState" class="form-label">State</label>
+                        <select class="form-input" id="billState" required>
+                            <option value="" disabled selected>Select your state</option>
+                            <option value="Karnataka">Karnataka</option>
+                            <option value="Maharashtra">Maharashtra</option>
+                            <option value="Delhi">Delhi</option>
+                            <option value="Tamil Nadu">Tamil Nadu</option>
+                            <option value="Telangana">Telangana</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="billCountry" class="form-label">Country</label>
+                        <input type="text" class="form-input readonly-input" id="billCountry" value="{{ org.country or 'India' }}" readonly placeholder="Country">
                     </div>
 
-                    <div class="card bg-light border-0 p-3 mb-4" style="border-radius: 12px;">
-                        <p class="small text-muted mb-0">
-                            <strong>Note:</strong> This is a simulation. No real money will be charged. Clicking
-                            "Complete Payment" will instantly activate your <strong>{{ plan.name }}</strong>
-                            subscription.
-                        </p>
+                    <div class="form-group">
+                        <label for="billZip" class="form-label">ZIP / Postal Code</label>
+                        <input type="text" class="form-input" id="billZip" placeholder="e.g. 560001" required>
                     </div>
+                    
+                    <div class="form-group">
+                        <label for="billGst" class="form-label">GSTIN (Optional)</label>
+                        <input type="text" class="form-input" id="billGst" placeholder="e.g. 29AAAAA1111A1Z1">
+                    </div>
+                </div>
+            </form>
+        </div> <!-- Close checkout-card -->
+    </div> <!-- Close checkout-left properly! -->
 
-                    <button class="btn btn-primary w-100 py-3 fw-bold shadow-lg" type="submit" id="submit-button"
-                        style="border-radius: 15px;">
-                        <span id="button-text">Complete Payment</span>
-                        <div id="loader" class="spinner-border spinner-border-sm ms-2 d-none" role="status"></div>
-                    </button>
-                </form>
+    <!-- RIGHT PANEL (30%) -->
+    <div class="checkout-right">
+        <div class="summary-sticky">
+            <div class="summary-card">
+                <h4 class="fw-bold mb-4" style="font-family: 'Outfit', sans-serif;">Order Summary</h4>
+                
+                <div class="d-flex align-items-center gap-3 mb-4 p-3 rounded-4" style="background: var(--grey-50); border: 1px solid var(--grey-100);">
+                    <div style="width: 48px; height: 48px; background: var(--primary); color: white; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-box-seam fs-4"></i>
+                    </div>
+                    <div>
+                        <h5 class="mb-0 fw-bold" style="font-family: 'Outfit', sans-serif;">{{ plan.name }}</h5>
+                        <small class="text-muted fw-medium text-capitalize" style="font-size: 0.8rem;">{{ plan.billing_interval }} Plan</small>
+                    </div>
+                </div>
+
+                <div class="summary-row">
+                    <span>Monthly Price</span>
+                    <span class="price-val">₹{{ plan.price|int }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tax (18% GST)</span>
+                    <span class="price-val">₹{{ (plan.price|float * 0.18)|int }}</span>
+                </div>
+                <div class="summary-row text-success">
+                    <span>Discount</span>
+                    <span>-₹0</span>
+                </div>
+                
+                <div class="summary-row total">
+                    <span>Total</span>
+                    <span>₹{{ (plan.price|float + (plan.price|float * 0.18))|int }}</span>
+                </div>
+                
+                <div class="mb-4 mt-3 pt-3 border-top border-light">
+                    <div class="d-flex justify-content-between text-muted small fw-medium mb-2">
+                        <span>Renewal Date</span>
+                        <span>Next Month</span>
+                    </div>
+                </div>
+
+                <button class="btn-cta" type="submit" form="payment-form" id="submit-button" {% if not gateways %}disabled{% endif %}>
+                    <span id="button-text">Proceed to Payment</span>
+                    <div id="loader" class="spinner-border spinner-border-sm" role="status" style="display: none; color: white;"></div>
+                </button>
+
+                <div class="secure-badge">
+                    <i class="bi bi-shield-check fs-5"></i>
+                    <span>Secured with 256-bit encryption</span>
+                </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
 
-<script>
-    document.getElementById('payment-form').addEventListener('submit', function (e) {
-        const btn = document.getElementById('submit-button');
-        const text = document.getElementById('button-text');
-        const loader = document.getElementById('loader');
-
-        btn.disabled = true;
-        text.innerText = 'Processing Order...';
-        loader.classList.remove('d-none');
-    });
-</script>
-
-<style>
-    .form-control,
-    .form-select {
-        border-radius: 10px;
-        border: 1px solid #dee2e6;
-        padding: 0.6rem 1rem;
-    }
-
-    .form-control:focus,
-    .form-select:focus {
-        box-shadow: 0 0 0 0.25rem rgba(141, 51, 255, 0.1);
-        border-color: var(--primary-color);
-    }
-
-    .form-check-input:checked {
-        background-color: var(--primary-color);
-        border-color: var(--primary-color);
-    }
-</style>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/checkout.js') }}"></script>
 {% endblock %}

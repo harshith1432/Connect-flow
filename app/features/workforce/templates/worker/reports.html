@@ -50,24 +50,7 @@
             </div>
         </div>
 
-        <div class="divider-premium mt-4 mb-4"></div>
 
-        <div class="table-responsive">
-            <table class="table premium-table">
-                <thead>
-                    <tr>
-                        <th>Date</th>
-                        <th>Action</th>
-                        <th>Status</th>
-                        <th>Module</th>
-                        <th>Details</th>
-                    </tr>
-                </thead>
-                <tbody id="report-table-body">
-                    <!-- Loaded via JS -->
-                </tbody>
-            </table>
-        </div>
     </div>
 </div>
 {% endblock %}
@@ -83,48 +66,59 @@
 
         if (moduleId) {
             document.getElementById('report-module-name').innerText = data.module_name || 'Selected Module';
+        } else if (data.module_name) {
+            document.getElementById('report-module-name').innerText = data.module_name;
+        }
+
+        document.getElementById('report-total-delivery').innerText = data.total_attempts || '0';
+        document.getElementById('report-success-rate').innerText = (data.success_rate || 0) + '%';
+
+        const hasTrendData = data.trend && data.trend.data && data.trend.data.length > 0;
+        const hasDistData = data.distribution && data.distribution.data && data.distribution.data.length > 0;
+
+        if (!hasTrendData && !hasDistData) {
+            document.getElementById('report-timeline-chart').innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--grey-500);">No data present</div>';
+            document.getElementById('report-status-chart').innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--grey-500);">No data present</div>';
+            return;
         }
 
         // Timeline Chart
-        const timelineOptions = {
-            series: [{
-                name: 'Success',
-                data: data.trend.data
-            }],
-            chart: { type: 'area', height: 350, toolbar: { show: false } },
-            colors: ['#22c55e'],
-            stroke: { curve: 'smooth' },
-            xaxis: { categories: data.trend.labels }
-        };
+        if (hasTrendData) {
+            const timelineOptions = {
+                series: [{
+                    name: 'Success',
+                    data: data.trend.data
+                }],
+                chart: { type: 'area', height: 350, toolbar: { show: false } },
+                colors: ['#22c55e'],
+                stroke: { curve: 'smooth' },
+                xaxis: { categories: data.trend.labels },
+                noData: { text: "No data present" }
+            };
+            document.getElementById('report-timeline-chart').innerHTML = ''; // clear existing
+            new ApexCharts(document.querySelector("#report-timeline-chart"), timelineOptions).render();
+        } else {
+            document.getElementById('report-timeline-chart').innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--grey-500);">No data present</div>';
+        }
 
         // Status Chart
-        const statusOptions = {
-            series: data.distribution.data,
-            chart: { type: 'pie', height: 350 },
-            labels: data.distribution.labels,
-            colors: ['#6366f1', '#22c55e', '#f59e0b', '#ef4444']
-        };
-
-        new ApexCharts(document.querySelector("#report-timeline-chart"), timelineOptions).render();
-        new ApexCharts(document.querySelector("#report-status-chart"), statusOptions).render();
-
-        // Load Table Data
-        const tableBody = document.getElementById('report-table-body');
-        const activityResponse = await fetch('/worker/api/recent-activities');
-        const activities = await activityResponse.json();
-
-        tableBody.innerHTML = activities.map(a => `
-            <tr>
-                <td>${a.timestamp}</td>
-                <td>${a.action}</td>
-                <td><span class="badge-premium">Completed</span></td>
-                <td>${data.module_name || 'System'}</td>
-                <td>${a.details}</td>
-            </tr>
-        `).join('');
+        if (hasDistData) {
+            const statusOptions = {
+                series: data.distribution.data,
+                chart: { type: 'pie', height: 350 },
+                labels: data.distribution.labels,
+                colors: ['#6366f1', '#22c55e', '#f59e0b', '#ef4444'],
+                noData: { text: "No data present" }
+            };
+            document.getElementById('report-status-chart').innerHTML = ''; // clear existing
+            new ApexCharts(document.querySelector("#report-status-chart"), statusOptions).render();
+        } else {
+            document.getElementById('report-status-chart').innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--grey-500);">No data present</div>';
+        }
     }
 
     loadReport();
+    setInterval(loadReport, 15000); // Real-time refresh every 15s
 </script>
 
 <style>

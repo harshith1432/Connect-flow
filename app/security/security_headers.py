@@ -24,13 +24,13 @@ def init_security_headers(app):
         # CDNs for icons, and prevents flash, object and frame embedding.
         csp_directives = [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net",
+            "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://checkout.razorpay.com",
             "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net",
             "img-src 'self' data: https: blob:",
             "font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net",
-            "frame-src 'self'",
+            "frame-src 'self' https://api.razorpay.com https://checkout.razorpay.com",
             "object-src 'none'",
-            "connect-src 'self' https://api.twilio.com",
+            "connect-src 'self' https://api.twilio.com https://api.razorpay.com",
         ]
         response.headers["Content-Security-Policy"] = "; ".join(csp_directives)
 

@@ -76,7 +76,7 @@
             
             <div class="modules-grid-premium">
                 {% for module in modules %}
-                <div class="module-card-premium" onclick="window.location.href='{{ url_for('worker.manage_module', mid=module.id) }}'">
+                <div class="module-card-premium" onclick="window.location.href='{{ url_for('worker.manage_groups', mid=module.id) }}'">
                     <div class="module-status {{ module.status }}"></div>
                     <div class="module-header">
                         <div class="module-meta">
@@ -91,19 +91,16 @@
                                 <span class="value">{{ module.record_count }}</span>
                             </div>
                             <div class="m-stat">
-                                <span class="label">Campaigns</span>
-                                <span class="value">{{ module.campaign_count }}</span>
+                                <span class="label">Groups</span>
+                                <span class="value">{{ module.group_count }}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="module-actions-premium mt-3 d-flex gap-2">
+                    <div class="module-actions-premium mt-3 d-flex flex-wrap gap-2">
                         <button class="btn-action-premium" onclick="event.stopPropagation(); configureModule({{ module.id }}, '{{ module.name }}')">
                             <i class="bi bi-gear"></i> Configure
                         </button>
-                        <button class="btn-action-premium" onclick="event.stopPropagation(); viewReport({{ module.id }})">
-                            <i class="bi bi-file-earmark-bar-graph"></i> Report
-                        </button>
-                        <button class="btn-action-premium dark" onclick="event.stopPropagation(); window.location.href='{{ url_for('worker.manage_module', mid=module.id) }}'">
+                        <button class="btn-action-premium dark" onclick="event.stopPropagation(); window.location.href='{{ url_for('worker.manage_groups', mid=module.id) }}'">
                             <i class="bi bi-box-arrow-in-right"></i> Go Inside
                         </button>
                     </div>

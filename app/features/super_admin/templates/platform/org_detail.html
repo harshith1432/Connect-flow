@@ -1,218 +1,254 @@
-{% extends 'base.html' %}
-{% block title %}Organization Details - {{ org.name }}{% endblock %}
+{% extends "base_platform_premium.html" %}
+
+{% block title %}ConnectFlow | {{ org.name }}{% endblock %}
+{% block page_title %}Organization Details{% endblock %}
+
 {% block content %}
-<div class="org-detail-container animate-in">
-    <!-- Breadcrumb Row (Premium Style) -->
+<div class="container-fluid p-0 animate-in">
+    <!-- Breadcrumb Row -->
     <div class="row mb-4">
         <div class="col-12">
             <nav aria-label="breadcrumb">
-                <ul class="breadcrumb-premium d-flex align-items-center mb-0 p-0">
-                    <li class="breadcrumb-item-premium">
-                        <a href="{{ url_for('super_admin.dashboard') }}">
-                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                <ol class="breadcrumb mb-0" style="font-size: 0.9rem; font-weight: 500;">
+                    <li class="breadcrumb-item">
+                        <a href="{{ url_for('super_admin.dashboard') }}" class="text-decoration-none text-muted">
+                            <i class="bi bi-grid-1x2 me-1"></i> Dashboard
                         </a>
                     </li>
-                    <li class="breadcrumb-spacer-premium mx-2 text-muted opacity-50"><i
-                            class="bi bi-chevron-right small"></i></li>
-                    <li class="breadcrumb-item-premium active fw-bold text-dark">
-                        Organizations
-                    </li>
-                </ul>
+                    <li class="breadcrumb-item text-muted">Organizations</li>
+                    <li class="breadcrumb-item active text-dark fw-bold" aria-current="page">{{ org.name }}</li>
+                </ol>
             </nav>
         </div>
     </div>
 
-    <!-- Main Header Row -->
-    <div class="row align-items-center mb-5 g-4 shadow-sm bg-white p-4 rounded-4 mx-0 border border-light-subtle">
-        <div class="col-md-auto text-center-mobile">
-            <div class="org-logo-wrapper">
+    <!-- Organization Hero -->
+    <div class="premium-panel mb-4">
+        <div class="d-flex flex-column flex-md-row align-items-center gap-4">
+            <!-- Logo Wrapper -->
+            <div class="org-logo-wrapper flex-shrink-0" style="width: 100px; height: 100px; border-radius: 20px; background: var(--grey-50); border: 1px solid var(--grey-200); display: flex; align-items: center; justify-content: center; overflow: hidden;">
                 {% if org.logo_url %}
-                <img src="{{ url_for('static', filename=org.logo_url) }}" alt="{{ org.name }}" class="org-logo-detail">
+                <img src="{{ url_for('static', filename=org.logo_url) }}" alt="{{ org.name }}" style="max-width: 100%; max-height: 100%; object-fit: contain; padding: 8px;">
                 {% else %}
-                <div class="org-logo-placeholder">
-                    <i class="bi bi-building fs-1"></i>
+                <i class="bi bi-building fs-1 text-muted"></i>
+                {% endif %}
+            </div>
+            
+            <!-- Org Info -->
+            <div class="flex-grow-1 text-center text-md-start">
+                <div class="d-flex flex-column flex-md-row align-items-center gap-2 mb-2 justify-content-center justify-content-md-start">
+                    <h2 class="h3 fw-bold mb-0 text-dark">{{ org.name }}</h2>
+                    {% if org.status == 'active' %}
+                    <span class="badge-premium" style="background: rgba(34, 197, 94, 0.1); color: #22c55e;">Active</span>
+                    {% elif org.status == 'pending' %}
+                    <span class="badge-premium" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">Pending</span>
+                    {% else %}
+                    <span class="badge-premium" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">{{ org.status|capitalize }}</span>
+                    {% endif %}
                 </div>
-                {% endif %}
+                <div class="text-muted small">
+                    <i class="bi bi-calendar3 me-1"></i> Registered: {{ org.created_at.strftime('%d %b, %Y') }}
+                </div>
             </div>
-        </div>
-        <div class="col-md text-center-mobile">
-            <h1 class="display-5 fw-bold mb-2 text-dark">{{ org.name }}</h1>
-            <div class="d-flex flex-wrap align-items-center gap-3 justify-content-center-mobile">
-                <span
-                    class="badge rounded-pill {% if org.status == 'active' %}bg-success-subtle text-success border-success{% elif org.status == 'pending' %}bg-warning-subtle text-warning border-warning{% else %}bg-danger-subtle text-danger border-danger{% endif %} border px-3 py-2 fw-bold">
-                    <i class="bi bi-circle-fill me-2" style="font-size: 0.5rem; vertical-align: middle;"></i>{{
-                    org.status|upper }}
-                </span>
-                <span class="text-muted small fw-semibold">
-                    <i class="bi bi-calendar3 me-2"></i>Registered: {{ org.created_at.strftime('%d %b, %Y') }}
-                </span>
-            </div>
-        </div>
-        <div class="col-md-auto ms-md-auto text-center-mobile">
-            <div class="d-flex flex-wrap gap-2 justify-content-center-mobile">
+
+            <!-- Status Actions -->
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
                 {% if org.status != 'active' %}
-                <form method="post" action="{{ url_for('super_admin.approve_org', org_id=org.id) }}">
+                <form method="post" action="{{ url_for('super_admin.approve_org', org_id=org.id) }}" class="m-0">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button class="btn btn-approve-premium px-5 py-2 text-white fw-bold shadow-sm rounded-pill">
-                        <i class="bi bi-check-circle-fill me-2"></i> Approve Request
+                    <button type="submit" class="btn-premium primary">
+                        <i class="bi bi-check-circle-fill"></i> Approve Request
                     </button>
                 </form>
                 {% endif %}
+                
                 {% if org.status != 'suspended' %}
-                <form method="post" action="{{ url_for('super_admin.suspend_org', org_id=org.id) }}">
+                <form method="post" action="{{ url_for('super_admin.suspend_org', org_id=org.id) }}" class="m-0">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button class="btn btn-outline-danger px-4 fw-bold py-2">
-                        <i class="bi bi-slash-circle me-1"></i> Suspend
+                    <button type="submit" class="btn-premium secondary text-warning border-warning" style="border-color: rgba(245,158,11,0.3) !important;">
+                        <i class="bi bi-slash-circle"></i> Suspend
                     </button>
                 </form>
                 {% endif %}
+                
+                <!-- Delete Button -->
+                <form method="post" action="{{ url_for('super_admin.delete_org', org_id=org.id) }}" class="m-0" onsubmit="return confirm('Are you sure you want to delete {{ org.name }}? This action cannot be undone and will delete all associated data including workers, campaigns, and payments.');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn-premium secondary text-danger border-danger" style="border-color: rgba(239,68,68,0.3) !important;">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </form>
             </div>
         </div>
     </div>
 
-    <div class="row g-4">
-        <!-- Main Info Columns -->
-        <div class="col-lg-8">
-            <!-- Operational Stats Grid -->
-            <div class="row g-3 mb-4">
-                <div class="col-md-4">
-                    <div class="stats-card-premium p-4 text-center">
-                        <div class="stats-icon-circle bg-primary-subtle text-primary mb-3">
-                            <i class="bi bi-people-fill"></i>
-                        </div>
-                        <div class="h3 fw-bold mb-0">{{ worker_count }}</div>
-                        <div class="text-muted small text-uppercase fw-bold">Active Workers</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stats-card-premium p-4 text-center">
-                        <div class="stats-icon-circle bg-info-subtle text-info mb-3">
-                            <i class="bi bi-chat-left-text-fill"></i>
-                        </div>
-                        <div class="h3 fw-bold mb-0">{{ msg_sent }}</div>
-                        <div class="text-muted small text-uppercase fw-bold">Messages Sent</div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="stats-card-premium p-4 text-center">
-                        <div class="stats-icon-circle bg-success-subtle text-success mb-3">
-                            <i class="bi bi-telephone-fill"></i>
-                        </div>
-                        <div class="h3 fw-bold mb-0">{{ calls_made }}</div>
-                        <div class="text-muted small text-uppercase fw-bold">Calls Made</div>
-                    </div>
+    <!-- Metrics Grid -->
+    <div class="kpi-grid mb-4">
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span class="kpi-label">Active Workers</span>
+                <div class="kpi-icon">
+                    <i class="bi bi-people-fill text-primary"></i>
                 </div>
             </div>
+            <div class="kpi-value">{{ worker_count }}</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span class="kpi-label">Messages Sent</span>
+                <div class="kpi-icon">
+                    <i class="bi bi-chat-left-text-fill text-info"></i>
+                </div>
+            </div>
+            <div class="kpi-value">{{ msg_sent }}</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-header">
+                <span class="kpi-label">Calls Made</span>
+                <div class="kpi-icon">
+                    <i class="bi bi-telephone-fill text-success"></i>
+                </div>
+            </div>
+            <div class="kpi-value">{{ calls_made }}</div>
+        </div>
+    </div>
 
-            <!-- Subscription & Billing Overview -->
-            <div class="card border-0 shadow-sm p-4 mb-4">
-                <h3 class="h5 fw-bold mb-4 border-bottom pb-3 text-secondary"><i class="bi bi-gem me-2"></i>
-                    Subscription Status</h3>
+    <!-- Two-Column Details Grid -->
+    <div class="row g-4">
+        <!-- Left Column: Profiles, Subscriptions & Transactions -->
+        <div class="col-lg-8">
+            <!-- Subscription Card -->
+            <div class="premium-panel mb-4">
+                <div class="panel-header border-bottom pb-3 mb-4">
+                    <div class="panel-title">
+                        <h3><i class="bi bi-gem me-2 text-primary"></i> Subscription Status</h3>
+                        <p>Current subscription details and billing cycle</p>
+                    </div>
+                </div>
                 <div class="row g-4">
                     <div class="col-md-4">
-                        <label class="detail-label">Current Plan</label>
-                        <div class="detail-value fw-bold text-primary">{{ subscription.plan if subscription else 'Free
-                            Tier' }}</div>
+                        <label class="form-label text-uppercase text-muted" style="font-size: 0.75rem;">Current Plan</label>
+                        <div class="h5 fw-bold text-primary">{{ subscription.plan if subscription else 'Free Tier' }}</div>
                     </div>
                     <div class="col-md-4">
-                        <label class="detail-label">Billing Interval</label>
-                        <div class="detail-value text-muted">{{ subscription.billing_interval|capitalize if subscription
-                            else 'N/A' }}</div>
+                        <label class="form-label text-uppercase text-muted" style="font-size: 0.75rem;">Billing Interval</label>
+                        <div class="h6 fw-semibold text-dark">{{ subscription.billing_interval|capitalize if subscription else 'N/A' }}</div>
                     </div>
                     <div class="col-md-4">
-                        <label class="detail-label">Status</label>
+                        <label class="form-label text-uppercase text-muted" style="font-size: 0.75rem;">Status</label>
                         <div>
                             {% if subscription and subscription.display_status == 'ACTIVE' %}
-                            <span class="badge bg-success">ACTIVE</span>
+                            <span class="badge bg-success-subtle text-success border border-success px-3 py-1.5 fw-bold" style="border-radius: 8px; font-size: 0.75rem;">ACTIVE</span>
                             {% elif subscription %}
-                            <span class="badge bg-danger">{{ subscription.display_status }}</span>
+                            <span class="badge bg-danger-subtle text-danger border border-danger px-3 py-1.5 fw-bold" style="border-radius: 8px; font-size: 0.75rem;">{{ subscription.display_status }}</span>
                             {% else %}
-                            <span class="badge bg-secondary">TRIAL</span>
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary px-3 py-1.5 fw-bold" style="border-radius: 8px; font-size: 0.75rem;">TRIAL</span>
                             {% endif %}
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="detail-label">Billing Cycle Start</label>
-                        <div class="detail-value">{{ subscription.starts_at.strftime('%d %b %Y') if subscription and
-                            subscription.starts_at else 'N/A' }}</div>
+                        <label class="form-label text-uppercase text-muted" style="font-size: 0.75rem;">Billing Cycle Start</label>
+                        <div class="text-muted fw-semibold">
+                            <i class="bi bi-calendar-event me-1"></i>
+                            {{ subscription.starts_at.strftime('%d %b, %Y') if subscription and subscription.starts_at else 'N/A' }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="detail-label">Next Expiry Date</label>
-                        <div class="detail-value text-danger fw-bold">{{ subscription.expires_at.strftime('%d %b %Y') if
-                            subscription and subscription.expires_at else 'N/A' }}</div>
+                        <label class="form-label text-uppercase text-muted" style="font-size: 0.75rem;">Next Expiry Date</label>
+                        <div class="text-danger fw-bold">
+                            <i class="bi bi-calendar-x me-1"></i>
+                            {{ subscription.expires_at.strftime('%d %b, %Y') if subscription and subscription.expires_at else 'N/A' }}
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Profile & Registration Details -->
-            <div class="card border-0 shadow-sm p-4 mb-4">
-                <h3 class="h5 fw-bold mb-4 border-bottom pb-3 text-primary"><i class="bi bi-info-circle me-2"></i>
-                    Organization Profile</h3>
+            <!-- Profile Info Card -->
+            <div class="premium-panel mb-4">
+                <div class="panel-header border-bottom pb-3 mb-4">
+                    <div class="panel-title">
+                        <h3><i class="bi bi-info-circle me-2 text-primary"></i> Organization Profile</h3>
+                        <p>Registration and business details</p>
+                    </div>
+                </div>
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <label class="detail-label">Organization Type</label>
-                        <div class="detail-value">{{ org.org_type or 'Not Specified' }}</div>
+                        <label class="form-label text-uppercase text-muted" style="font-size: 0.75rem;">Organization Type</label>
+                        <div class="text-dark fw-semibold">{{ org.org_type or 'Not Specified' }}</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="detail-label">Industry / Domain</label>
-                        <div class="detail-value">{{ org.industry or 'Not Specified' }}</div>
+                        <label class="form-label text-uppercase text-muted" style="font-size: 0.75rem;">Industry / Domain</label>
+                        <div class="text-dark fw-semibold">{{ org.industry or 'Not Specified' }}</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="detail-label">Support Email</label>
-                        <div class="detail-value">{{ org.support_email or 'Not Provided' }}</div>
+                        <label class="form-label text-uppercase text-muted" style="font-size: 0.75rem;">Support Email</label>
+                        <div class="text-dark fw-semibold text-break">
+                            <a href="mailto:{{ org.support_email }}" class="text-decoration-none text-dark">
+                                <i class="bi bi-envelope me-1"></i> {{ org.support_email or 'Not Provided' }}
+                            </a>
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="detail-label">Support Phone</label>
-                        <div class="detail-value">{{ org.support_phone or 'Not Provided' }}</div>
+                        <label class="form-label text-uppercase text-muted" style="font-size: 0.75rem;">Support Phone</label>
+                        <div class="text-dark fw-semibold">
+                            <i class="bi bi-telephone me-1"></i> {{ org.support_phone or 'Not Provided' }}
+                        </div>
                     </div>
                     <div class="col-md-6">
-                        <label class="detail-label">Country</label>
-                        <div class="detail-value">{{ org.country or 'Not Provided' }}</div>
+                        <label class="form-label text-uppercase text-muted" style="font-size: 0.75rem;">Country</label>
+                        <div class="text-dark fw-semibold">{{ org.country or 'Not Provided' }}</div>
                     </div>
                     <div class="col-md-6">
-                        <label class="detail-label">System Language</label>
-                        <div class="detail-value">{{ org.language_preference or 'English' }}</div>
+                        <label class="form-label text-uppercase text-muted" style="font-size: 0.75rem;">System Language</label>
+                        <div class="text-dark fw-semibold">{{ org.language_preference or 'English' }}</div>
                     </div>
                     <div class="col-12">
-                        <label class="detail-label">Office Address</label>
-                        <div class="detail-value p-3 bg-light rounded-3">{{ org.office_address or 'No address provided'
-                            }}</div>
+                        <label class="form-label text-uppercase text-muted" style="font-size: 0.75rem;">Office Address</label>
+                        <div class="p-3 rounded-3 text-dark fw-medium" style="background: var(--grey-50); border: 1px solid var(--grey-200);">{{ org.office_address or 'No address provided' }}</div>
                     </div>
                 </div>
             </div>
 
-            <!-- Payment History -->
-            <div class="card border-0 shadow-sm p-4">
-                <h3 class="h5 fw-bold mb-4 border-bottom pb-3 text-primary"><i class="bi bi-credit-card me-2"></i>
-                    Transaction History</h3>
+            <!-- Transaction History Card -->
+            <div class="premium-panel">
+                <div class="panel-header border-bottom pb-3 mb-4">
+                    <div class="panel-title">
+                        <h3><i class="bi bi-credit-card me-2 text-primary"></i> Transaction History</h3>
+                        <p>Latest payment transactions</p>
+                    </div>
+                </div>
                 <div class="table-responsive">
                     <table class="table align-middle">
-                        <thead class="bg-light-soft text-primary">
-                            <tr>
-                                <th>Transaction ID</th>
-                                <th>Amount</th>
-                                <th>Status</th>
-                                <th>Method</th>
+                        <thead>
+                            <tr class="text-uppercase text-muted" style="font-size: 0.75rem; letter-spacing: 0.5px;">
+                                <th class="border-0 pb-3">Transaction ID</th>
+                                <th class="border-0 pb-3">Amount</th>
+                                <th class="border-0 pb-3">Status</th>
+                                <th class="border-0 pb-3">Method</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for p in payments %}
-                            <tr>
-                                <td class="small fw-semibold">#{{ p.id }}</td>
-                                <td class="fw-bold text-success">₹{{ "%.2f"|format(p.amount) }}</td>
-                                <td>
-                                    <span
-                                        class="badge {% if p.status == 'completed' or p.status == 'paid' %}bg-success-subtle text-success{% else %}bg-warning-subtle text-warning{% endif %}">
+                            <tr style="border-bottom: 1px solid var(--grey-100);">
+                                <td class="py-3 fw-semibold text-dark">#{{ p.id }}</td>
+                                <td class="py-3 fw-bold text-success">₹{{ "%.2f"|format(p.amount) }}</td>
+                                <td class="py-3">
+                                    {% if p.status == 'completed' or p.status == 'paid' %}
+                                    <span class="badge bg-success-subtle text-success border border-success px-2.5 py-1 fw-bold" style="border-radius: 6px; font-size: 0.75rem;">
                                         {{ p.status|upper }}
                                     </span>
+                                    {% else %}
+                                    <span class="badge bg-warning-subtle text-warning border border-warning px-2.5 py-1 fw-bold" style="border-radius: 6px; font-size: 0.75rem;">
+                                        {{ p.status|upper }}
+                                    </span>
+                                    {% endif %}
                                 </td>
-                                <td class="text-muted small">{{ p.meta.get('method', 'N/A') if p.meta else 'N/A' }}</td>
+                                <td class="py-3 text-muted small">{{ p.meta.get('method', 'N/A') if p.meta else 'N/A' }}</td>
                             </tr>
                             {% endfor %}
                             {% if not payments %}
                             <tr>
-                                <td colspan="4" class="text-center py-4 text-muted small">No payments recorded for this
-                                    organization.</td>
+                                <td colspan="4" class="text-center py-4 text-muted small">No payments recorded for this organization.</td>
                             </tr>
                             {% endif %}
                         </tbody>
@@ -221,42 +257,56 @@
             </div>
         </div>
 
-        <!-- Sidebar Info -->
+        <!-- Right Column: Primary Admin, Service Plan & Communication Settings -->
         <div class="col-lg-4">
-            <!-- Account Admin Info -->
-            <div class="card border-0 shadow-sm p-4 mb-4">
-                <h3 class="h6 fw-bold mb-4 text-uppercase text-muted opacity-75">Primary Admin</h3>
+            <!-- Primary Admin -->
+            <div class="premium-panel mb-4">
+                <div class="panel-header border-bottom pb-3 mb-4">
+                    <div class="panel-title">
+                        <h3>Primary Admin</h3>
+                        <p>Organization owner details</p>
+                    </div>
+                </div>
                 {% if admin %}
                 <div class="d-flex align-items-center gap-3 mb-4">
-                    <div class="admin-avatar">
+                    <div class="admin-avatar flex-shrink-0" style="width: 48px; height: 48px; border-radius: 12px; background: var(--black); color: var(--white); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.25rem;">
                         {{ admin.email[0]|upper }}
                     </div>
                     <div>
-                        <div class="fw-bold text-dark">{{ admin.email }}</div>
-                        <div class="small fw-bold text-primary">{{ admin.designation or 'Organization Admin' }}</div>
+                        <div class="fw-bold text-dark text-break">{{ admin.email }}</div>
+                        <div class="small fw-semibold text-muted">{{ admin.designation or 'Organization Admin' }}</div>
                     </div>
                 </div>
-                <div class="small text-muted mb-2"><i class="bi bi-telephone-fw me-2"></i> {{ admin.phone or 'No phone
-                    number' }}</div>
-                <div class="small text-muted"><i class="bi bi-calendar-event me-2"></i> Joined {{
-                    admin.created_at.strftime('%d %b %Y') }}</div>
+                <div class="small text-muted mb-2">
+                    <i class="bi bi-telephone me-2"></i> {{ admin.phone or 'No phone number' }}
+                </div>
+                <div class="small text-muted">
+                    <i class="bi bi-calendar-event me-2"></i> Joined {{ admin.created_at.strftime('%d %b %Y') }}
+                </div>
                 {% else %}
                 <div class="text-muted small">No admin details found.</div>
                 {% endif %}
             </div>
 
-            <!-- Subscription Status -->
-            <div class="card border-0 shadow-sm p-4 mb-4">
-                <h3 class="h6 fw-bold mb-4 text-uppercase text-muted opacity-75">Service Plan</h3>
-                <div class="p-3 bg-primary-subtle rounded-4 mb-4 border border-primary-subtle">
+            <!-- Service Plan -->
+            <div class="premium-panel mb-4">
+                <div class="panel-header border-bottom pb-3 mb-4">
+                    <div class="panel-title">
+                        <h3>Service Plan</h3>
+                        <p>Active plan status</p>
+                    </div>
+                </div>
+                
+                <div class="p-3 mb-4 border rounded-4" style="background: var(--grey-50); border-color: var(--grey-200) !important;">
                     <div class="row align-items-center">
                         <div class="col-auto">
-                            <i class="bi bi-shield-check text-primary fs-3"></i>
+                            <div class="d-flex align-items-center justify-content-center bg-white rounded-3 border" style="width: 42px; height: 42px;">
+                                <i class="bi bi-shield-check text-success fs-4"></i>
+                            </div>
                         </div>
                         <div class="col">
-                            <div class="small fw-bold text-primary opacity-75">CURRENT TIER</div>
-                            <div class="h5 fw-bold mb-0 text-primary">{{ subscription.plan if subscription else 'Trial'
-                                }}</div>
+                            <div class="small fw-bold text-muted" style="font-size: 0.7rem; letter-spacing: 0.5px;">CURRENT TIER</div>
+                            <div class="h5 fw-bold mb-0 text-dark">{{ subscription.plan if subscription else 'Trial' }}</div>
                         </div>
                     </div>
                 </div>
@@ -264,78 +314,80 @@
                 <div class="d-flex flex-column gap-3 mb-4">
                     <div class="d-flex justify-content-between small">
                         <span class="text-muted">Status:</span>
-                        <span
-                            class="fw-bold {% if subscription and subscription.display_status == 'ACTIVE' %}text-success{% else %}text-danger{% endif %}">{{
-                            subscription.display_status if subscription else 'INACTIVE' }}</span>
+                        <span class="fw-bold {% if subscription and subscription.display_status == 'ACTIVE' %}text-success{% else %}text-danger{% endif %}">
+                            {{ subscription.display_status if subscription else 'INACTIVE' }}
+                        </span>
                     </div>
                     <div class="d-flex justify-content-between small">
                         <span class="text-muted">Billing Cycle:</span>
-                        <span class="fw-bold text-dark">{{ subscription.billing_interval|capitalize if subscription else
-                            'N/A' }}</span>
+                        <span class="fw-bold text-dark">{{ subscription.billing_interval|capitalize if subscription else 'N/A' }}</span>
                     </div>
                 </div>
 
-                <button type="button" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" data-bs-toggle="modal"
-                    data-bs-target="#manageSubscriptionModal">
-                    Manage Subscription
+                <button type="button" class="btn-premium primary w-100 justify-content-center py-2.5 shadow-sm" data-bs-toggle="modal" data-bs-target="#manageSubscriptionModal">
+                    <i class="bi bi-sliders me-1"></i> Manage Subscription
                 </button>
             </div>
 
-
             <!-- Communication Settings -->
-            <div class="card border-0 shadow-sm p-4">
+            <div class="premium-panel mb-4">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h3 class="h6 fw-bold mb-0 text-uppercase text-muted opacity-75">Communication Config</h3>
+                    <div class="panel-title">
+                        <h3 class="mb-0">Communication Config</h3>
+                        <p class="text-muted small mb-0">Gateway settings</p>
+                    </div>
                     {% if org.hooman_config and org.hooman_config.get('api_key') %}
-                    <span class="badge bg-success-subtle text-success small" style="font-size: 0.6rem;">
+                    <span class="badge bg-success-subtle text-success border border-success fw-bold" style="font-size: 0.65rem; border-radius: 6px; padding: 4px 8px;">
                         <i class="bi bi-check-circle-fill me-1"></i>HOOMAN ACTIVE
                     </span>
                     {% endif %}
                 </div>
 
                 {% if pending_request %}
-                <div class="alert alert-warning small mb-3 border-0 bg-warning-subtle text-warning-emphasis">
+                <div class="alert alert-warning small mb-3 border-0 bg-warning-subtle text-warning-emphasis" style="border-radius: 12px;">
                     <i class="bi bi-exclamation-circle-fill me-1"></i>
-                    <strong>Request Pending:</strong> Org requested <strong>{{ pending_request.new_value|title
-                        }}</strong> number.
+                    <strong>Request Pending:</strong> Org requested <strong>{{ pending_request.new_value|title }}</strong> number.
                 </div>
                 {% endif %}
 
                 {% if org.hooman_config %}
-                <div class="mb-3 p-2 bg-light rounded-3 border">
-                    <div class="d-flex align-items-center gap-2 mb-1">
-                        <i class="bi bi-robot text-primary small"></i>
-                        <span class="small fw-bold">Hooman Labs</span>
+                <div class="mb-4 p-3 rounded-4 border bg-light">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <i class="bi bi-robot text-primary"></i>
+                        <span class="small fw-bold text-dark">Hooman Labs</span>
                     </div>
-                    <div class="small text-muted" style="font-size: 0.75rem;">
-                        <div>Number: <span class="fw-semibold text-dark">{{ org.hooman_config.get('number', 'Not Set') }}</span></div>
-                        <div>API Key: <span class="fw-semibold text-dark">••••••••{{ org.hooman_config.get('api_key', '')[-4:] if org.hooman_config.get('api_key') else 'Not Set' }}</span></div>
+                    <div class="small text-muted" style="font-size: 0.75rem; line-height: 1.6;">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Number:</span>
+                            <span class="fw-semibold text-dark">{{ org.hooman_config.get('number', 'Not Set') }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>API Key:</span>
+                            <span class="fw-semibold text-dark">••••••••{{ org.hooman_config.get('api_key', '')[-4:] if org.hooman_config.get('api_key') else 'Not Set' }}</span>
+                        </div>
                     </div>
                 </div>
                 {% endif %}
 
-                <button class="btn btn-primary w-100 fw-bold py-2 shadow-sm" data-bs-toggle="modal"
-                    data-bs-target="#configTwilioModal">
+                <button class="btn-premium secondary w-100 justify-content-center py-2.5 shadow-sm" data-bs-toggle="modal" data-bs-target="#configTwilioModal">
                     <i class="bi bi-gear-fill me-1"></i> Configure Settings
                 </button>
             </div>
-
-
         </div>
     </div>
 </div>
 
 <!-- Configure Twilio Modal -->
 <div class="modal fade" id="configTwilioModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-xl" style="max-width: 90%;">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+    <div class="modal-dialog modal-xl modal-dialog-centered" style="max-width: 90%;">
+        <div class="modal-content">
             <form action="{{ url_for('super_admin.configure_twilio', org_id=org.id) }}" method="POST">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <div class="modal-header border-0 p-4 pb-0">
-                    <h5 class="modal-title fw-bold">Configuration Communication Settings</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Configure Communication Settings</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body p-4" style="max-height: 70vh; overflow-y: auto;">
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
                     <p class="text-muted small mb-4">
                         Configure specific Twilio credentials for this organization.
                         If left blank, the system will use the platform's default environment variables.
@@ -344,25 +396,24 @@
                     <div class="row g-4">
                         <!-- Voice Config -->
                         <div class="col-md-6">
-                            <div class="p-3 border rounded bg-light h-100">
-                                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-telephone-fill me-2"></i>Voice
-                                    Configuration</h6>
+                            <div class="p-4 border rounded-4 bg-light h-100" style="border-color: var(--grey-200) !important;">
+                                <h6 class="fw-bold text-primary mb-3"><i class="bi bi-telephone-fill me-2"></i>Voice Configuration</h6>
 
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">Account SID</label>
-                                    <input type="text" class="form-control form-control-sm bg-white" name="voice_sid"
+                                    <label class="form-label text-uppercase text-muted" style="font-size: 0.7rem; font-weight: 700;">Account SID</label>
+                                    <input type="text" class="form-control bg-white py-2" name="voice_sid"
                                         value="{{ org.twilio_config.get('voice', {}).get('sid', '') if org.twilio_config else '' }}"
                                         placeholder="AC...">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">Auth Token</label>
-                                    <input type="password" class="form-control form-control-sm bg-white"
+                                    <label class="form-label text-uppercase text-muted" style="font-size: 0.7rem; font-weight: 700;">Auth Token</label>
+                                    <input type="password" class="form-control bg-white py-2"
                                         name="voice_token"
                                         value="{{ org.twilio_config.get('voice', {}).get('token', '') if org.twilio_config else '' }}">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">Voice Number</label>
-                                    <input type="text" class="form-control form-control-sm bg-white" name="voice_number"
+                                    <label class="form-label text-uppercase text-muted" style="font-size: 0.7rem; font-weight: 700;">Voice Number</label>
+                                    <input type="text" class="form-control bg-white py-2" name="voice_number"
                                         value="{{ org.twilio_config.get('voice', {}).get('number', '') if org.twilio_config else '' }}"
                                         placeholder="+1...">
                                 </div>
@@ -371,24 +422,23 @@
 
                         <!-- WhatsApp Config -->
                         <div class="col-md-6">
-                            <div class="p-3 border rounded bg-light h-100">
-                                <h6 class="fw-bold text-success mb-3"><i class="bi bi-whatsapp me-2"></i>WhatsApp
-                                    Configuration</h6>
+                            <div class="p-4 border rounded-4 bg-light h-100" style="border-color: var(--grey-200) !important;">
+                                <h6 class="fw-bold text-success mb-3"><i class="bi bi-whatsapp me-2"></i>WhatsApp Configuration</h6>
 
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">Account SID</label>
-                                    <input type="text" class="form-control form-control-sm bg-white" name="wa_sid"
+                                    <label class="form-label text-uppercase text-muted" style="font-size: 0.7rem; font-weight: 700;">Account SID</label>
+                                    <input type="text" class="form-control bg-white py-2" name="wa_sid"
                                         value="{{ org.twilio_config.get('whatsapp', {}).get('sid', '') if org.twilio_config else '' }}"
                                         placeholder="AC...">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">Auth Token</label>
-                                    <input type="password" class="form-control form-control-sm bg-white" name="wa_token"
+                                    <label class="form-label text-uppercase text-muted" style="font-size: 0.7rem; font-weight: 700;">Auth Token</label>
+                                    <input type="password" class="form-control bg-white py-2" name="wa_token"
                                         value="{{ org.twilio_config.get('whatsapp', {}).get('token', '') if org.twilio_config else '' }}">
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold">WhatsApp Number</label>
-                                    <input type="text" class="form-control form-control-sm bg-white" name="wa_number"
+                                    <label class="form-label text-uppercase text-muted" style="font-size: 0.7rem; font-weight: 700;">WhatsApp Number</label>
+                                    <input type="text" class="form-control bg-white py-2" name="wa_number"
                                         value="{{ org.twilio_config.get('whatsapp', {}).get('number', '') if org.twilio_config else '' }}"
                                         placeholder="whatsapp:+1...">
                                 </div>
@@ -397,103 +447,94 @@
                     </div>
 
                     <!-- Hooman Labs Config -->
-                    <div class="mt-4 p-3 border rounded" style="background: linear-gradient(135deg, #e8f4fd 0%, #f0e8ff 100%); border-color: #6c5ce7 !important;">
+                    <div class="mt-4 p-4 border rounded-4" style="background: linear-gradient(135deg, #e8f4fd 0%, #f0e8ff 100%); border-color: #6c5ce7 !important;">
                         <h6 class="fw-bold mb-3" style="color: #6c5ce7;">
                             <i class="bi bi-robot me-2"></i>Hooman Labs Configuration
                         </h6>
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold">Number</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-white"><i class="bi bi-telephone text-muted"></i></span>
-                                    <input type="text" class="form-control bg-white" name="hooman_number"
+                                <label class="form-label text-uppercase text-muted" style="font-size: 0.7rem; font-weight: 700; color: #6c5ce7;">Number</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-telephone text-muted"></i></span>
+                                    <input type="text" class="form-control bg-white border-start-0 py-2" name="hooman_number"
                                         value="{{ org.hooman_config.get('number', '') if org.hooman_config else (org.twilio_config.get('hooman_labs', {}).get('number', '') if org.twilio_config else '') }}"
                                         placeholder="+91...">
                                 </div>
-                                <div class="form-text small text-muted" style="font-size: 0.65rem;">
+                                <div class="form-text small text-muted" style="font-size: 0.75rem;">
                                     <i class="bi bi-info-circle me-1"></i>Caller ID number for Hooman Labs.
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label small fw-bold">API Key</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text bg-white"><i class="bi bi-key text-muted"></i></span>
-                                    <input type="password" class="form-control bg-white" name="hooman_api_key"
+                                <label class="form-label text-uppercase text-muted" style="font-size: 0.7rem; font-weight: 700; color: #6c5ce7;">API Key</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-key text-muted"></i></span>
+                                    <input type="password" class="form-control bg-white border-start-0 py-2" name="hooman_api_key"
                                         value="{{ org.hooman_config.get('api_key', '') if org.hooman_config else (org.twilio_config.get('hooman_labs', {}).get('api_key', '') if org.twilio_config else '') }}"
                                         placeholder="hl_api_key...">
                                 </div>
-                                <div class="form-text small text-muted" style="font-size: 0.65rem;">
+                                <div class="form-text small text-muted" style="font-size: 0.75rem;">
                                     <i class="bi bi-info-circle me-1"></i>Hooman Labs API key for authentication.
                                 </div>
                             </div>
                         </div>
                     </div>
-
                 </div>
-                <div class="modal-footer border-0 p-4">
-                    <button type="button" class="btn btn-light fw-bold" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary fw-bold px-4">Save Configuration</button>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn-premium secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-premium primary px-4">Save Configuration</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 
-<!-- Manage Subscription Modal (Admin) -->
+<!-- Manage Subscription Modal -->
 <div class="modal fade" id="manageSubscriptionModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
-            <div class="modal-header border-0 p-4 pb-0">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
                 <h5 class="modal-title fw-bold">Manage Organization Subscription</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
+            <div class="modal-body">
                 <!-- Current Plan Report -->
-                <div class="bg-light rounded-4 p-4 mb-4">
+                <div class="rounded-4 p-4 mb-4" style="background: var(--grey-50); border: 1px solid var(--grey-200);">
                     <div class="row g-4 text-center">
-                        <div class="col-md-4">
-                            <div class="text-muted small text-uppercase">Current Plan</div>
-                            <div class="fw-bold h5 mb-0 text-primary">{{ subscription.plan if subscription else 'Free
-                                Tier' }}</div>
+                        <div class="col-md-4 border-end">
+                            <div class="text-muted small text-uppercase fw-bold" style="font-size: 0.75rem;">Current Plan</div>
+                            <div class="fw-bold h5 mb-0 text-primary mt-1">{{ subscription.plan if subscription else 'Free Tier' }}</div>
+                        </div>
+                        <div class="col-md-4 border-end">
+                            <div class="text-muted small text-uppercase fw-bold" style="font-size: 0.75rem;">Expiry Date</div>
+                            <div class="fw-bold h5 mb-0 text-danger mt-1">{{ subscription.expires_at.strftime('%d %b %Y') if subscription and subscription.expires_at else 'No Expiry' }}</div>
                         </div>
                         <div class="col-md-4">
-                            <div class="text-muted small text-uppercase">Expiry Date</div>
-                            <div class="fw-bold h5 mb-0 text-danger">{{ subscription.expires_at.strftime('%d %b %Y') if
-                                subscription and subscription.expires_at else 'No Expiry' }}</div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="text-muted small text-uppercase">Status</div>
-                            <div
-                                class="fw-bold h5 mb-0 {% if subscription and subscription.display_status == 'ACTIVE' %}text-success{% else %}text-danger{% endif %}">
+                            <div class="text-muted small text-uppercase fw-bold" style="font-size: 0.75rem;">Status</div>
+                            <div class="fw-bold h5 mb-0 mt-1 {% if subscription and subscription.display_status == 'ACTIVE' %}text-success{% else %}text-danger{% endif %}">
                                 {{ subscription.display_status if subscription else 'ACTIVE' }}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div
-                    class="d-flex align-items-center justify-content-between p-4 border rounded-4 mb-4 bg-white shadow-sm">
+                <div class="d-flex align-items-center justify-content-between p-4 border rounded-4 mb-4 bg-white" style="border-color: var(--grey-200) !important;">
                     <div>
                         <h6 class="fw-bold mb-1">Inactivity Control</h6>
-                        <p class="text-muted small mb-0">Setting this to **Inactive** will block worker logins and show
-                            a popup on the org dashboard.</p>
+                        <p class="text-muted small mb-0">Setting this to <strong>Inactive</strong> will block worker logins and show a popup on the organization dashboard.</p>
                     </div>
-                    <form action="{{ url_for('super_admin.toggle_subscription_status', org_id=org.id) }}" method="POST">
+                    <form action="{{ url_for('super_admin.toggle_subscription_status', org_id=org.id) }}" method="POST" class="m-0">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <button type="submit"
-                            class="btn {% if subscription and subscription.status == 'inactive' %}btn-success{% else %}btn-outline-danger{% endif %} px-4 py-2 fw-bold"
-                            style="border-radius: 10px;">
+                        <button type="submit" class="btn-premium {% if subscription and subscription.status == 'inactive' %}primary{% else %}secondary text-danger border-danger{% endif %} px-4 py-2">
                             {{ 'Set Active' if subscription and subscription.status == 'inactive' else 'Set Inactive' }}
                         </button>
                     </form>
                 </div>
 
-                <div class="card border-0 bg-light rounded-4">
+                <div class="card border-0 rounded-4" style="background: var(--grey-50); border: 1px solid var(--grey-200) !important;">
                     <div class="card-body p-4">
-                        <h6 class="fw-bold mb-3"><i class="bi bi-shield-lock me-2"></i>Security Note</h6>
+                        <h6 class="fw-bold mb-2"><i class="bi bi-shield-lock me-2 text-danger"></i>Administrative Control Note</h6>
                         <p class="small text-muted mb-0">
-                            Deactivating a subscription is an administrative action. This overrides the organization's
-                            own control and effectively suspends their worker operations while retaining their data.
+                            Deactivating a subscription is an administrative action. This overrides the organization's own control and effectively suspends their worker operations while retaining all their data.
                         </p>
                     </div>
                 </div>
@@ -503,154 +544,38 @@
 </div>
 
 <style>
-    :root {
-        --primary-color: #6c5ce7;
-        --secondary-color: #a29bfe;
+    .modal-content {
+        border-radius: 24px !important;
+        border: none !important;
+        box-shadow: 0 15px 50px rgba(0,0,0,0.1) !important;
     }
-
-    .org-detail-container {
-        padding: 20px 0;
-        font-family: 'Poppins', sans-serif;
+    .modal-header {
+        border-bottom: 1px solid var(--grey-100) !important;
+        padding: 1.5rem 2rem !important;
     }
-
-    /* Breadcrumbs Fix */
-    .breadcrumb-modern {
-        font-size: 0.9rem;
-        font-weight: 500;
+    .modal-body {
+        padding: 2rem !important;
     }
-
-    .breadcrumb-link {
-        color: #94a3b8;
-        text-decoration: none;
-        transition: color 0.2s;
+    .modal-footer {
+        border-top: 1px solid var(--grey-100) !important;
+        padding: 1.5rem 2rem !important;
     }
-
-    .breadcrumb-link:hover {
-        color: var(--primary-color);
+    .form-control:focus {
+        border-color: var(--black) !important;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05) !important;
+        background-color: #fff !important;
     }
-
-    .breadcrumb-sep {
-        color: #cbd5e1;
-        font-size: 0.75rem;
-    }
-
-    .breadcrumb-current {
-        color: #475569;
-        font-weight: 600;
-    }
-
-    .org-logo-wrapper {
-        width: 120px;
-        height: 120px;
-        background: white;
-        border-radius: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        border: 2px solid #f1f5f9;
-        overflow: hidden;
-    }
-
-    .org-logo-detail {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        padding: 12px;
-    }
-
-    .org-logo-placeholder {
-        color: #cbd5e1;
-    }
-
-    .stats-card-premium {
-        background: white;
-        border-radius: 28px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-        border: 1px solid #f1f5f9;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .stats-card-premium:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 15px 35px rgba(108, 92, 231, 0.1);
-    }
-
-    .stats-icon-circle {
-        width: 54px;
-        height: 54px;
-        border-radius: 18px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.4rem;
-    }
-
-    .detail-label {
-        font-size: 0.7rem;
-        font-weight: 800;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.08em;
-        margin-bottom: 6px;
-        display: block;
-    }
-
-    .detail-value {
-        font-size: 1.05rem;
-        font-weight: 600;
-        color: #334155;
-    }
-
-    .admin-avatar {
-        width: 50px;
-        height: 50px;
-        border-radius: 16px;
-        background: var(--primary-color);
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 800;
-        font-size: 1.4rem;
-        box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3);
-    }
-
-    .bg-light-soft {
-        background: #f8fafc;
-    }
-
     .animate-in {
         animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
     }
-
     @keyframes slideUp {
         from {
             opacity: 0;
-            transform: translateY(30px);
+            transform: translateY(20px);
         }
-
         to {
             opacity: 1;
             transform: translateY(0);
-        }
-    }
-
-    @media (max-width: 768px) {
-        .text-center-mobile {
-            text-align: center;
-        }
-
-        .justify-content-center-mobile {
-            justify-content: center;
-        }
-
-        .org-logo-wrapper {
-            margin: 0 auto;
-        }
-
-        .ms-md-auto {
-            margin-top: 25px;
         }
     }
 </style>

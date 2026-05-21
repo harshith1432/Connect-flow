@@ -1,0 +1,168 @@
+{% extends 'base_billing_premium.html' %}
+
+{% block title %}ConnectFlow | Payment History{% endblock %}
+{% block page_title %}Payment history{% endblock %}
+
+{% block content %}
+<!-- Compute Lifetime Spend dynamically in Jinja -->
+{% set total_spend = namespace(value=0) %}
+{% for p in payments %}
+    {% if p.status == 'completed' %}
+        {% set total_spend.value = total_spend.value + p.amount %}
+    {% endif %}
+{% endfor %}
+
+<div class="kpi-grid">
+    <!-- Lifetime Spend -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Lifetime Spend</span>
+            <div class="kpi-icon"><i class="bi bi-piggy-bank-fill text-success"></i></div>
+        </div>
+        <div class="kpi-value">₹{{ total_spend.value|int }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-graph-up-arrow"></i> Aggregate investment
+        </div>
+    </div>
+    
+    <!-- Last Payment -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Last Payment Made</span>
+            <div class="kpi-icon"><i class="bi bi-credit-card-fill text-primary"></i></div>
+        </div>
+        <div class="kpi-value">
+            {% if payments %}
+                ₹{{ payments[0].amount|int }}
+            {% else %}
+                ₹0
+            {% endif %}
+        </div>
+        <div class="kpi-trend text-muted" style="font-size: 0.75rem; font-weight: 600;">
+            {% if payments %}
+                Cleared on {{ payments[0].created_at.strftime('%b %d, %Y') }}
+            {% else %}
+                No transactions recorded
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Payment status -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Cycle Status</span>
+            <div class="kpi-icon"><i class="bi bi-shield-check text-success"></i></div>
+        </div>
+        <div class="kpi-value" style="font-size: 1.85rem;">Good Standing</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-shield-fill-check"></i> Account is active
+        </div>
+    </div>
+
+    <!-- Active Gateways -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Primary Gateway</span>
+            <div class="kpi-icon"><i class="bi bi-cpu-fill text-info"></i></div>
+        </div>
+        <div class="kpi-value" style="font-size: 1.55rem; padding: 0.15rem 0;">Razorpay</div>
+        <div class="kpi-trend text-muted" style="font-size: 0.75rem; font-weight: 600;">
+            Mode: <span class="text-primary fw-bold">SANDBOX</span>
+        </div>
+    </div>
+</div>
+
+<div class="premium-panel">
+    <div class="panel-header">
+        <div class="panel-title">
+            <h3>Transaction Ledger</h3>
+            <p>A comprehensive journal of all outbound platform license transactions</p>
+        </div>
+        <div class="panel-actions">
+            <button class="btn btn-outline-secondary btn-sm rounded-3 d-flex align-items-center gap-1 fw-bold text-dark border" onclick="window.print()" style="font-size: 0.8rem; padding: 0.5rem 1rem; background: var(--white);">
+                <i class="bi bi-printer"></i> Print Statement
+            </button>
+        </div>
+    </div>
+
+    <div class="table-responsive mt-2">
+        <table class="activity-table">
+            <thead>
+                <tr style="border-bottom: 2px solid var(--grey-100);">
+                    <th style="padding: 1.25rem 1rem;">Transaction Date</th>
+                    <th style="padding: 1.25rem 1rem;">Reference Number</th>
+                    <th style="padding: 1.25rem 1rem;">Integrated Gateway</th>
+                    <th style="padding: 1.25rem 1rem;">Payment Method</th>
+                    <th style="padding: 1.25rem 1rem;">License Type</th>
+                    <th style="padding: 1.25rem 1rem;">Amount</th>
+                    <th style="padding: 1.25rem 1rem; text-align: right;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if payments %}
+                    {% for p in payments %}
+                    <tr style="transition: var(--transition-base);">
+                        <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--black);">
+                            {{ p.created_at.strftime('%b %d, %Y • %I:%M %p') }}
+                        </td>
+                        <td style="padding: 1.25rem 1rem;">
+                            <code class="px-2.5 py-1 rounded bg-light border text-secondary" style="font-size: 0.75rem; font-weight: 700;">
+                                {{ p.transaction_id or 'TXN_DUMMY_8192' }}
+                            </code>
+                        </td>
+                        <td style="padding: 1.25rem 1rem; font-weight: 600; color: var(--grey-800);">
+                            {{ p.gateway_name or 'Razorpay Standard' }}
+                        </td>
+                        <td style="padding: 1.25rem 1rem; font-size: 0.85rem; color: var(--grey-600); font-weight: 500;">
+                            <i class="bi bi-credit-card me-1"></i> Sandbox Wallet
+                        </td>
+                        <td style="padding: 1.25rem 1rem; font-weight: 700; color: var(--black);">
+                            {{ p.meta.get('plan_name', 'Enterprise License') if p.meta else 'Enterprise License' }}
+                        </td>
+                        <td style="padding: 1.25rem 1rem; font-family: var(--font-heading); font-weight: 800; color: var(--black); font-size: 0.95rem;">
+                            ₹{{ p.amount|int }}
+                        </td>
+                        <td style="padding: 1.25rem 1rem; text-align: right;">
+                            <span class="status-badge" style="background: #ecfdf5; color: #047857; font-weight: 700; border: 1px solid #d1fae5; font-size: 0.75rem; padding: 0.35rem 0.75rem;">
+                                {{ p.status|upper }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <div class="py-4">
+                                <i class="bi bi-credit-card-2-back fs-1 d-block mb-3 text-grey-300"></i>
+                                <span class="fw-semibold" style="font-size: 1.1rem; color: var(--black);">No transaction history found</span>
+                                <p class="small text-muted mt-2 max-width-400 mx-auto">You have not executed any license payments yet. Choose one of our commercial plans to unlock active workspace pipelines.</p>
+                                <a href="{{ url_for('org.browse_plans') }}" class="btn btn-dark mt-4 fw-bold rounded-3" style="padding: 0.65rem 1.5rem; font-size: 0.85rem;">Browse Enterprise Plans</a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.activity-table tbody tr:hover {
+    background-color: var(--grey-50);
+}
+@media print {
+    .premium-sidebar, .premium-topbar, .panel-actions, .kpi-grid {
+        display: none !important;
+    }
+    .main-wrapper {
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    .premium-panel {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+}
+</style>
+{% endblock %}

@@ -22,9 +22,8 @@ def org_required(f):
     @wraps(f)
     @login_required
     def decorated(*args, **kwargs):
-        # Organization users use OrganizationUser model and must have organization_id
-        if not hasattr(current_user, "organization_id"):
-            flash("Access denied: organization users only", "danger")
+        if not hasattr(current_user, "organization_id") or getattr(current_user, "role", "") != "org_admin":
+            flash("Access denied: organization admins only", "danger")
             return redirect(url_for("org.login"))
         return f(*args, **kwargs)
 
@@ -35,9 +34,8 @@ def verified_org_required(f):
     @wraps(f)
     @login_required
     def decorated(*args, **kwargs):
-        # Organization users use OrganizationUser model and must have organization_id
-        if not hasattr(current_user, "organization_id"):
-            flash("Access denied: organization users only", "danger")
+        if not hasattr(current_user, "organization_id") or getattr(current_user, "role", "") != "org_admin":
+            flash("Access denied: organization admins only", "danger")
             return redirect(url_for("org.login"))
         return f(*args, **kwargs)
 
@@ -80,10 +78,10 @@ def active_subscription_required(f):
         # MANDATORY: If no subscription record, they must buy one
         if not sub:
             allowed_endpoints = [
-                "tenant_admin.browse_plans",
-                "tenant_admin.checkout",
-                "tenant_admin.process_payment",
-                "tenant_admin.logout",
+                "org.browse_plans",
+                "org.checkout",
+                "org.process_payment",
+                "org.logout",
             ]
             if request.endpoint not in allowed_endpoints:
                 if getattr(current_user, "role", "") == "worker":
@@ -93,7 +91,7 @@ def active_subscription_required(f):
                     "A subscription is required to access these features. Please choose a plan.",
                     "warning",
                 )
-                return redirect(url_for("tenant_admin.browse_plans"))
+                return redirect(url_for("org.browse_plans"))
             return f(*args, **kwargs)
 
         now = datetime.utcnow()
@@ -106,13 +104,13 @@ def active_subscription_required(f):
         if is_inactive or is_expired_shutdown:
             # Allow access only to plans page or logout or verification pending
             allowed_endpoints = [
-                "tenant_admin.browse_plans",
-                "tenant_admin.checkout",
-                "tenant_admin.process_payment",
-                "tenant_admin.logout",
+                "org.browse_plans",
+                "org.checkout",
+                "org.process_payment",
+                "org.logout",
                 "main.subscription_expired",
-                "tenant_admin.dashboard",
-                "tenant_admin.profile",
+                "org.dashboard",
+                "org.profile",
             ]
 
             if request.endpoint not in allowed_endpoints:
@@ -124,7 +122,7 @@ def active_subscription_required(f):
                     "Your subscription is completed/inactive. Please renew to continue services.",
                     "warning",
                 )
-                return redirect(url_for("tenant_admin.dashboard"))
+                return redirect(url_for("org.dashboard"))
 
         # ALERT: If expired but within grace (3, 2, or 1 day remaining/past)
         if (

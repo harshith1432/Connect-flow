@@ -1,3 +1,4 @@
+import sys
 from flask import (
     request,
     redirect,
@@ -15,6 +16,7 @@ from app.models import (
     ModuleField,
     ModuleRecord,
     Campaign,
+    CampaignTarget,
     DeliveryLog,
     OrganizationUser,
     ChangeRequest,
@@ -22,8 +24,11 @@ from app.models import (
     ModuleRecordValue,
     ModuleGroup,
     Subscription,
+    Script,
+    CommunicationNumber,
 )
-from app.extensions import db
+from app.services.campaign_runner import CampaignExecutionService
+from app.extensions import db, csrf
 from app.core.decorators import worker_required, active_subscription_required
 from werkzeug.security import generate_password_hash
 from werkzeug.utils import secure_filename
@@ -33,13 +38,16 @@ import re
 from datetime import datetime, timedelta
 import os
 import time
+import asyncio
+import uuid
+import csv
+import io
 
 worker_bp = Blueprint(
     "worker",
     __name__,
     url_prefix="/worker",
     template_folder="templates",
-    static_folder="static",
 )
 
 
@@ -92,6 +100,7 @@ def dashboard():
     # Module enrichment (Real Data)
     for m in modules:
         m.record_count = ModuleRecord.query.filter_by(module_id=m.id).count()
+        m.group_count = ModuleGroup.query.filter_by(module_id=m.id).count()
         m.campaign_count = Campaign.query.filter_by(module_id=m.id).count()
         last_record = (
             ModuleRecord.query.filter_by(module_id=m.id)
@@ -159,9 +168,19 @@ def worker_analytics():
         .all()
     )
 
+    total_records = db.session.query(db.func.count(ModuleRecord.id)).filter(ModuleRecord.module_id.in_(m_ids)).scalar() or 0
+    total_logs = DeliveryLog.query.join(Campaign).filter(Campaign.module_id.in_(m_ids)).count()
+    success_logs = DeliveryLog.query.join(Campaign).filter(
+        Campaign.module_id.in_(m_ids),
+        DeliveryLog.status.in_(["sent", "delivered", "read", "completed"])
+    ).count()
+    success_rate = round((success_logs / total_logs * 100), 1) if total_logs > 0 else 0
+
     return jsonify(
         {
             "module_name": m_name,
+            "total_attempts": total_logs,
+            "success_rate": success_rate,
             "trend": {
                 "labels": [
                     t[0].strftime("%d %b") if hasattr(t[0], "strftime") else str(t[0])
@@ -359,12 +378,28 @@ def manage_module(mid):
         flash("Access denied", "danger")
         return redirect(url_for("worker.dashboard"))
 
-    fields = ModuleField.query.filter_by(module_id=mid).order_by(ModuleField.id).all()
-    records = (
-        ModuleRecord.query.filter_by(module_id=mid)
-        .order_by(ModuleRecord.created_at.desc())
-        .all()
-    )
+    # ── Group filter: if ?group=<id> is present, load only that group's records ──
+    active_group = None
+    group_id = request.args.get("group", type=int)
+    if group_id:
+        active_group = ModuleGroup.query.filter_by(id=group_id, module_id=mid).first()
+
+    if active_group:
+        fields = ModuleField.query.filter_by(module_id=mid, group_id=group_id).order_by(ModuleField.id).all()
+        records = (
+            ModuleRecord.query.filter_by(module_id=mid, group_id=group_id)
+            .order_by(ModuleRecord.created_at.desc())
+            .all()
+        )
+    else:
+        fields = ModuleField.query.filter_by(module_id=mid, group_id=None).order_by(ModuleField.id).all()
+        records = (
+            ModuleRecord.query.filter_by(module_id=mid, group_id=None)
+            .order_by(ModuleRecord.created_at.desc())
+            .all()
+        )
+
+
 
     # Enrich records with calculated/boolean values
     for r in records:
@@ -378,7 +413,8 @@ def manage_module(mid):
                 r.computed_values[f.id] = f_vals.get(f.id, "-")
 
     return render_template(
-        "worker/module_manage.html", module=m, fields=fields, records=records
+        "worker/module_manage.html", module=m, fields=fields, records=records,
+        active_group=active_group
     )
 
 
@@ -433,6 +469,52 @@ def update_module(mid):
     return jsonify({"success": True})
 
 
+@worker_bp.route("/modules/<int:mid>/delete", methods=["POST"])
+@worker_required
+@active_subscription_required
+def delete_module(mid):
+    m = db.get_or_404(Module, mid)
+    if m.organization_id != current_user.organization_id:
+        return jsonify({"success": False, "error": "Access denied"}), 403
+    
+    try:
+        # 1. Disconnect Campaigns from this module, its groups, and its scripts
+        campaigns = Campaign.query.filter_by(module_id=mid).all()
+        for c in campaigns:
+            c.module_id = None
+            c.group_id = None
+            c.script_id = None
+        db.session.flush()
+
+        # 2. Get all record IDs for cleaning up record values
+        record_ids = [r.id for r in ModuleRecord.query.filter_by(module_id=mid).all()]
+        if record_ids:
+            ModuleRecordValue.query.filter(ModuleRecordValue.record_id.in_(record_ids)).delete(synchronize_session=False)
+            ModuleRecord.query.filter(ModuleRecord.id.in_(record_ids)).delete(synchronize_session=False)
+
+        # 3. Delete scripts associated with the module
+        Script.query.filter_by(module_id=mid).delete(synchronize_session=False)
+
+        # 4. Delete fields and groups
+        ModuleField.query.filter_by(module_id=mid).delete(synchronize_session=False)
+        ModuleGroup.query.filter_by(module_id=mid).delete(synchronize_session=False)
+
+        # 5. Delete the module itself
+        db.session.delete(m)
+        db.session.commit()
+        
+        ChangeRequest.log(
+            current_user.organization_id,
+            current_user.id,
+            "Module Deletion",
+            new_val=f"Module '{m.name}' was permanently deleted",
+        )
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @worker_bp.route("/profile", methods=["GET", "POST"])
 @worker_required
 def profile():
@@ -442,6 +524,16 @@ def profile():
 
         current_user.full_name = full_name
         current_user.phone = phone
+        
+        # Handle profile photo upload
+        profile_photo = request.files.get("profile_photo")
+        if profile_photo and profile_photo.filename:
+            filename = secure_filename(f"user_{current_user.id}_{profile_photo.filename}")
+            upload_path = os.path.join("app", "static", "uploads", "profiles", filename)
+            os.makedirs(os.path.dirname(upload_path), exist_ok=True)
+            profile_photo.save(upload_path)
+            current_user.profile_photo = f"uploads/profiles/{filename}"
+
         db.session.commit()
 
         flash("Profile updated successfully", "success")
@@ -454,7 +546,20 @@ def profile():
 @worker_required
 def preferences():
     if request.method == "POST":
-        # Placeholder for preferences update logic
+        theme = request.form.get("theme", "light")
+        language = request.form.get("language", "English")
+        
+        prefs = current_user.preferences or {}
+        prefs["theme"] = theme
+        prefs["language"] = language
+        
+        # In SQLAlchemy JSON columns, we sometimes need to explicitly mark it as modified
+        current_user.preferences = prefs
+        from sqlalchemy.orm.attributes import flag_modified
+        flag_modified(current_user, "preferences")
+        
+        db.session.commit()
+        
         flash("Preferences updated successfully", "success")
         return redirect(url_for("worker.preferences"))
 
@@ -606,13 +711,20 @@ def add_record(mid):
         flash("Access denied", "danger")
         return redirect(url_for("worker.dashboard"))
 
+    group_id = request.form.get("group_id")
+    if not group_id:
+        flash("Group ID is required to add a record.", "danger")
+        return redirect(url_for("worker.manage_module", mid=mid))
+
+    group = ModuleGroup.query.get(group_id)
+
     # Create the record
-    record = ModuleRecord(module_id=mid, created_by_id=current_user.id)
+    record = ModuleRecord(module_id=mid, group_id=group_id, created_by_id=current_user.id)
     db.session.add(record)
     db.session.flush()  # Get the record ID
 
     # Add values
-    fields = ModuleField.query.filter_by(module_id=mid).all()
+    fields = ModuleField.query.filter_by(module_id=mid, group_id=group_id).all()
     for f in fields:
         if f.field_type in ["calculated", "boolean"]:
             continue
@@ -635,23 +747,24 @@ def add_record(mid):
                 existing = (
                     ModuleRecordValue.query.filter_by(field_id=f.id, value=val_text)
                     .join(ModuleRecord)
-                    .filter(ModuleRecord.module_id == mid)
+                    .filter(ModuleRecord.group_id == group_id)
                     .first()
                 )
                 if existing:
                     db.session.rollback()
                     flash(
-                        f"Duplicate entry detected: '{val_text}' is already registered for '{f.name}'.",
+                        f"Duplicate detected inside group '{group.name if group else 'unknown'}'. Number: {val_text}",
                         "danger",
                     )
-                    return redirect(url_for("worker.manage_module", mid=mid))
+                    return redirect(url_for("worker.manage_module", mid=mid, group=group_id))
 
             val = ModuleRecordValue(record_id=record.id, field_id=f.id, value=val_text)
             db.session.add(val)
 
     db.session.commit()
+    ChangeRequest.log(current_user.organization_id, current_user.id, f"Added Record to Module: {m.name}")
     flash("Record added successfully", "success")
-    return redirect(url_for("worker.manage_module", mid=mid))
+    return redirect(url_for("worker.manage_module", mid=mid, group=group_id))
 
 
 @worker_bp.route("/api/records/<int:rid>")
@@ -662,8 +775,12 @@ def get_record_api(rid):
     if m.organization_id != current_user.organization_id:
         return jsonify({"success": False, "error": "Access denied"}), 403
 
-    fields = ModuleField.query.filter_by(module_id=m.id).all()
+    fields = ModuleField.query.filter_by(module_id=m.id, group_id=r.group_id).all()
     values = {v.field_id: v.value for v in r.values}
+    
+    for f in fields:
+        if f.field_type in ["calculated", "boolean"]:
+            values[f.id] = evaluate_logic(r, f)
 
     return jsonify(
         {
@@ -686,7 +803,7 @@ def update_record_api(rid):
         return jsonify({"success": False, "error": "Access denied"}), 403
 
     # Update values
-    fields = ModuleField.query.filter_by(module_id=m.id).all()
+    fields = ModuleField.query.filter_by(module_id=m.id, group_id=r.group_id).all()
     for f in fields:
         if f.field_type in ["calculated", "boolean"]:
             continue
@@ -719,7 +836,7 @@ def update_record_api(rid):
                     ModuleRecordValue.record_id != rid,
                 )
                 .join(ModuleRecord)
-                .filter(ModuleRecord.module_id == m.id)
+                .filter(ModuleRecord.module_id == m.id, ModuleRecord.group_id == r.group_id)
                 .first()
             )
             if existing:
@@ -727,7 +844,7 @@ def update_record_api(rid):
                     f"Update failed: '{val_text}' is already registered for '{f.name}'.",
                     "danger",
                 )
-                return redirect(url_for("worker.manage_module", mid=m.id))
+                return redirect(url_for("worker.manage_module", mid=m.id, group=r.group_id))
 
         if val_obj:
             val_obj.value = val_text
@@ -737,7 +854,7 @@ def update_record_api(rid):
 
     db.session.commit()
     flash("Record updated successfully", "success")
-    return redirect(url_for("worker.manage_module", mid=m.id))
+    return redirect(url_for("worker.manage_module", mid=m.id, group=r.group_id))
 
 
 @worker_bp.route("/api/records/<int:rid>/delete", methods=["POST"])
@@ -832,6 +949,8 @@ def module_fields_api(mid):
         data = request.get_json()
         action = data.get("action")  # add, update, delete
 
+        group_id = request.args.get("group_id", type=int) or data.get("group_id")
+
         if action == "add":
             name = data.get("name")
             field_type = data.get("field_type")
@@ -839,6 +958,7 @@ def module_fields_api(mid):
             meta = data.get("meta", {})
             f = ModuleField(
                 module_id=mid,
+                group_id=group_id,
                 name=name,
                 field_type=field_type,
                 is_unique=is_unique,
@@ -862,12 +982,19 @@ def module_fields_api(mid):
         db.session.commit()
         return jsonify({"success": True})
 
-    fields = ModuleField.query.filter_by(module_id=mid).all()
+    group_id = request.args.get("group_id", type=int)
+    fields_query = ModuleField.query.filter_by(module_id=mid)
+    if group_id:
+        fields_query = fields_query.filter_by(group_id=group_id)
+    else:
+        fields_query = fields_query.filter_by(group_id=None)
+        
+    fields = fields_query.all()
     return jsonify(
         {
             "success": True,
             "fields": [
-                {"id": f.id, "name": f.name, "type": f.field_type, "meta": f.meta}
+                {"id": f.id, "name": f.name, "type": f.field_type, "is_unique": f.is_unique, "meta": f.meta}
                 for f in fields
             ],
         }
@@ -898,7 +1025,14 @@ def import_records(mid):
             df = pd.read_excel(filepath)
 
         # Get fields and identify unique ones
-        fields = ModuleField.query.filter_by(module_id=mid).all()
+        group_id = request.args.get("group_id", type=int)
+        fields_query = ModuleField.query.filter_by(module_id=mid)
+        if group_id:
+            fields_query = fields_query.filter_by(group_id=group_id)
+        else:
+            fields_query = fields_query.filter_by(group_id=None)
+            
+        fields = fields_query.all()
         field_map = {f.name.lower(): f for f in fields}
         unique_fields = [f for f in fields if f.is_unique]
 
@@ -929,13 +1063,13 @@ def import_records(mid):
                 skipped_count += 1
                 continue
 
-            record = ModuleRecord(module_id=mid, created_by_id=current_user.id)
+            record = ModuleRecord(module_id=mid, group_id=group_id, created_by_id=current_user.id)
             db.session.add(record)
             db.session.flush()
 
             for col in df.columns:
                 f_obj = field_map.get(col.lower())
-                if f_obj:
+                if f_obj and f_obj.field_type not in ["calculated", "boolean"]:
                     val = str(row[col]) if pd.notnull(row[col]) else ""
                     db.session.add(
                         ModuleRecordValue(
@@ -945,6 +1079,7 @@ def import_records(mid):
             import_count += 1
 
         db.session.commit()
+        ChangeRequest.log(current_user.organization_id, current_user.id, f"Imported {import_count} Records to Module: {m.name}")
         msg = f"Successfully imported {import_count} records"
         if skipped_count > 0:
             msg += f" ({skipped_count} duplicates skipped)"
@@ -956,6 +1091,8 @@ def import_records(mid):
         if os.path.exists(filepath):
             os.remove(filepath)
 
+    if request.args.get("group_id"):
+        return redirect(url_for("worker.manage_module", mid=mid, group=request.args.get("group_id")))
     return redirect(url_for("worker.manage_module", mid=mid))
 
 
@@ -967,15 +1104,30 @@ def export_records(mid, format):
         flash("Access denied", "danger")
         return redirect(url_for("worker.dashboard"))
 
-    fields = ModuleField.query.filter_by(module_id=mid).all()
-    records = ModuleRecord.query.filter_by(module_id=mid).all()
+    group_id = request.args.get("group_id", type=int)
+    
+    fields_query = ModuleField.query.filter_by(module_id=mid)
+    records_query = ModuleRecord.query.filter_by(module_id=mid)
+    
+    if group_id:
+        fields_query = fields_query.filter_by(group_id=group_id)
+        records_query = records_query.filter_by(group_id=group_id)
+    else:
+        fields_query = fields_query.filter_by(group_id=None)
+        records_query = records_query.filter_by(group_id=None)
+        
+    fields = fields_query.all()
+    records = records_query.all()
 
     data = []
     for r in records:
         row = {"Date Created": r.created_at.strftime("%Y-%m-%d %H:%M")}
         vals = r.field_values
         for f in fields:
-            row[f.name] = vals.get(f.id, "")
+            if f.field_type in ["calculated", "boolean"]:
+                row[f.name] = evaluate_logic(r, f)
+            else:
+                row[f.name] = vals.get(f.id, "")
         data.append(row)
 
     df = pd.DataFrame(data)
@@ -1103,3 +1255,815 @@ def evaluate_logic(record, field):
         return "Error"
 
     return ""
+
+
+# ============================================================
+# MODULE GROUPS
+# ============================================================
+
+@worker_bp.route("/modules/<int:mid>/groups")
+@worker_required
+@active_subscription_required
+def manage_groups(mid):
+    module = Module.query.filter_by(
+        id=mid, organization_id=current_user.organization_id
+    ).first_or_404()
+    return render_template("worker/groups.html", module=module)
+
+
+@worker_bp.route("/modules/<int:mid>/groups/add", methods=["POST"])
+@worker_required
+@active_subscription_required
+def add_group(mid):
+    module = Module.query.filter_by(
+        id=mid, organization_id=current_user.organization_id
+    ).first_or_404()
+    name = request.form.get("name", "").strip()
+    if not name:
+        flash("Group name is required.", "danger")
+        return redirect(url_for("worker.manage_groups", mid=mid))
+    group = ModuleGroup(module_id=mid, name=name)
+    db.session.add(group)
+    db.session.commit()
+    ChangeRequest.log(current_user.organization_id, current_user.id, f"Created Group: {name}")
+    flash(f'Group "{name}" created successfully.', "success")
+    return redirect(url_for("worker.manage_groups", mid=mid))
+
+
+@worker_bp.route("/groups/<int:gid>/edit", methods=["POST"])
+@worker_required
+@active_subscription_required
+def edit_group(gid):
+    group = ModuleGroup.query.get_or_404(gid)
+    module = Module.query.filter_by(
+        id=group.module_id, organization_id=current_user.organization_id
+    ).first_or_404()
+    name = request.form.get("name", "").strip()
+    if not name:
+        flash("Group name is required.", "danger")
+        return redirect(url_for("worker.manage_groups", mid=module.id))
+    group.name = name
+    db.session.commit()
+    flash("Group updated.", "success")
+    return redirect(url_for("worker.manage_groups", mid=module.id))
+
+
+@worker_bp.route("/groups/<int:gid>/delete", methods=["POST"])
+@worker_required
+@active_subscription_required
+def delete_group(gid):
+    group = ModuleGroup.query.get_or_404(gid)
+    module = Module.query.filter_by(
+        id=group.module_id, organization_id=current_user.organization_id
+    ).first_or_404()
+    mid = module.id
+    db.session.delete(group)
+    db.session.commit()
+    flash("Group deleted.", "success")
+    return redirect(url_for("worker.manage_groups", mid=mid))
+
+
+@worker_bp.route("/groups/<int:gid>/dashboard")
+@worker_required
+@active_subscription_required
+def group_dashboard(gid):
+    group = ModuleGroup.query.get_or_404(gid)
+    module = Module.query.filter_by(
+        id=group.module_id, organization_id=current_user.organization_id
+    ).first_or_404()
+    scripts = Script.query.filter_by(group_id=gid).all()
+    campaigns = Campaign.query.filter_by(
+        group_id=gid, organization_id=current_user.organization_id
+    ).order_by(Campaign.created_at.desc()).all()
+    return render_template(
+        "worker/groups.html",
+        module=module,
+        group=group,
+        scripts=scripts,
+        campaigns=campaigns,
+    )
+
+
+# ============================================================
+# SCRIPTS
+# ============================================================
+
+
+@worker_bp.route("/api/groups/<int:gid>/script-variables")
+@worker_required
+def group_script_variables_api(gid):
+    """Returns dynamic variables from the group's active schema fields.
+    
+    Variables are group-scoped: Group 18 variables ≠ Group 19 variables.
+    """
+    group = ModuleGroup.query.get_or_404(gid)
+    module = Module.query.filter_by(
+        id=group.module_id, organization_id=current_user.organization_id
+    ).first_or_404()
+    
+    # Load ONLY fields belonging to this group
+    fields = ModuleField.query.filter_by(group_id=gid).all()
+    
+    # Icon mapping by field_type
+    ICON_MAP = {
+        "phone": "bi-telephone",
+        "email": "bi-envelope",
+        "text": "bi-type",
+        "string": "bi-type",
+        "language": "bi-globe",
+        "number": "bi-hash",
+        "integer": "bi-hash",
+        "date": "bi-calendar",
+        "datetime": "bi-calendar-event",
+        "boolean": "bi-toggle-on",
+        "dropdown": "bi-list",
+        "multiple_choice": "bi-ui-checks",
+        "textarea": "bi-text-paragraph",
+        "url": "bi-link-45deg",
+        "file": "bi-paperclip",
+    }
+    
+    variables = []
+    
+    print(f"\n[GROUP]\n{gid}\n")
+    if not fields:
+        print("[NO SCHEMA FOR GROUP]\n")
+    else:
+        print(f"[SCHEMA FOUND]\n{len(fields)}\n")
+        print("[VARIABLES RETURNED]\n")
+        for f in fields:
+            print(f.name.strip())
+            ft = (f.field_type or "text").lower()
+            variables.append({
+                "key": f.name.strip(),
+                "label": f.name.strip(),
+                "placeholder": "{{" + f.name.strip() + "}}",
+                "type": ft,
+                "icon": ICON_MAP.get(ft, "bi-tag"),
+                "field_id": f.id,
+            })
+        print()
+    
+    return jsonify({"variables": variables, "group_id": gid, "group_name": group.name})
+
+
+@worker_bp.route("/groups/<int:gid>/scripts", methods=["GET", "POST"])
+@worker_required
+@active_subscription_required
+def scripts(gid):
+    group = ModuleGroup.query.get_or_404(gid)
+    module = Module.query.filter_by(
+        id=group.module_id, organization_id=current_user.organization_id
+    ).first_or_404()
+    # Group-scoped fields: load ONLY fields belonging to this group
+    fields = ModuleField.query.filter_by(group_id=gid).all()
+
+    if request.method == "POST":
+        comm_type = request.form.get("type", "whatsapp_text")
+        language = request.form.get("language", "English")
+        content = request.form.get("content", "").strip()
+        backup_enabled = request.form.get("backup_enabled") == "on"
+        backup_template = request.form.get("backup_template", "").strip()
+        
+        if not content:
+            flash("Script content is required.", "danger")
+            return redirect(url_for("worker.scripts", gid=gid))
+
+        import re
+        valid_field_names = [f.name.strip() for f in fields]
+        
+        used_vars = re.findall(r'\{\{(.*?)\}\}', content)
+        invalid_vars = [v.strip() for v in used_vars if v.strip() not in valid_field_names]
+        if invalid_vars:
+            flash(f"Invalid variables used in content: {', '.join(invalid_vars)}", "danger")
+            return redirect(url_for("worker.scripts", gid=gid))
+            
+        if backup_enabled and backup_template:
+            used_backup_vars = re.findall(r'\{\{(.*?)\}\}', backup_template)
+            invalid_backup_vars = [v.strip() for v in used_backup_vars if v.strip() not in valid_field_names]
+            if invalid_backup_vars:
+                flash(f"Invalid variables used in backup template: {', '.join(invalid_backup_vars)}", "danger")
+                return redirect(url_for("worker.scripts", gid=gid))
+
+        script = Script(
+            module_id=module.id,
+            group_id=gid,
+            language=language,
+            type=comm_type,
+            content=content,
+            backup_enabled=backup_enabled,
+            backup_template=backup_template
+        )
+        db.session.add(script)
+        db.session.commit()
+        flash("Script created successfully.", "success")
+        return redirect(url_for("worker.scripts", gid=gid))
+
+    all_scripts = Script.query.filter_by(group_id=gid).order_by(Script.id.desc()).all()
+    return render_template(
+        "worker/scripts.html",
+        module=module,
+        group=group,
+        scripts=all_scripts,
+        fields=fields,
+    )
+
+
+@worker_bp.route("/scripts/<int:sid>/edit", methods=["GET", "POST"])
+@worker_required
+@active_subscription_required
+def edit_script(sid):
+    script = Script.query.get_or_404(sid)
+    group = ModuleGroup.query.get_or_404(script.group_id)
+    module = Module.query.filter_by(
+        id=group.module_id, organization_id=current_user.organization_id
+    ).first_or_404()
+    # Group-scoped fields: load ONLY fields belonging to this group
+    fields = ModuleField.query.filter_by(group_id=script.group_id).all()
+
+    if request.method == "POST":
+        script.type = request.form.get("type", script.type)
+        script.language = request.form.get("language", script.language)
+        content = request.form.get("content", "").strip()
+        script.backup_enabled = request.form.get("backup_enabled") == "on"
+        script.backup_template = request.form.get("backup_template", "").strip()
+
+        if not content:
+            flash("Content cannot be empty.", "danger")
+            return redirect(url_for("worker.edit_script", sid=sid))
+
+        import re
+        valid_field_names = [f.name.strip() for f in fields]
+        
+        used_vars = re.findall(r'\{\{(.*?)\}\}', content)
+        invalid_vars = [v.strip() for v in used_vars if v.strip() not in valid_field_names]
+        if invalid_vars:
+            flash(f"Invalid variables used in content: {', '.join(invalid_vars)}", "danger")
+            return redirect(url_for("worker.edit_script", sid=sid))
+            
+        if script.backup_enabled and script.backup_template:
+            used_backup_vars = re.findall(r'\{\{(.*?)\}\}', script.backup_template)
+            invalid_backup_vars = [v.strip() for v in used_backup_vars if v.strip() not in valid_field_names]
+            if invalid_backup_vars:
+                flash(f"Invalid variables used in backup template: {', '.join(invalid_backup_vars)}", "danger")
+                return redirect(url_for("worker.edit_script", sid=sid))
+
+        script.content = content
+        db.session.commit()
+        flash("Script updated.", "success")
+        return redirect(url_for("worker.scripts", gid=group.id))
+
+    return render_template(
+        "worker/script_edit.html",
+        script=script,
+        group=group,
+        module=module,
+        fields=fields,
+    )
+
+
+@worker_bp.route("/scripts/<int:sid>/delete", methods=["POST"])
+@worker_required
+@active_subscription_required
+def delete_script(sid):
+    script = Script.query.get_or_404(sid)
+    group = ModuleGroup.query.get_or_404(script.group_id)
+    module = Module.query.filter_by(
+        id=group.module_id, organization_id=current_user.organization_id
+    ).first_or_404()
+    gid = group.id
+    db.session.delete(script)
+    db.session.commit()
+    flash("Script deleted.", "success")
+    return redirect(url_for("worker.scripts", gid=gid))
+
+
+@worker_bp.route("/preview-voice", methods=["POST"])
+@worker_required
+def preview_voice():
+    """Generate a TTS audio preview and return the static URL."""
+    try:
+        data = request.get_json(force=True)
+        text = (data.get("text") or "").strip()
+        language = (data.get("language") or "English").strip()
+
+        if not text:
+            return jsonify({"success": False, "error": "No text provided."})
+
+        # Map language name to 2-letter code
+        lang_map = {
+            "English": "en",
+            "Hindi": "hi",
+            "Kannada": "kn",
+            "Tamil": "ta",
+            "Telugu": "te",
+            "Malayalam": "ml",
+            "Marathi": "mr",
+            "Punjabi": "pa",
+            "Gujarati": "gu",
+        }
+        lang_code = lang_map.get(language, "en")
+
+        # Create output directory
+        audio_dir = os.path.join(current_app.root_path, "static", "audio", "previews")
+        audio_dir = os.path.abspath(audio_dir)
+        os.makedirs(audio_dir, exist_ok=True)
+
+        filename = f"preview_{uuid.uuid4().hex}.mp3"
+        output_path = os.path.join(audio_dir, filename)
+
+        # Run async TTS generation synchronously
+        from app.common.audio.generator import get_voice_generator
+        generator = get_voice_generator()
+        asyncio.run(generator.generate_audio(text, lang_code, output_path))
+
+        audio_url = f"/static/audio/previews/{filename}"
+        return jsonify({"success": True, "audio_url": audio_url})
+
+    except Exception as e:
+        current_app.logger.error(f"[preview_voice] error: {e}")
+        return jsonify({"success": False, "error": str(e)})
+
+
+# ============================================================
+# CAMPAIGNS
+# ============================================================
+
+@worker_bp.route("/groups/<int:gid>/campaigns", methods=["GET", "POST"])
+@worker_required
+@active_subscription_required
+def campaigns(gid):
+    group = ModuleGroup.query.get_or_404(gid)
+    module = Module.query.filter_by(
+        id=group.module_id, organization_id=current_user.organization_id
+    ).first_or_404()
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        comm_type = request.form.get("type", "whatsapp_text")
+        script_id = request.form.get("script_id") or None
+        sender_number_id = request.form.get("sender_number_id") or None
+
+        if not name:
+            flash("Campaign name is required.", "danger")
+            return redirect(url_for("worker.campaigns", gid=gid))
+            
+        if script_id:
+            script = Script.query.get(script_id)
+            if script and script.type != comm_type:
+                flash("Selected script is not compatible with the chosen campaign type.", "danger")
+                return redirect(url_for("worker.campaigns", gid=gid))
+
+        campaign = Campaign(
+            organization_id=current_user.organization_id,
+            module_id=module.id,
+            group_id=gid,
+            name=name,
+            type=comm_type,
+            script_id=int(script_id) if script_id else None,
+            sender_number_id=int(sender_number_id) if sender_number_id else None,
+            status="draft",
+            created_by_id=current_user.id,
+        )
+        db.session.add(campaign)
+        db.session.commit()
+        ChangeRequest.log(current_user.organization_id, current_user.id, f"Created Campaign: {name}")
+        db.session.commit()
+        flash(f'Campaign "{name}" created as draft.', "success")
+        return redirect(url_for("worker.campaigns", gid=gid))
+
+    all_campaigns = Campaign.query.filter_by(
+        group_id=gid, organization_id=current_user.organization_id
+    ).order_by(Campaign.created_at.desc()).all()
+
+    scripts_list = Script.query.filter_by(group_id=gid).all()
+    numbers = CommunicationNumber.query.filter_by(
+        organization_id=current_user.organization_id
+    ).all()
+
+    return render_template(
+        "worker/campaigns.html",
+        module=module,
+        group=group,
+        campaigns=all_campaigns,
+        scripts=scripts_list,
+        numbers=numbers,
+    )
+
+
+@worker_bp.route("/campaigns/<int:cid>/start", methods=["POST"])
+@worker_required
+@active_subscription_required
+def start_campaign(cid):
+    print(f"\n[ROUTE] start_campaign hit for cid {cid}", file=sys.stderr, flush=True)
+    campaign = Campaign.query.filter_by(
+        id=cid, organization_id=current_user.organization_id
+    ).first_or_404()
+
+    if campaign.status != "draft":
+        flash("Only draft campaigns can be started.", "warning")
+        return redirect(url_for("worker.campaigns", gid=campaign.group_id))
+
+    # Gather target records from the group
+    group = ModuleGroup.query.get_or_404(campaign.group_id)
+    records = group.records  # relies on backref from ModuleRecord -> ModuleGroup
+
+    if not records:
+        flash("No records in this group to target.", "warning")
+        return redirect(url_for("worker.campaigns", gid=campaign.group_id))
+
+    campaign.status = "running"
+    db.session.commit()
+    
+    from app.services.campaign_runner import CampaignExecutionService
+    CampaignExecutionService.start(cid)
+    
+    flash(
+        f'Campaign "{campaign.name}" is now running with {len(records)} target(s).',
+        "success",
+    )
+    return redirect(url_for("worker.campaign_report", cid=cid))
+
+
+@worker_bp.route("/campaigns/<int:cid>/report")
+@worker_required
+@active_subscription_required
+def campaign_report(cid):
+    campaign = Campaign.query.filter_by(
+        id=cid, organization_id=current_user.organization_id
+    ).first_or_404()
+    group  = ModuleGroup.query.get(campaign.group_id)
+    module = Module.query.filter_by(
+        id=campaign.module_id, organization_id=current_user.organization_id
+    ).first_or_404()
+
+    targets = (CampaignTarget.query
+               .filter_by(campaign_id=cid)
+               .order_by(CampaignTarget.id.asc())
+               .all())
+
+    # Build rich row data joining record for phone/name
+    rows = []
+    for t in targets:
+        record = ModuleRecord.query.get(t.record_id) if t.record_id else None
+        nv     = record.named_values if record else {}
+        phone  = None
+        name   = None
+        if record:
+            from app.services.campaign_runner import _extract_phone_from_record
+            phone = _extract_phone_from_record(record)
+            name  = nv.get("name") or nv.get("Name") or ""
+        rows.append({
+            "target": t,
+            "phone":  phone or "—",
+            "name":   name  or "—",
+        })
+
+    total          = len(targets)
+    answered_count = sum(1 for t in targets if t.status in ("answered", "completed"))
+    retry_count    = sum(1 for t in targets if t.status in ("retry_pending", "retrying"))
+    wa_count       = sum(1 for t in targets if t.status == "whatsapp_sent")
+    failed_count   = sum(1 for t in targets if t.status == "failed")
+    waiting_count  = sum(1 for t in targets if t.status == "waiting_webhook")
+    queued_count   = sum(1 for t in targets if t.status in ("queued", "calling"))
+
+    stats = {
+        "total":    total,
+        "answered": answered_count,
+        "retrying": retry_count,
+        "whatsapp": wa_count,
+        "failed":   failed_count,
+        "waiting":  waiting_count,
+        "queued":   queued_count,
+    }
+
+    return render_template(
+        "worker/campaign_report.html",
+        campaign=campaign,
+        group=group,
+        module=module,
+        rows=rows,
+        stats=stats,
+    )
+
+
+@worker_bp.route("/campaigns/<int:cid>/report-data")
+@worker_required
+def campaign_report_data(cid):
+    """Live JSON endpoint polled every 15 s by the report page."""
+    campaign = Campaign.query.filter_by(
+        id=cid, organization_id=current_user.organization_id
+    ).first_or_404()
+
+    targets = CampaignTarget.query.filter_by(campaign_id=cid).all()
+
+    STATUS_COLOR = {
+        "answered":      "success",
+        "completed":     "success",
+        "retry_pending": "warning",
+        "retrying":      "orange",
+        "whatsapp_sent": "info",
+        "waiting_webhook": "gray",
+        "calling":       "gray",
+        "queued":        "gray",
+        "failed":        "danger",
+    }
+
+    rows = []
+    for t in targets:
+        record = ModuleRecord.query.get(t.record_id) if t.record_id else None
+        nv     = record.named_values if record else {}
+        from app.services.campaign_runner import _extract_phone_from_record
+        phone = _extract_phone_from_record(record) if record else None
+        rows.append({
+            "id":             t.id,
+            "phone":          phone or "—",
+            "name":           nv.get("name") or nv.get("Name") or "—",
+            "status":         t.status,
+            "color":          STATUS_COLOR.get(t.status, "gray"),
+            "call_attempts":  t.call_attempts,
+            "retry_count":    t.retry_count or 0,
+            "connected":      t.connected,
+            "duration":       t.duration or 0,
+            "whatsapp_sent":  t.whatsapp_sent,
+            "next_retry_at":  t.next_retry_at.isoformat() if t.next_retry_at else None,
+            "last_webhook_at":t.last_webhook_at.isoformat() if t.last_webhook_at else None,
+            "completed_at":   t.completed_at.isoformat() if t.completed_at else None,
+            "end_reason":     t.end_reason or "",
+        })
+
+    total = len(targets)
+    stats = {
+        "total":    total,
+        "answered": sum(1 for t in targets if t.status in ("answered","completed")),
+        "retrying": sum(1 for t in targets if t.status in ("retry_pending","retrying")),
+        "whatsapp": sum(1 for t in targets if t.status == "whatsapp_sent"),
+        "failed":   sum(1 for t in targets if t.status == "failed"),
+        "waiting":  sum(1 for t in targets if t.status == "waiting_webhook"),
+        "queued":   sum(1 for t in targets if t.status in ("queued","calling")),
+    }
+    return jsonify({"rows": rows, "stats": stats, "campaign_status": campaign.status})
+
+
+
+@worker_bp.route("/campaigns/<int:cid>/download-report")
+@worker_required
+@active_subscription_required
+def download_report(cid):
+    campaign = Campaign.query.filter_by(
+        id=cid, organization_id=current_user.organization_id
+    ).first_or_404()
+    logs = DeliveryLog.query.filter_by(campaign_id=cid).order_by(
+        DeliveryLog.created_at.desc()
+    ).all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Recipient", "Channel", "Status", "SID", "Error", "Created At"])
+    for log in logs:
+        writer.writerow([
+            log.recipient,
+            log.channel,
+            log.status,
+            log.sid,
+            log.error or "",
+            log.created_at.strftime("%Y-%m-%d %H:%M:%S") if log.created_at else "",
+        ])
+
+    from flask import make_response
+    response = make_response(output.getvalue())
+    response.headers["Content-Disposition"] = (
+        f'attachment; filename="campaign_{cid}_report.csv"'
+    )
+    response.headers["Content-Type"] = "text/csv"
+    return response
+
+
+@worker_bp.route("/campaigns/<int:cid>/delete", methods=["POST"])
+@worker_required
+@active_subscription_required
+def delete_campaign(cid):
+    campaign = Campaign.query.filter_by(
+        id=cid, organization_id=current_user.organization_id
+    ).first_or_404()
+    gid = campaign.group_id
+    db.session.delete(campaign)
+    db.session.commit()
+    flash("Campaign deleted.", "success")
+    return redirect(url_for("worker.campaigns", gid=gid))
+
+
+@worker_bp.route("/campaigns/bulk-delete", methods=["POST"])
+@worker_required
+@active_subscription_required
+def bulk_delete_campaigns():
+    data = request.json
+    if not data:
+        return jsonify({"success": False, "message": "No data provided"}), 400
+    
+    campaign_ids = data.get("campaign_ids", [])
+    if not campaign_ids:
+        return jsonify({"success": False, "message": "No campaigns selected"}), 400
+
+    campaigns = Campaign.query.filter(
+        Campaign.id.in_(campaign_ids),
+        Campaign.organization_id == current_user.organization_id
+    ).all()
+
+    if not campaigns:
+        return jsonify({"success": False, "message": "No valid campaigns found"}), 404
+
+    try:
+        for c in campaigns:
+            if c.status == "running":
+                return jsonify({"success": False, "message": "Stop campaign before deleting"}), 400
+            db.session.delete(c)
+        
+        db.session.commit()
+        print(f"[BULK-DELETE] Successfully deleted {len(campaigns)} campaigns.", file=sys.stderr, flush=True)
+        return jsonify({"success": True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
+@worker_bp.route("/api/campaigns/bulk-action", methods=["POST"])
+@worker_required
+@active_subscription_required
+def bulk_action_campaigns():
+    data = request.json
+    print(f"\n[ROUTE] bulk_action_campaigns hit with data: {data}", file=sys.stderr, flush=True)
+    if not data:
+        return jsonify({"error": "No data provided"}), 400
+    
+    action = data.get("action")
+    campaign_ids = data.get("ids", [])
+    if not action or not campaign_ids:
+        return jsonify({"error": "Missing action or ids"}), 400
+        
+    campaigns = Campaign.query.filter(
+        Campaign.id.in_(campaign_ids),
+        Campaign.organization_id == current_user.organization_id
+    ).all()
+    
+    if not campaigns:
+        return jsonify({"error": "No valid campaigns found"}), 404
+        
+    try:
+        if action == "assign":
+            script_id = data.get("extra_data", {}).get("script_id")
+            if not script_id:
+                return jsonify({"error": "Missing script ID"}), 400
+            for c in campaigns:
+                c.script_id = script_id
+            db.session.commit()
+            return jsonify({"success": True, "message": f"Assigned script to {len(campaigns)} campaigns."})
+            
+        elif action == "move":
+            group_id = data.get("extra_data", {}).get("group_id")
+            if not group_id:
+                return jsonify({"error": "Missing group ID"}), 400
+            for c in campaigns:
+                c.group_id = group_id
+            db.session.commit()
+            return jsonify({"success": True, "message": f"Moved {len(campaigns)} campaigns."})
+            
+        elif action in ["start", "pause", "restart", "stop"]:
+            new_status = {
+                "start": "running",
+                "pause": "paused",
+                "restart": "running",
+                "stop": "completed"
+            }.get(action)
+            
+            from app.services.campaign_runner import CampaignExecutionService
+            to_start = []
+            for c in campaigns:
+                # Validation for start/restart
+                if action in ["start", "restart"]:
+                    if not c.script_id:
+                        return jsonify({"error": f"Campaign '{c.name}' missing script."}), 400
+                    if not c.group_id:
+                        return jsonify({"error": f"Campaign '{c.name}' missing group."}), 400
+                        
+                c.status = new_status
+                if action in ["start", "restart"]:
+                    to_start.append(c.id)
+                    
+            db.session.commit()
+            
+            print(f"[BULK-ACTION] Starting/restarting {len(to_start)} campaigns.", file=sys.stderr, flush=True)
+            for cid in to_start:
+                CampaignExecutionService.start(cid)
+                
+            print(f"[BULK-ACTION] {new_status} applied to {len(campaigns)} campaigns successfully.", file=sys.stderr, flush=True)
+            return jsonify({"success": True, "message": f"Marked {len(campaigns)} campaigns as {new_status}."})
+            
+        elif action == "duplicate":
+            for c in campaigns:
+                new_c = Campaign(
+                    organization_id=c.organization_id,
+                    module_id=c.module_id,
+                    group_id=c.group_id,
+                    name=f"{c.name} (Copy)",
+                    type=c.type,
+                    script_id=c.script_id,
+                    status="draft"
+                )
+                db.session.add(new_c)
+            db.session.commit()
+            return jsonify({"success": True, "message": f"Duplicated {len(campaigns)} campaigns."})
+            
+        return jsonify({"error": f"Unknown action: {action}"}), 400
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+@worker_bp.route("/api/humanlab/webhook", methods=["POST"])
+@csrf.exempt
+def humanlab_webhook():
+    """Receive webhook from Hooman Labs. Passes full payload for rich status extraction."""
+    import sys
+    data = request.json
+    print(f"\n[WEBHOOK ROUTE] Incoming webhook payload: {data}", file=sys.stderr, flush=True)
+    
+    if not data:
+        return jsonify({"success": False, "error": "No JSON payload"}), 400
+    
+    # Accept any valid webhook — the handler will figure out the target
+    from flask import current_app
+    app = current_app._get_current_object()
+    result = CampaignExecutionService.handle_webhook(app, data)
+    
+    return jsonify({"success": bool(result)})
+
+
+@worker_bp.route("/api/campaign/<int:cid>/status")
+@worker_required
+def campaign_status_api(cid):
+    """Polling endpoint for real-time campaign status updates."""
+    campaign = Campaign.query.filter_by(
+        id=cid, organization_id=current_user.organization_id
+    ).first_or_404()
+    
+    targets = CampaignTarget.query.filter_by(campaign_id=cid).all()
+    logs = DeliveryLog.query.filter_by(campaign_id=cid).order_by(
+        DeliveryLog.created_at.desc()
+    ).all()
+    
+    # Build target summaries
+    target_data = []
+    for t in targets:
+        target_data.append({
+            "id": t.id,
+            "status": t.status,
+            "call_status": t.call_status or t.last_call_status,
+            "connected": t.connected,
+            "duration": t.duration,
+            "end_reason": t.end_reason,
+            "attempts": t.call_attempts,
+            "conversation_id": t.conversation_id,
+            "last_webhook_at": t.last_webhook_at.isoformat() if t.last_webhook_at else None,
+        })
+    
+    # Count statuses
+    from collections import Counter
+    status_counts = dict(Counter([t.status for t in targets]))
+    log_status_counts = dict(Counter([l.status for l in logs]))
+    
+    return jsonify({
+        "campaign_id": cid,
+        "campaign_status": campaign.status,
+        "total_targets": len(targets),
+        "target_statuses": status_counts,
+        "log_statuses": log_status_counts,
+        "targets": target_data,
+        "is_terminal": campaign.status in ("completed", "failed"),
+    })
+
+
+@worker_bp.route("/api/humanlab/debug")
+@worker_required
+def humanlab_debug():
+    """Debug endpoint — shows resolved Hooman config for current org (API key masked)."""
+    from app.services.humanlab_provider import get_hooman_config
+    org_id = current_user.organization_id
+    cfg = get_hooman_config(org_id)
+    
+    api_key = cfg["api_key"]
+    masked = (api_key[:6] + "****" + api_key[-4:]) if len(api_key) > 10 else ("****" if api_key else "EMPTY")
+    
+    return jsonify({
+        "organization_id": org_id,
+        "source": "database (org.hooman_config)",
+        "api_key": masked,
+        "api_key_length": len(api_key),
+        "api_key_present": bool(api_key),
+        "campaign": cfg["campaign"],
+        "from_number": cfg["from_number"],
+        "from_number_present": bool(cfg["from_number"]),
+        "hooman_org_id": cfg["organization_id"],
+        "base_url": current_app.config.get("BASE_URL", ""),
+        "note": "api_key & from_number come ONLY from org DB config, set by platform admin."
+    })

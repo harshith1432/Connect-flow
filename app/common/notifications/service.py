@@ -19,12 +19,14 @@ def create_notification(org_id, type, title, message, link=None):
 
 
 def get_unread_count():
-    return PlatformNotification.query.filter_by(is_read=False).count()
+    return PlatformNotification.query.filter_by(is_read=False).filter(PlatformNotification.type != "support_query").count()
 
 
 def get_recent_notifications(limit=20):
     return (
-        PlatformNotification.query.order_by(PlatformNotification.created_at.desc())
+        PlatformNotification.query.filter(PlatformNotification.type != "support_query")
+        .order_by(PlatformNotification.created_at.desc())
         .limit(limit)
         .all()
     )
+

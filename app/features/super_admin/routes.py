@@ -29,7 +29,7 @@ from app.core.decorators import platform_required
 from app.config import Config
 
 super_admin_bp = Blueprint(
-    "super_admin", __name__, template_folder="templates", static_folder="static"
+    "super_admin", __name__, template_folder="templates"
 )
 
 
@@ -188,10 +188,48 @@ def notifications():
         get_recent_notifications,
         get_unread_count,
     )
+    from app.models.helpdesk import HelpdeskQuery
+    from datetime import datetime
 
     # Fetch more for the full page
     all_notifs = get_recent_notifications(50)
-    return render_template("platform/notifications.html", notifications=all_notifs)
+
+    # Calculate real-time resolved helpdesk queries today in local IST time (matching the user's timezone)
+    from datetime import timedelta
+    IST_OFFSET = timedelta(hours=5, minutes=30)
+    now_ist = datetime.utcnow() + IST_OFFSET
+    today_midnight_ist = now_ist.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_start = today_midnight_ist - IST_OFFSET
+
+    resolved_today_count = HelpdeskQuery.query.filter(
+        HelpdeskQuery.status == "Resolved",
+        HelpdeskQuery.resolved_at >= today_start
+    ).count()
+
+    return render_template(
+        "platform/notifications.html", 
+        notifications=all_notifs,
+        resolved_today_count=resolved_today_count
+    )
+
+
+@super_admin_bp.route("/notifications/<int:nid>/read", methods=["POST"])
+@platform_required
+def mark_notification_read(nid):
+    n = db.get_or_404(PlatformNotification, nid)
+    n.is_read = True
+    db.session.commit()
+    flash("Notification marked as read.", "success")
+    return redirect(url_for("super_admin.notifications"))
+
+
+@super_admin_bp.route("/notifications/read-all", methods=["POST"])
+@platform_required
+def mark_all_notifications_read():
+    PlatformNotification.query.filter_by(is_read=False).update({"is_read": True})
+    db.session.commit()
+    flash("All notifications marked as read.", "success")
+    return redirect(url_for("super_admin.notifications"))
 
 
 @super_admin_bp.route("/orgs/<int:org_id>")
@@ -548,7 +586,19 @@ def manage_plans():
         return redirect(url_for("super_admin.manage_plans"))
 
     plans = Plan.query.order_by(Plan.price.asc()).all()
-    return render_template("platform/settings_plans.html", plans=plans)
+
+    # KPI data for the premium dashboard
+    lowest_price = min(p.price for p in plans) if plans else 0
+    highest_price = max(p.price for p in plans) if plans else 0
+    billing_types = len(set(p.billing_interval for p in plans)) if plans else 0
+
+    return render_template(
+        "platform/settings_plans.html",
+        plans=plans,
+        lowest_price=lowest_price,
+        highest_price=highest_price,
+        billing_types=billing_types,
+    )
 
 
 @super_admin_bp.route("/settings/plans/delete/<int:plan_id>", methods=["POST"])
@@ -586,7 +636,115 @@ def manage_payments():
         return redirect(url_for("super_admin.manage_payments"))
 
     methods = PaymentMethod.query.all()
-    return render_template("platform/settings_payments.html", methods=methods)
+
+    # === REAL-TIME PAYMENT DATA ===
+    from datetime import timedelta
+    from decimal import Decimal
+
+    now = datetime.utcnow()
+
+    # Total completed payments count
+    total_payments = Payment.query.filter_by(status="completed").count()
+
+    # Total revenue (all time)
+    total_revenue_raw = (
+        db.session.query(func.sum(Payment.amount))
+        .filter(Payment.status == "completed")
+        .scalar()
+    )
+    total_revenue = float(total_revenue_raw) if total_revenue_raw else 0.0
+
+    # Failed payments count
+    failed_payments = Payment.query.filter(
+        Payment.status.in_(["failed", "error"])
+    ).count()
+
+    # Success rate
+    all_payments_count = Payment.query.count()
+    if all_payments_count > 0:
+        success_rate = round((total_payments / all_payments_count) * 100, 1)
+    else:
+        success_rate = 100.0
+
+    # Monthly collections (current month)
+    first_of_month = datetime(now.year, now.month, 1)
+    monthly_revenue_raw = (
+        db.session.query(func.sum(Payment.amount))
+        .filter(Payment.status == "completed")
+        .filter(Payment.created_at >= first_of_month)
+        .scalar()
+    )
+    monthly_revenue = float(monthly_revenue_raw) if monthly_revenue_raw else 0.0
+
+    # Previous month collections for trend comparison
+    if now.month == 1:
+        prev_month_start = datetime(now.year - 1, 12, 1)
+        prev_month_end = datetime(now.year, 1, 1)
+    else:
+        prev_month_start = datetime(now.year, now.month - 1, 1)
+        prev_month_end = first_of_month
+    prev_monthly_raw = (
+        db.session.query(func.sum(Payment.amount))
+        .filter(Payment.status == "completed")
+        .filter(Payment.created_at >= prev_month_start)
+        .filter(Payment.created_at < prev_month_end)
+        .scalar()
+    )
+    prev_monthly = float(prev_monthly_raw) if prev_monthly_raw else 0.0
+    if prev_monthly > 0:
+        monthly_growth = round(((monthly_revenue - prev_monthly) / prev_monthly) * 100, 1)
+    else:
+        monthly_growth = 0.0
+
+    # Daily revenue trend (last 14 days)
+    revenue_labels = []
+    revenue_data = []
+    for i in range(13, -1, -1):
+        day = now - timedelta(days=i)
+        day_start = datetime(day.year, day.month, day.day)
+        day_end = day_start + timedelta(days=1)
+
+        day_rev_raw = (
+            db.session.query(func.sum(Payment.amount))
+            .filter(Payment.status == "completed")
+            .filter(Payment.created_at >= day_start)
+            .filter(Payment.created_at < day_end)
+            .scalar()
+        )
+        revenue_labels.append(day.strftime("%d %b"))
+        revenue_data.append(float(day_rev_raw) if day_rev_raw else 0)
+
+    # Payment method usage breakdown (from payment meta)
+    all_completed = Payment.query.filter_by(status="completed").all()
+    method_counts = {}
+    for p in all_completed:
+        method_name = "Other"
+        if p.meta and isinstance(p.meta, dict):
+            method_name = p.meta.get("method", p.meta.get("plan_name", "Other"))
+        method_counts[method_name] = method_counts.get(method_name, 0) + 1
+
+    usage_labels = list(method_counts.keys()) if method_counts else ["No data"]
+    usage_series = list(method_counts.values()) if method_counts else [1]
+
+    # Recent payments for billing log
+    recent_payments = (
+        Payment.query.order_by(Payment.created_at.desc()).limit(10).all()
+    )
+
+    return render_template(
+        "platform/settings_payments.html",
+        methods=methods,
+        total_payments=total_payments,
+        total_revenue=total_revenue,
+        success_rate=success_rate,
+        monthly_revenue=monthly_revenue,
+        monthly_growth=monthly_growth,
+        revenue_labels=revenue_labels,
+        revenue_data=revenue_data,
+        usage_labels=usage_labels,
+        usage_series=usage_series,
+        recent_payments=recent_payments,
+    )
 
 
 @super_admin_bp.route("/settings/payments/delete/<int:method_id>", methods=["POST"])
@@ -668,6 +826,24 @@ def manage_admins():
     )
 
 
+@super_admin_bp.route("/settings/preferences", methods=["POST"])
+@platform_required
+def update_preferences():
+    theme = request.form.get("theme", "light")
+    language = request.form.get("language", "English")
+    
+    prefs = current_user.preferences or {}
+    prefs["theme"] = theme
+    prefs["language"] = language
+    
+    current_user.preferences = prefs
+    from sqlalchemy.orm.attributes import flag_modified
+    flag_modified(current_user, "preferences")
+    db.session.commit()
+    
+    flash("Preferences updated successfully", "success")
+    return redirect(url_for("super_admin.manage_admins"))
+
 @super_admin_bp.route("/settings/admins/add", methods=["POST"])
 @platform_required
 def add_admin():
@@ -722,6 +898,53 @@ def delete_admin(aid):
     db.session.commit()
     flash(f"Admin {admin.email} removed", "info")
     return redirect(url_for("super_admin.manage_admins"))
+
+
+@super_admin_bp.route("/helpdesk")
+@platform_required
+def helpdesk():
+    from app.models.helpdesk import HelpdeskQuery
+    # Query all helpdesk tickets in chronological order
+    queries = HelpdeskQuery.query.order_by(HelpdeskQuery.created_at.desc()).all()
+    
+    # Simple KPI counts
+    total_queries = len(queries)
+    pending_queries = sum(1 for q in queries if q.status == "Pending")
+    resolved_queries = total_queries - pending_queries
+    
+    return render_template(
+        "platform/helpdesk.html",
+        queries=queries,
+        total_queries=total_queries,
+        pending_queries=pending_queries,
+        resolved_queries=resolved_queries
+    )
+
+
+@super_admin_bp.route("/helpdesk/<int:qid>/resolve", methods=["POST"])
+@platform_required
+def resolve_query(qid):
+    from app.models.helpdesk import HelpdeskQuery
+    from app.models import DashboardNotification
+    
+    query = db.get_or_404(HelpdeskQuery, qid)
+    query.status = "Resolved"
+    query.resolved_at = datetime.utcnow()
+    
+    # Notify user who raised it
+    db_notif = DashboardNotification(
+        user_id=query.user_id,
+        organization_id=query.organization_id,
+        type="system",
+        title=f"Support Query {query.ticket_number} Resolved",
+        message="Your raised support ticket has been solved by the platform administrator.",
+        link="/org/dashboard" if query.user_type == "org_admin" else "/worker/dashboard"
+    )
+    db.session.add(db_notif)
+    
+    db.session.commit()
+    flash(f"Ticket {query.ticket_number} has been resolved successfully.", "success")
+    return redirect(url_for("super_admin.helpdesk"))
 
 
 @super_admin_bp.route("/logout")

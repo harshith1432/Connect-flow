@@ -1,0 +1,185 @@
+{% extends 'base_org_premium.html' %}
+
+{% block title %}ConnectFlow | Subscription Settings{% endblock %}
+{% block page_title %}Subscription settings{% endblock %}
+
+{% block content %}
+<div class="kpi-grid">
+    <!-- Active Subscription Details -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Active Plan Tier</span>
+            <div class="kpi-icon"><i class="bi bi-patch-check-fill text-success"></i></div>
+        </div>
+        <div class="kpi-value" style="font-size: 1.85rem;">{{ subscription.plan if subscription else 'Free Trial' }}</div>
+        <div class="kpi-trend">
+            <span class="badge rounded-pill {% if subscription and subscription.status == 'active' %}bg-success-subtle text-success border border-success-subtle{% else %}bg-warning-subtle text-warning border border-warning-subtle{% endif %} text-uppercase px-3 py-1" style="font-size: 0.7rem; font-weight: 800;">
+                {{ subscription.display_status if subscription else 'ACTIVE TRIAL' }}
+            </span>
+        </div>
+    </div>
+    
+    <!-- Spend Rate -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Billing Rate</span>
+            <div class="kpi-icon"><i class="bi bi-wallet2 text-primary"></i></div>
+        </div>
+        <div class="kpi-value">₹{{ subscription.price|int if subscription else '0' }}</div>
+        <div class="kpi-trend text-muted" style="font-size: 0.8rem; font-weight: 600;">
+            Charged {{ subscription.billing_interval if subscription else 'monthly' }}
+        </div>
+    </div>
+
+    <!-- Renewal / Expiry -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Cycle Renewal Date</span>
+            <div class="kpi-icon"><i class="bi bi-calendar-event-fill text-danger"></i></div>
+        </div>
+        <div class="kpi-value" style="font-size: 1.35rem; padding: 0.25rem 0;">
+            {% if subscription and subscription.expires_at %}
+                {{ subscription.expires_at.strftime('%B %d, %Y') }}
+            {% else %}
+                N/A (No Expiry)
+            {% endif %}
+        </div>
+        <div class="kpi-trend text-dark" style="font-size: 0.8rem; font-weight: 700;">
+            <i class="bi bi-hourglass-split"></i> {{ subscription.days_left if subscription else '30' }} Days Remaining
+        </div>
+    </div>
+
+    <!-- Active Channel Integrations -->
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Status Health</span>
+            <div class="kpi-icon"><i class="bi bi-activity text-info"></i></div>
+        </div>
+        <div class="kpi-value" style="font-size: 1.85rem;">Active</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-check-all"></i> All gateways operational
+        </div>
+    </div>
+</div>
+
+<div class="premium-layout-grid mb-5" style="grid-template-columns: 2fr 1.2fr; gap: 1.5rem;">
+    <!-- Resource Utilization panel -->
+    <div class="premium-panel">
+        <div class="panel-header">
+            <div class="panel-title">
+                <h3>SaaS Resource Utilization</h3>
+                <p>Real-time system bounds allocated to your current subscription plan</p>
+            </div>
+        </div>
+        
+        <div class="py-2">
+            <!-- Active Workers Progress -->
+            <div class="mb-4 p-3 rounded-4" style="background: var(--grey-50); border: 1px solid var(--grey-100);">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold" style="font-size: 0.9rem; color: var(--black);"><i class="bi bi-people-fill me-2"></i> Operational Staff Limit</span>
+                    <span class="fw-bold" style="font-size: 0.9rem; font-family: var(--font-heading);">{{ workers_count }} / {{ limits.workers }} Workers</span>
+                </div>
+                <div style="height: 8px; background: var(--grey-200); border-radius: 10px; overflow: hidden; margin-top: 0.5rem;">
+                    <div style="width: {{ (workers_count / (limits.workers or 1) * 100)|round|int }}%; height: 100%; background: var(--black); border-radius: 10px; transition: var(--transition-base);"></div>
+                </div>
+                <small class="text-muted d-block mt-2" style="font-size: 0.75rem; font-weight: 500;">Allocate seats for workforce logins, support operators, and administrators.</small>
+            </div>
+
+            <!-- Campaign limit -->
+            <div class="mb-4 p-3 rounded-4" style="background: var(--grey-50); border: 1px solid var(--grey-100);">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold" style="font-size: 0.9rem; color: var(--black);"><i class="bi bi-megaphone-fill me-2"></i> Parallel Marketing Campaigns</span>
+                    <span class="fw-bold" style="font-size: 0.9rem; font-family: var(--font-heading);">{{ campaigns_count }} / {{ limits.campaigns }} Active</span>
+                </div>
+                <div style="height: 8px; background: var(--grey-200); border-radius: 10px; overflow: hidden; margin-top: 0.5rem;">
+                    <div style="width: {{ [((campaigns_count / (limits.campaigns or 1)) * 100)|round|int, 100]|min }}%; height: 100%; background: var(--black); border-radius: 10px; transition: var(--transition-base);"></div>
+                </div>
+                <small class="text-muted d-block mt-2" style="font-size: 0.75rem; font-weight: 500;">Simultaneous active blast operations across WhatsApp, SMS, and Twilio voice networks.</small>
+            </div>
+
+            <!-- Messages volumes -->
+            <div class="mb-3 p-3 rounded-4" style="background: var(--grey-50); border: 1px solid var(--grey-100);">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="fw-bold" style="font-size: 0.9rem; color: var(--black);"><i class="bi bi-envelope-check-fill me-2"></i> Monthly Broadcast Limits</span>
+                    <span class="fw-bold" style="font-size: 0.9rem; font-family: var(--font-heading);">{{ delivery_logs_count }} / {{ limits.messages }} Messages</span>
+                </div>
+                <div style="height: 8px; background: var(--grey-200); border-radius: 10px; overflow: hidden; margin-top: 0.5rem;">
+                    <div style="width: {{ [((delivery_logs_count / (limits.messages or 1)) * 100)|round|int, 100]|min }}%; height: 100%; background: var(--black); border-radius: 10px; transition: var(--transition-base);"></div>
+                </div>
+                <small class="text-muted d-block mt-2" style="font-size: 0.75rem; font-weight: 500;">Reset occurs automatically at the start of your next billing cycle.</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Details Summary -->
+    <div class="premium-panel">
+        <div class="panel-header mb-4">
+            <div class="panel-title">
+                <h3>Actions</h3>
+                <p>Configure subscription tiers</p>
+            </div>
+        </div>
+        
+        <div class="d-flex flex-column gap-3">
+            <div style="background: var(--grey-50); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--grey-100);">
+                <span class="text-muted d-block mb-1" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">BILLING ENTITY</span>
+                <span class="fw-bold text-dark" style="font-size: 0.9rem;">{{ current_user.organization.name }}</span>
+                <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">{{ current_user.email }}</small>
+            </div>
+
+            <div style="background: var(--grey-50); padding: 1.25rem; border-radius: 16px; border: 1px solid var(--grey-100);">
+                <span class="text-muted d-block mb-1" style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase;">INTEGRATED GATEWAY</span>
+                <span class="fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 0.9rem;">
+                    <i class="bi bi-credit-card-fill text-success"></i> 
+                    {% if subscription and subscription.payment_method %}
+                        {{ subscription.payment_method }}
+                    {% else %}
+                        Razorpay Standard
+                    {% endif %}
+                </span>
+                <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">Sandbox Mode Enabled</small>
+            </div>
+
+            <div class="mt-3">
+                <a href="{{ url_for('org.browse_plans') }}" class="btn-black w-100 py-3 mb-2 d-flex align-items-center justify-content-center gap-2" style="border-radius: 12px; font-weight: 700; font-size: 0.9rem; text-decoration: none;">
+                    <i class="bi bi-star-fill"></i> Change Subscription Plan
+                </a>
+                
+                <button class="btn btn-outline-danger w-100 py-3 mt-2 d-flex align-items-center justify-content-center gap-2" onclick="cancelSubscription()" style="border-radius: 12px; font-weight: 700; font-size: 0.9rem; background: var(--white); border: 1px solid #fee2e2; color: #ef4444; transition: var(--transition-base);">
+                    <i class="bi bi-slash-circle"></i> Cancel Subscription Plan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cancellation Warning -->
+<div id="cancelModal" class="modal-backdrop" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; align-items: center; justify-content: center; backdrop-filter: blur(4px);">
+    <div class="premium-panel" style="width: 100%; max-width: 480px; padding: 2.5rem; border-radius: 24px; border: 1px solid var(--white); box-shadow: 0 20px 45px rgba(0,0,0,0.25);">
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div style="width: 56px; height: 56px; background: #fee2e2; color: #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem auto;">
+                <i class="bi bi-exclamation-triangle-fill fs-3"></i>
+            </div>
+            <h4 style="font-size: 1.35rem; font-weight: 800; color: var(--black);">Cancel Subscription?</h4>
+            <p class="text-muted mt-2 mb-0" style="font-size: 0.875rem; line-height: 1.5;">
+                Are you sure you want to cancel your **{{ subscription.plan if subscription else 'Pro' }} Plan**? Access to campaigns, active staff seats, and automation streams will be terminated at the end of the current billing cycle.
+            </p>
+        </div>
+        <div class="d-flex gap-3">
+            <button onclick="hideCancelModal()" class="btn btn-light flex-grow-1 py-2.5 rounded-3 fw-bold border" style="font-size: 0.875rem;">Keep Subscription</button>
+            <form action="#" method="POST" class="flex-grow-1">
+                <button type="submit" class="btn btn-danger w-100 py-2.5 rounded-3 fw-bold" style="font-size: 0.875rem; background: #ef4444; border: none;">Confirm Cancellation</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function cancelSubscription() {
+        document.getElementById('cancelModal').style.display = 'flex';
+    }
+    function hideCancelModal() {
+        document.getElementById('cancelModal').style.display = 'none';
+    }
+</script>
+{% endblock %}
