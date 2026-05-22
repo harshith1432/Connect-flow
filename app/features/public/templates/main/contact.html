@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us | ConnectFlow</title>
+    <meta name="description" content="Get in touch with the ConnectFlow team. We're here to help with sales, support, and partnerships.">
+    <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .page-hero { background: #0f172a; color: white; padding: 5rem 0 4rem; text-align: center; }
+        .page-hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; }
+        .page-hero p { color: #94a3b8; font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+        .contact-section { padding: 5rem 0; background: #f8fafc; }
+        .contact-grid { display: grid; grid-template-columns: 1fr 1.5fr; gap: 4rem; align-items: start; }
+        .contact-info h2 { font-size: 1.75rem; font-weight: 800; color: #0f172a; margin-bottom: 2rem; }
+        .contact-item { display: flex; gap: 1rem; margin-bottom: 2rem; }
+        .contact-item .icon { width: 48px; height: 48px; background: #0f172a; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .contact-item .icon i { color: white; font-size: 1.2rem; }
+        .contact-item h5 { font-weight: 700; color: #0f172a; margin: 0 0 0.25rem; }
+        .contact-item p { color: #64748b; margin: 0; font-size: 0.9rem; }
+        .contact-form { background: white; border-radius: 20px; padding: 2.5rem; box-shadow: 0 4px 24px rgba(0,0,0,0.07); border: 1px solid #e2e8f0; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .form-group { margin-bottom: 1.25rem; }
+        .form-group label { display: block; font-weight: 600; color: #0f172a; font-size: 0.875rem; margin-bottom: 0.5rem; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.875rem 1rem; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 0.9rem; color: #0f172a; background: #f8fafc; transition: border-color 0.2s; outline: none; font-family: inherit; }
+        .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #0f172a; background: white; }
+        .form-group textarea { resize: vertical; min-height: 120px; }
+        .btn-submit { width: 100%; background: #0f172a; color: white; border: none; padding: 1rem; border-radius: 10px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+        .btn-submit:hover { background: #1e293b; }
+        .success-banner { background: #dcfce7; border: 1px solid #86efac; border-radius: 12px; padding: 1.5rem; text-align: center; color: #166534; margin-bottom: 1.5rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="container nav-content">
+            <a href="/" class="logo">Connect<span>Flow</span></a>
+            <div class="nav-auth">
+                <a href="{{ url_for('org.login') }}" class="btn-outline">Login</a>
+                <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-hero">
+        <div class="container">
+            <a href="/" style="color:#94a3b8; text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem; margin-bottom:2rem;"><i class="bi bi-arrow-left"></i> Back to Home</a>
+            <h1>Let's Talk</h1>
+            <p>Have a question about ConnectFlow? Want a personalised demo? Our team is ready to help you automate your outreach.</p>
+        </div>
+    </div>
+
+    <section class="contact-section">
+        <div class="container">
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <h2>Get in Touch</h2>
+                    <div class="contact-item">
+                        <div class="icon"><i class="bi bi-envelope-fill"></i></div>
+                        <div>
+                            <h5>Email Support</h5>
+                            <p>support@connectflow.io</p>
+                            <p style="font-size:0.8rem; color:#94a3b8;">Response within 24 hours</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="icon"><i class="bi bi-building"></i></div>
+                        <div>
+                            <h5>Sales Enquiries</h5>
+                            <p>sales@connectflow.io</p>
+                            <p style="font-size:0.8rem; color:#94a3b8;">For enterprise plans & custom quotes</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="icon"><i class="bi bi-github"></i></div>
+                        <div>
+                            <h5>Open Source</h5>
+                            <p><a href="https://github.com/harshith1432/Connect-flow" style="color:#0f172a;" target="_blank">github.com/harshith1432/Connect-flow</a></p>
+                            <p style="font-size:0.8rem; color:#94a3b8;">Report bugs or contribute</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <div class="icon"><i class="bi bi-clock-fill"></i></div>
+                        <div>
+                            <h5>Support Hours</h5>
+                            <p>Monday – Friday, 9 AM – 6 PM IST</p>
+                            <p style="font-size:0.8rem; color:#94a3b8;">Emergency support for Enterprise plans</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="contact-form">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for cat, msg in messages %}
+                    <div class="success-banner" style="{% if cat == 'danger' %}background:#fee2e2; border-color:#fca5a5; color:#991b1b;{% endif %}">
+                        <i class="bi bi-{% if cat == 'danger' %}exclamation-circle{% else %}check-circle{% endif %}-fill" style="font-size:2rem; display:block; margin-bottom:0.5rem;"></i>
+                        <strong>{{ msg }}</strong>
+                    </div>
+                    {% endfor %}
+                    {% endwith %}
+                    <h3 style="font-size:1.25rem; font-weight:800; color:#0f172a; margin-bottom:1.5rem;">Send us a Message</h3>
+                    <form method="POST" action="{{ url_for('main.submit_inquiry') }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="source_page" value="contact">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Full Name *</label>
+                                <input type="text" name="name" placeholder="John Doe" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Phone Number *</label>
+                                <input type="tel" name="phone" placeholder="9876543210" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Business Email *</label>
+                            <input type="email" name="email" placeholder="john@company.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Company / Organisation Name *</label>
+                            <input type="text" name="company_name" placeholder="Your Company Ltd." required>
+                        </div>
+                        <div class="form-group">
+                            <label>Reason for Contact *</label>
+                            <select name="reason" required>
+                                <option value="">Select a topic...</option>
+                                <option>Request a Demo</option>
+                                <option>Sales / Pricing Enquiry</option>
+                                <option>Technical Support</option>
+                                <option>Partnership / Integration</option>
+                                <option>General Question</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Your Message</label>
+                            <textarea name="message" placeholder="Tell us how we can help you..."></textarea>
+                        </div>
+                        <button type="submit" class="btn-submit"><i class="bi bi-send-fill"></i> &nbsp;Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer style="background:#020617; color:#64748b; padding:2rem 0; text-align:center; font-size:0.875rem;">
+        <p>&copy; 2026 ConnectFlow. All rights reserved. &nbsp;|&nbsp; <a href="{{ url_for('main.privacy_policy') }}" style="color:#64748b;">Privacy</a> &nbsp;|&nbsp; <a href="{{ url_for('main.terms_of_service') }}" style="color:#64748b;">Terms</a></p>
+    </footer>
+</body>
+</html>

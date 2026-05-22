@@ -1,29 +1,34 @@
 {% extends "base_platform_premium.html" %}
 
 {% block title %}ConnectFlow | Helpdesk{% endblock %}
-{% block page_title %}Helpdesk Support{% endblock %}
+{% block page_title %}Helpdesk{% endblock %}
 
 {% block content %}
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% for cat, msg in messages %}
+<div class="alert alert-{{ 'success' if cat == 'success' else 'danger' }} alert-dismissible fade show" role="alert" style="border-radius:12px; margin-bottom:1.5rem;">
+    <i class="bi bi-{{ 'check-circle' if cat == 'success' else 'exclamation-circle' }}-fill me-2"></i> {{ msg }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endwith %}
+
+<!-- ── KPI Row ── -->
 <div class="kpi-grid">
     <div class="kpi-card">
         <div class="kpi-header">
-            <span class="kpi-label">Total Queries</span>
-            <div class="kpi-icon">
-                <i class="bi bi-headset"></i>
-            </div>
+            <span class="kpi-label">Total Tickets</span>
+            <div class="kpi-icon"><i class="bi bi-headset"></i></div>
         </div>
         <div class="kpi-value">{{ total_queries }}</div>
-        <div class="kpi-trend trend-up">
-            <i class="bi bi-info-circle"></i>
-            <span>Registered</span>
-        </div>
+        <div class="kpi-trend trend-up"><i class="bi bi-info-circle"></i><span>Registered</span></div>
     </div>
     <div class="kpi-card">
         <div class="kpi-header">
-            <span class="kpi-label">Pending Queries</span>
-            <div class="kpi-icon">
-                <i class="bi bi-exclamation-circle{% if pending_queries > 0 %}-fill text-warning{% endif %}"></i>
-            </div>
+            <span class="kpi-label">Pending Tickets</span>
+            <div class="kpi-icon"><i class="bi bi-exclamation-circle{% if pending_queries > 0 %}-fill text-warning{% endif %}"></i></div>
         </div>
         <div class="kpi-value">{{ pending_queries }}</div>
         <div class="kpi-trend {% if pending_queries > 0 %}trend-down{% else %}trend-up{% endif %}">
@@ -33,118 +38,357 @@
     </div>
     <div class="kpi-card">
         <div class="kpi-header">
-            <span class="kpi-label">Resolved Queries</span>
-            <div class="kpi-icon">
-                <i class="bi bi-check-circle-fill text-success"></i>
-            </div>
+            <span class="kpi-label">Resolved Tickets</span>
+            <div class="kpi-icon"><i class="bi bi-check-circle-fill text-success"></i></div>
         </div>
         <div class="kpi-value">{{ resolved_queries }}</div>
-        <div class="kpi-trend trend-up">
-            <i class="bi bi-shield-check"></i>
-            <span>Completed</span>
+        <div class="kpi-trend trend-up"><i class="bi bi-shield-check"></i><span>Completed</span></div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">New Inquiries</span>
+            <div class="kpi-icon"><i class="bi bi-person-lines-fill {% if new_inquiry_count > 0 %}text-warning{% endif %}"></i></div>
+        </div>
+        <div class="kpi-value">{{ new_inquiry_count }}</div>
+        <div class="kpi-trend {% if new_inquiry_count > 0 %}trend-down{% else %}trend-up{% endif %}">
+            <i class="bi bi-{% if new_inquiry_count > 0 %}stars{% else %}check-all{% endif %}"></i>
+            <span>{% if new_inquiry_count > 0 %}Unreviewed Leads{% else %}All Reviewed{% endif %}</span>
         </div>
     </div>
 </div>
 
+<!-- ── Tab Navigation ── -->
 <div class="row g-4 mt-2">
     <div class="col-12">
         <div class="premium-card">
-            <div class="card-header-premium">
-                <div class="header-left">
-                    <h2>Support Tickets</h2>
-                    <p>Track and resolve issues submitted by Organization Admins and Workers</p>
+
+            <!-- Tab Header -->
+            <div style="border-bottom: 1px solid var(--grey-100); padding: 0 1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+                <div style="display:flex; gap:0;">
+                    <button onclick="switchTab('tickets')" id="tab-tickets"
+                        class="tab-btn active"
+                        style="padding:1.25rem 1.5rem; background:none; border:none; border-bottom:2px solid #0f172a; font-weight:700; font-size:0.9rem; color:#0f172a; cursor:pointer; transition:all 0.2s;">
+                        <i class="bi bi-headset me-2"></i> Support Tickets
+                        {% if pending_queries > 0 %}
+                        <span style="background:#f59e0b; color:white; font-size:0.65rem; font-weight:800; padding:2px 6px; border-radius:10px; margin-left:6px;">{{ pending_queries }}</span>
+                        {% endif %}
+                    </button>
+                    <button onclick="switchTab('inquiries')" id="tab-inquiries"
+                        style="padding:1.25rem 1.5rem; background:none; border:none; border-bottom:2px solid transparent; font-weight:600; font-size:0.9rem; color:var(--grey-400); cursor:pointer; transition:all 0.2s;">
+                        <i class="bi bi-person-lines-fill me-2"></i> New Inquiries
+                        {% if new_inquiry_count > 0 %}
+                        <span style="background:#ef4444; color:white; font-size:0.65rem; font-weight:800; padding:2px 6px; border-radius:10px; margin-left:6px;">{{ new_inquiry_count }}</span>
+                        {% endif %}
+                    </button>
+                </div>
+                <!-- Filter for Inquiries tab -->
+                <div id="inquiry-filter" style="display:none;">
+                    <select id="statusFilter" class="form-select form-select-sm" style="border-radius:8px; font-size:0.85rem; width:160px;" onchange="filterInquiries()">
+                        <option value="">All Statuses</option>
+                        <option value="New">New</option>
+                        <option value="Contacted">Contacted</option>
+                        <option value="Qualified">Qualified</option>
+                        <option value="Closed">Closed</option>
+                    </select>
                 </div>
             </div>
-            
-            <div class="table-responsive">
-                <table class="table align-middle table-hover" style="border-collapse: separate; border-spacing: 0 0.5rem; padding: 0 1.5rem;">
-                    <thead>
-                        <tr style="color: var(--grey-400); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
-                            <th class="border-0 pb-3" style="width: 15%;">Ticket Number</th>
-                            <th class="border-0 pb-3" style="width: 20%;">Organization</th>
-                            <th class="border-0 pb-3" style="width: 20%;">Submitter</th>
-                            <th class="border-0 pb-3" style="width: 25%;">Message</th>
-                            <th class="border-0 pb-3" style="width: 10%;">Status</th>
-                            <th class="border-0 pb-3 text-end" style="width: 10%;">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for q in queries %}
-                        <tr style="background: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-radius: 8px;">
-                            <td class="border-0 rounded-start" style="padding: 1.2rem 1rem;">
-                                <span class="fw-bold" style="color: var(--text-dark); font-family: monospace; font-size: 0.95rem;">{{ q.ticket_number }}</span>
-                            </td>
-                            <td class="border-0" style="padding: 1.2rem 1rem;">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div style="width: 32px; height: 32px; border-radius: 6px; background: var(--grey-100); display: flex; align-items: center; justify-content: center; color: var(--grey-600);">
-                                        <i class="bi bi-building"></i>
+
+            <!-- ══ TAB 1: Support Tickets ══ -->
+            <div id="panel-tickets">
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover" style="border-collapse:separate; border-spacing:0 0.5rem; padding:0 1.5rem;">
+                        <thead>
+                            <tr style="color:var(--grey-400); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.5px;">
+                                <th class="border-0 pb-3" style="width:15%;">Ticket Number</th>
+                                <th class="border-0 pb-3" style="width:20%;">Organization</th>
+                                <th class="border-0 pb-3" style="width:20%;">Submitter</th>
+                                <th class="border-0 pb-3" style="width:25%;">Message</th>
+                                <th class="border-0 pb-3" style="width:10%;">Status</th>
+                                <th class="border-0 pb-3 text-end" style="width:10%;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for q in queries %}
+                            <tr style="background:var(--white); box-shadow:0 2px 4px rgba(0,0,0,0.02); border-radius:8px;">
+                                <td class="border-0 rounded-start" style="padding:1.2rem 1rem;">
+                                    <span class="fw-bold" style="color:var(--text-dark); font-family:monospace; font-size:0.95rem;">{{ q.ticket_number }}</span>
+                                </td>
+                                <td class="border-0" style="padding:1.2rem 1rem;">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="width:32px; height:32px; border-radius:6px; background:var(--grey-100); display:flex; align-items:center; justify-content:center; color:var(--grey-600);">
+                                            <i class="bi bi-building"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold" style="color:var(--text-dark); font-size:0.9rem;">{{ q.to_dict().organization_name }}</div>
+                                            <div class="small" style="color:var(--grey-400);">ID: {{ q.organization_id }}</div>
+                                        </div>
                                     </div>
+                                </td>
+                                <td class="border-0" style="padding:1.2rem 1rem;">
                                     <div>
-                                        <div class="fw-semibold" style="color: var(--text-dark); font-size: 0.9rem;">{{ q.to_dict().organization_name }}</div>
-                                        <div class="small" style="color: var(--grey-400);">ID: {{ q.organization_id }}</div>
+                                        <div class="fw-semibold" style="color:var(--text-dark); font-size:0.9rem;">{{ q.to_dict().user_name }}</div>
+                                        <div class="d-flex align-items-center gap-1.5 mt-1">
+                                            {% if q.user_type == 'org_admin' %}
+                                            <span class="badge" style="background:rgba(75,85,99,0.1); color:#4b5563; font-size:0.7rem; padding:2px 6px;">Org Admin</span>
+                                            {% else %}
+                                            <span class="badge" style="background:rgba(107,114,128,0.1); color:#6b7280; font-size:0.7rem; padding:2px 6px;">Worker</span>
+                                            {% endif %}
+                                            <span class="small text-muted" style="font-size:0.75rem;">({{ q.to_dict().user_email }})</span>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td class="border-0" style="padding: 1.2rem 1rem;">
-                                <div>
-                                    <div class="fw-semibold" style="color: var(--text-dark); font-size: 0.9rem;">{{ q.to_dict().user_name }}</div>
-                                    <div class="d-flex align-items-center gap-1.5 mt-1">
-                                        {% if q.user_type == 'org_admin' %}
-                                        <span class="badge" style="background: rgba(75, 85, 99, 0.1); color: #4b5563; font-size: 0.7rem; padding: 2px 6px;">Org Admin</span>
-                                        {% else %}
-                                        <span class="badge" style="background: rgba(107, 114, 128, 0.1); color: #6b7280; font-size: 0.7rem; padding: 2px 6px;">Worker</span>
-                                        {% endif %}
-                                        <span class="small text-muted" style="font-size: 0.75rem;">({{ q.to_dict().user_email }})</span>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="border-0" style="padding: 1.2rem 1rem;">
-                                <div style="max-height: 80px; overflow-y: auto; font-size: 0.9rem; color: var(--text-dark); line-height: 1.4; word-break: break-word; white-space: pre-line;">
-                                    {{ q.message }}
-                                </div>
-                                <div class="small text-muted mt-1" style="font-size: 0.75rem;">
-                                    Submitted: {{ q.created_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC
-                                </div>
-                            </td>
-                            <td class="border-0" style="padding: 1.2rem 1rem;">
-                                {% if q.status == 'Pending' %}
-                                <span class="badge-premium" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">Pending</span>
-                                {% else %}
-                                <span class="badge-premium" style="background: rgba(34, 197, 94, 0.1); color: #22c55e; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600;">Resolved</span>
-                                {% endif %}
-                            </td>
-                            <td class="border-0 rounded-end text-end" style="padding: 1.2rem 1rem;">
-                                <div class="d-flex justify-content-end gap-2">
+                                </td>
+                                <td class="border-0" style="padding:1.2rem 1rem;">
+                                    <div style="max-height:80px; overflow-y:auto; font-size:0.9rem; color:var(--text-dark); line-height:1.4; word-break:break-word; white-space:pre-line;">{{ q.message }}</div>
+                                    <div class="small text-muted mt-1" style="font-size:0.75rem;">Submitted: {{ q.created_at.strftime('%Y-%m-%d %H:%M:%S') }} UTC</div>
+                                </td>
+                                <td class="border-0" style="padding:1.2rem 1rem;">
                                     {% if q.status == 'Pending' %}
-                                    <form method="post" action="{{ url_for('super_admin.resolve_query', qid=q.id) }}" style="margin: 0;">
+                                    <span class="badge-premium" style="background:rgba(245,158,11,0.1); color:#f59e0b; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:600;">Pending</span>
+                                    {% else %}
+                                    <span class="badge-premium" style="background:rgba(34,197,94,0.1); color:#22c55e; padding:4px 10px; border-radius:20px; font-size:0.75rem; font-weight:600;">Resolved</span>
+                                    {% endif %}
+                                </td>
+                                <td class="border-0 rounded-end text-end" style="padding:1.2rem 1rem;">
+                                    {% if q.status == 'Pending' %}
+                                    <form method="post" action="{{ url_for('super_admin.resolve_query', qid=q.id) }}" style="margin:0;">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                        <button class="btn btn-sm btn-success d-flex align-items-center gap-1.5" style="border-radius: 8px; font-size: 0.8rem; padding: 6px 12px; font-weight: 500;" title="Mark as Solved">
-                                            <i class="bi bi-check2-circle" style="font-size: 0.95rem;"></i> Solve
+                                        <button class="btn btn-sm btn-success d-flex align-items-center gap-1.5" style="border-radius:8px; font-size:0.8rem; padding:6px 12px; font-weight:500;" title="Mark as Solved">
+                                            <i class="bi bi-check2-circle" style="font-size:0.95rem;"></i> Solve
                                         </button>
                                     </form>
                                     {% else %}
-                                    <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" disabled style="border-radius: 8px; font-size: 0.8rem; padding: 6px 12px; font-weight: 500; opacity: 0.65;">
-                                        <i class="bi bi-check2-all" style="font-size: 0.95rem;"></i> Solved
+                                    <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1.5" disabled style="border-radius:8px; font-size:0.8rem; padding:6px 12px; font-weight:500; opacity:0.65;">
+                                        <i class="bi bi-check2-all" style="font-size:0.95rem;"></i> Solved
                                     </button>
                                     {% endif %}
-                                </div>
-                            </td>
-                        </tr>
-                        {% else %}
-                        <tr>
-                            <td colspan="6" class="text-center py-5 border-0">
-                                <div class="empty-state py-4" style="color: var(--grey-400);">
-                                    <i class="bi bi-headset" style="font-size: 2.5rem; margin-bottom: 1rem; display: block;"></i>
-                                    <p class="fw-semibold" style="font-size: 1.1rem; color: var(--text-dark);">No Support Tickets Found</p>
-                                    <p class="small text-muted" style="max-width: 320px; margin: 0.25rem auto 0 auto;">When Organization Admins or Workers raise queries from their dashboards, they will appear here in real-time.</p>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 border-0">
+                                    <div class="empty-state py-4" style="color:var(--grey-400);">
+                                        <i class="bi bi-headset" style="font-size:2.5rem; margin-bottom:1rem; display:block;"></i>
+                                        <p class="fw-semibold" style="font-size:1.1rem; color:var(--text-dark);">No Support Tickets Found</p>
+                                        <p class="small text-muted" style="max-width:320px; margin:0.25rem auto 0;">When Organization Admins or Workers raise queries, they will appear here in real-time.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ══ TAB 2: New Inquiries ══ -->
+            <div id="panel-inquiries" style="display:none;">
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover" id="inquiryTable" style="border-collapse:separate; border-spacing:0 0.5rem; padding:0 1.5rem;">
+                        <thead>
+                            <tr style="color:var(--grey-400); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px;">
+                                <th class="border-0 pb-3" style="width:5%;">#</th>
+                                <th class="border-0 pb-3" style="width:18%;">Contact</th>
+                                <th class="border-0 pb-3" style="width:15%;">Company</th>
+                                <th class="border-0 pb-3" style="width:11%;">Reason</th>
+                                <th class="border-0 pb-3" style="width:20%;">Message / Remark</th>
+                                <th class="border-0 pb-3" style="width:8%;">Source</th>
+                                <th class="border-0 pb-3" style="width:8%;">Status</th>
+                                <th class="border-0 pb-3" style="width:10%;">Received</th>
+                                <th class="border-0 pb-3 text-end" style="width:5%;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for inq in inquiries %}
+                            <tr class="inquiry-row" data-status="{{ inq.status }}" style="background:var(--white); box-shadow:0 2px 4px rgba(0,0,0,0.02); border-radius:8px; {% if inq.status == 'New' %}border-left:3px solid #f59e0b;{% elif inq.status == 'Qualified' %}border-left:3px solid #10b981;{% elif inq.status == 'Contacted' %}border-left:3px solid #3b82f6;{% endif %}">
+
+                                <td class="border-0 rounded-start" style="padding:1.2rem 1rem;">
+                                    <span style="font-size:0.78rem; color:var(--grey-400); font-family:monospace;">#{{ inq.id }}</span>
+                                </td>
+
+                                <td class="border-0" style="padding:1.2rem 1rem;">
+                                    <div style="display:flex; align-items:center; gap:0.75rem;">
+                                        <div style="width:36px; height:36px; border-radius:10px; background:#0f172a; display:flex; align-items:center; justify-content:center; color:white; font-weight:800; font-size:0.9rem; flex-shrink:0;">
+                                            {{ inq.name[0].upper() if inq.name else '?' }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold" style="color:var(--text-dark); font-size:0.88rem;">{{ inq.name }}</div>
+                                            <a href="mailto:{{ inq.email }}" style="color:var(--grey-400); text-decoration:none; font-size:0.78rem;">{{ inq.email }}</a>
+                                            {% if inq.phone %}
+                                            <div><a href="tel:{{ inq.phone }}" style="color:var(--grey-400); text-decoration:none; font-size:0.75rem;"><i class="bi bi-telephone-fill me-1"></i>{{ inq.phone }}</a></div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td class="border-0" style="padding:1.2rem 1rem;">
+                                    <span style="font-size:0.875rem; color:var(--text-dark); font-weight:600;">{{ inq.company_name or '—' }}</span>
+                                </td>
+
+                                <td class="border-0" style="padding:1.2rem 1rem;">
+                                    <span style="background:rgba(15,23,42,0.07); color:#0f172a; font-size:0.7rem; padding:3px 8px; border-radius:6px; font-weight:700; white-space:nowrap;">
+                                        {{ inq.reason or 'General' }}
+                                    </span>
+                                </td>
+
+                                <td class="border-0" style="padding:1.2rem 1rem;">
+                                    <div style="max-height:55px; overflow:hidden; font-size:0.82rem; color:var(--grey-600); line-height:1.4;">
+                                        {{ inq.message or '—' }}
+                                    </div>
+                                    {% if inq.admin_remark %}
+                                    <div style="margin-top:0.4rem; background:#f0fdf4; border-radius:6px; padding:0.3rem 0.6rem; font-size:0.72rem; color:#065f46;">
+                                        <i class="bi bi-chat-square-text-fill me-1"></i> {{ inq.admin_remark }}
+                                    </div>
+                                    {% endif %}
+                                </td>
+
+                                <td class="border-0" style="padding:1.2rem 1rem;">
+                                    <span style="font-size:0.72rem; color:var(--grey-400); font-family:monospace;">{{ inq.source_page or 'contact' }}</span>
+                                </td>
+
+                                <td class="border-0" style="padding:1.2rem 1rem;">
+                                    {% if inq.status == 'New' %}
+                                        <span style="background:rgba(245,158,11,0.12); color:#d97706; padding:4px 10px; border-radius:20px; font-size:0.7rem; font-weight:700; display:inline-block;">● New</span>
+                                    {% elif inq.status == 'Contacted' %}
+                                        <span style="background:rgba(59,130,246,0.1); color:#2563eb; padding:4px 10px; border-radius:20px; font-size:0.7rem; font-weight:700; display:inline-block;">● Contacted</span>
+                                    {% elif inq.status == 'Qualified' %}
+                                        <span style="background:rgba(16,185,129,0.1); color:#059669; padding:4px 10px; border-radius:20px; font-size:0.7rem; font-weight:700; display:inline-block;">● Qualified</span>
+                                    {% else %}
+                                        <span style="background:rgba(100,116,139,0.1); color:#64748b; padding:4px 10px; border-radius:20px; font-size:0.7rem; font-weight:700; display:inline-block;">● Closed</span>
+                                    {% endif %}
+                                </td>
+
+                                <td class="border-0" style="padding:1.2rem 1rem;">
+                                    <div style="font-size:0.78rem; color:var(--grey-600);">{{ inq.created_at.strftime('%d %b %Y') }}</div>
+                                    <div style="font-size:0.7rem; color:var(--grey-400);">{{ inq.created_at.strftime('%I:%M %p') }}</div>
+                                </td>
+
+                                <td class="border-0 rounded-end text-end" style="padding:1.2rem 1rem;">
+                                    <button class="btn btn-sm" style="background:#0f172a; color:white; border-radius:8px; font-size:0.75rem; padding:5px 10px; font-weight:600; white-space:nowrap;"
+                                        onclick="openRemark({{ inq.id }}, '{{ inq.name | e }}', '{{ inq.email | e }}', '{{ inq.phone or '' | e }}', '{{ inq.company_name or '' | e }}', '{{ inq.reason or '' | e }}', '{{ (inq.message or '') | replace("'", "\\'") | replace('\n', ' ') | e }}', '{{ inq.status }}', '{{ (inq.admin_remark or '') | replace("'", "\\'") | e }}')">
+                                        <i class="bi bi-pencil-square"></i> Remark
+                                    </button>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="9" class="text-center py-5 border-0">
+                                    <div class="empty-state py-4" style="color:var(--grey-400);">
+                                        <i class="bi bi-person-lines-fill" style="font-size:2.5rem; margin-bottom:1rem; display:block;"></i>
+                                        <p class="fw-semibold" style="font-size:1.1rem; color:var(--text-dark);">No Inquiries Yet</p>
+                                        <p class="small text-muted" style="max-width:340px; margin:0.25rem auto 0;">When visitors submit the "Talk to Us" or "Contact" form, their details appear here as leads.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- .premium-card -->
+    </div>
+</div>
+
+<!-- ── Remark Modal ── -->
+<div class="modal fade" id="remarkModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius:20px; border:none; box-shadow:0 20px 60px rgba(0,0,0,0.15);">
+            <div class="modal-header" style="background:#0f172a; border-radius:20px 20px 0 0; padding:1.5rem 2rem; border:none;">
+                <div>
+                    <h5 class="modal-title" style="color:white; font-weight:800; margin:0;">
+                        <i class="bi bi-person-lines-fill me-2"></i> Inquiry Detail & Remark
+                    </h5>
+                    <p style="color:#64748b; font-size:0.8rem; margin:0.2rem 0 0;">Review lead details and add your internal notes</p>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:2rem;">
+                <div style="background:#f8fafc; border-radius:14px; padding:1.5rem; margin-bottom:1.5rem; border:1px solid #e2e8f0;">
+                    <h6 style="font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:1px; color:#94a3b8; margin-bottom:1rem;">Lead Information</h6>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                        <div><label style="font-size:0.68rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:0.2rem;">Full Name</label><p id="modal-name" style="font-weight:700; color:#0f172a; margin:0;"></p></div>
+                        <div><label style="font-size:0.68rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:0.2rem;">Email</label><p id="modal-email" style="font-weight:600; color:#0f172a; margin:0; font-size:0.9rem;"></p></div>
+                        <div><label style="font-size:0.68rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:0.2rem;">Phone</label><p id="modal-phone" style="font-weight:600; color:#0f172a; margin:0;"></p></div>
+                        <div><label style="font-size:0.68rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:0.2rem;">Company</label><p id="modal-company" style="font-weight:600; color:#0f172a; margin:0;"></p></div>
+                        <div><label style="font-size:0.68rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:0.2rem;">Reason</label><p id="modal-reason" style="font-weight:600; color:#0f172a; margin:0;"></p></div>
+                    </div>
+                    <div style="margin-top:1rem;">
+                        <label style="font-size:0.68rem; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px; display:block; margin-bottom:0.4rem;">Their Message</label>
+                        <div id="modal-message" style="background:white; border:1px solid #e2e8f0; border-radius:10px; padding:0.875rem; font-size:0.875rem; color:#475569; line-height:1.7; min-height:50px;"></div>
+                    </div>
+                </div>
+                <form method="POST" id="remarkForm">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div style="margin-bottom:1.25rem;">
+                        <label style="font-size:0.8rem; font-weight:700; color:#0f172a; display:block; margin-bottom:0.5rem;">Update Lead Status</label>
+                        <select name="status" id="modal-status" class="form-select" style="border-radius:10px; border:1.5px solid #e2e8f0; font-size:0.875rem; padding:0.75rem 1rem;">
+                            <option value="New">🟡 New — Just received, not yet reviewed</option>
+                            <option value="Contacted">🔵 Contacted — We have reached out</option>
+                            <option value="Qualified">🟢 Qualified — Strong lead, ready to close</option>
+                            <option value="Closed">⚫ Closed — Deal closed or not interested</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom:1.5rem;">
+                        <label style="font-size:0.8rem; font-weight:700; color:#0f172a; display:block; margin-bottom:0.5rem;">Internal Remark <span style="color:#94a3b8; font-weight:400;">(visible only to admins)</span></label>
+                        <textarea name="remark" id="modal-remark" rows="3" class="form-control" placeholder="e.g. 'Called 22 May — interested in Growth plan. Follow up next week.'" style="border-radius:10px; border:1.5px solid #e2e8f0; font-size:0.875rem; resize:vertical;"></textarea>
+                    </div>
+                    <div style="display:flex; gap:1rem; justify-content:flex-end;">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" style="border-radius:8px; font-weight:600;">Cancel</button>
+                        <button type="submit" class="btn" style="background:#0f172a; color:white; border-radius:8px; font-weight:700; padding:0.6rem 1.75rem;">
+                            <i class="bi bi-check2-circle me-1"></i> Save Remark & Status
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+/* ── Tab switcher ── */
+function switchTab(name) {
+    const tabs = ['tickets', 'inquiries'];
+    tabs.forEach(t => {
+        const btn = document.getElementById('tab-' + t);
+        const panel = document.getElementById('panel-' + t);
+        if (t === name) {
+            btn.style.borderBottomColor = '#0f172a';
+            btn.style.color = '#0f172a';
+            btn.style.fontWeight = '700';
+            panel.style.display = 'block';
+        } else {
+            btn.style.borderBottomColor = 'transparent';
+            btn.style.color = 'var(--grey-400)';
+            btn.style.fontWeight = '600';
+            panel.style.display = 'none';
+        }
+    });
+    document.getElementById('inquiry-filter').style.display = name === 'inquiries' ? 'block' : 'none';
+}
+
+/* ── Inquiry filter ── */
+function filterInquiries() {
+    const filter = document.getElementById('statusFilter').value.toLowerCase();
+    document.querySelectorAll('.inquiry-row').forEach(row => {
+        const status = row.getAttribute('data-status').toLowerCase();
+        row.style.display = (!filter || status === filter) ? '' : 'none';
+    });
+}
+
+/* ── Remark modal ── */
+function openRemark(id, name, email, phone, company, reason, message, status, remark) {
+    document.getElementById('modal-name').textContent    = name;
+    document.getElementById('modal-email').textContent   = email;
+    document.getElementById('modal-phone').textContent   = phone   || '—';
+    document.getElementById('modal-company').textContent = company || '—';
+    document.getElementById('modal-reason').textContent  = reason  || '—';
+    document.getElementById('modal-message').textContent = message || 'No message provided.';
+    document.getElementById('modal-status').value  = status;
+    document.getElementById('modal-remark').value  = remark;
+    document.getElementById('remarkForm').action   = '/platform/inquiries/' + id + '/remark';
+    new bootstrap.Modal(document.getElementById('remarkModal')).show();
+}
+
+/* Auto-switch to Inquiries tab if URL hash says so */
+if (window.location.hash === '#inquiries') switchTab('inquiries');
+</script>
 {% endblock %}

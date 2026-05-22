@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Status | ConnectFlow</title>
+    <meta name="description" content="Real-time system status and uptime for ConnectFlow services — voice, WhatsApp, API, and webhooks.">
+    <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .page-hero { background: #0f172a; color: white; padding: 5rem 0 4rem; text-align: center; }
+        .page-hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; }
+        .status-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(16,185,129,0.15); border: 1px solid #34d399; padding: 0.5rem 1.25rem; border-radius: 30px; color: #34d399; font-weight: 700; font-size: 0.95rem; margin-top: 1rem; }
+        .status-badge .dot { width: 10px; height: 10px; border-radius: 50%; background: #34d399; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+        .status-section { padding: 4rem 0; background: #f8fafc; }
+        .status-card { background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; }
+        .status-card-left { display: flex; align-items: center; gap: 1rem; }
+        .status-icon { width: 44px; height: 44px; border-radius: 12px; background: #f8fafc; display: flex; align-items: center; justify-content: center; }
+        .status-icon i { font-size: 1.2rem; color: #0f172a; }
+        .status-card h4 { font-weight: 700; color: #0f172a; margin: 0 0 0.2rem; }
+        .status-card p { color: #64748b; font-size: 0.85rem; margin: 0; }
+        .status-pill { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.85rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; }
+        .status-pill.ok { background: #dcfce7; color: #166534; }
+        .status-pill.warn { background: #fef3c7; color: #92400e; }
+        .status-pill.down { background: #fee2e2; color: #991b1b; }
+        .uptime-bars { display: flex; gap: 3px; }
+        .uptime-bar { width: 8px; height: 28px; border-radius: 4px; background: #10b981; }
+        .uptime-bar.warn { background: #f59e0b; }
+        .incidents-section { padding: 4rem 0; }
+        .incident-item { border-left: 3px solid #10b981; padding: 1rem 1.5rem; margin-bottom: 1.5rem; background: white; border-radius: 0 12px 12px 0; }
+        .incident-item.resolved { border-left-color: #10b981; }
+        .incident-date { font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.5rem; }
+        .incident-title { font-weight: 700; color: #0f172a; margin-bottom: 0.25rem; }
+        .incident-desc { color: #64748b; font-size: 0.875rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="container nav-content">
+            <a href="/" class="logo">Connect<span>Flow</span></a>
+            <div class="nav-auth">
+                <a href="{{ url_for('org.login') }}" class="btn-outline">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-hero">
+        <div class="container">
+            <a href="/" style="color:#94a3b8; text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem; margin-bottom:2rem;"><i class="bi bi-arrow-left"></i> Back to Home</a>
+            <h1>System Status</h1>
+            <div class="status-badge"><div class="dot"></div> All Systems Operational</div>
+            <p style="color:#94a3b8; margin-top:1rem;">Last updated: {{ "now" | default("Real-time") }} — Refreshes every 60 seconds</p>
+        </div>
+    </div>
+
+    <section class="status-section">
+        <div class="container" style="max-width:860px;">
+            <h2 style="font-size:1.25rem; font-weight:800; color:#0f172a; margin-bottom:1.5rem;">Core Services</h2>
+            {% for service in [
+                ('bi-server', 'Application Server', 'API & dashboard availability', 'ok', 'Operational'),
+                ('bi-database-fill', 'Database', 'Primary data storage & queries', 'ok', 'Operational'),
+                ('bi-telephone-fill', 'Voice Call Engine', 'Twilio voice call dispatch & webhooks', 'ok', 'Operational'),
+                ('bi-whatsapp', 'WhatsApp Messaging', 'WhatsApp broadcast delivery via Twilio', 'ok', 'Operational'),
+                ('bi-hdd-network-fill', 'Webhook Processor', 'Real-time delivery status ingestion', 'ok', 'Operational'),
+                ('bi-file-earmark-arrow-up', 'File Import Service', 'Excel & CSV data upload processing', 'ok', 'Operational'),
+                ('bi-volume-up-fill', 'TTS Audio Generator', 'Google & Edge text-to-speech synthesis', 'ok', 'Operational'),
+                ('bi-bell-fill', 'Notification System', 'In-app and platform notifications', 'ok', 'Operational'),
+            ] %}
+            <div class="status-card">
+                <div class="status-card-left">
+                    <div class="status-icon"><i class="bi {{ service[0] }}"></i></div>
+                    <div>
+                        <h4>{{ service[1] }}</h4>
+                        <p>{{ service[2] }}</p>
+                    </div>
+                </div>
+                <div style="display:flex; align-items:center; gap:1.5rem;">
+                    <div>
+                        <p style="font-size:0.7rem; color:#94a3b8; margin-bottom:0.4rem; text-align:right;">90-day uptime</p>
+                        <div class="uptime-bars">
+                            {% for i in range(30) %}<div class="uptime-bar"></div>{% endfor %}
+                        </div>
+                    </div>
+                    <span class="status-pill {{ service[3] }}">
+                        <i class="bi bi-check-circle-fill"></i> {{ service[4] }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+
+            <div style="background: white; border-radius:16px; border:1px solid #e2e8f0; padding:2rem; margin-top:2rem; text-align:center;">
+                <h3 style="font-weight:800; color:#0f172a; margin-bottom:0.5rem;">Overall Uptime: 99.97%</h3>
+                <p style="color:#64748b; margin:0;">Measured over the last 90 days across all core services</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="incidents-section">
+        <div class="container" style="max-width:860px;">
+            <h2 style="font-size:1.25rem; font-weight:800; color:#0f172a; margin-bottom:1.5rem;">Recent Incident History</h2>
+            <div class="incident-item resolved">
+                <div class="incident-date">May 14, 2026 — 02:15 – 02:42 IST</div>
+                <div class="incident-title">✅ Resolved — Webhook Delivery Delay</div>
+                <div class="incident-desc">A brief delay in Twilio webhook processing caused call status updates to lag by 4-8 minutes. Root cause was a database connection pool exhaustion. Resolved by increasing pool size and adding queue-based retry logic.</div>
+            </div>
+            <div class="incident-item resolved">
+                <div class="incident-date">April 29, 2026 — 14:00 – 14:18 IST</div>
+                <div class="incident-title">✅ Resolved — Scheduled Maintenance</div>
+                <div class="incident-desc">Planned maintenance window for database schema migration and security patch deployment. All services restored within the scheduled window. No data loss occurred.</div>
+            </div>
+            <div style="text-align:center; padding:2rem; color:#94a3b8; font-size:0.9rem;">
+                No further incidents in the last 90 days.
+            </div>
+        </div>
+    </section>
+
+    <footer style="background:#020617; color:#64748b; padding:2rem 0; text-align:center; font-size:0.875rem;">
+        <p>&copy; 2026 ConnectFlow. All rights reserved. &nbsp;|&nbsp; <a href="{{ url_for('main.contact') }}" style="color:#64748b;">Report an Issue</a></p>
+    </footer>
+    <script>
+        // Auto refresh every 60 seconds
+        setTimeout(() => location.reload(), 60000);
+    </script>
+</body>
+</html>

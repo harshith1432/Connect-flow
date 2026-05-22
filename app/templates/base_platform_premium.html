@@ -59,7 +59,7 @@
             <a href="{{ url_for('super_admin.pending_changes') }}" class="nav-item {% if request.endpoint == 'super_admin.pending_changes' %}active{% endif %}">
                 <i class="bi bi-exclamation-circle"></i> Pending Reviews
             </a>
-            <a href="{{ url_for('super_admin.helpdesk') }}" class="nav-item {% if request.endpoint == 'super_admin.helpdesk' %}active{% endif %}">
+            <a href="{{ url_for('super_admin.helpdesk') }}" class="nav-item {% if request.endpoint in ['super_admin.helpdesk', 'super_admin.inquiries', 'super_admin.inquiry_remark'] %}active{% endif %}">
                 <i class="bi bi-headset"></i> Helpdesk
             </a>
             <a href="{{ url_for('super_admin.notifications') }}" class="nav-item {% if request.endpoint == 'super_admin.notifications' %}active{% endif %}">

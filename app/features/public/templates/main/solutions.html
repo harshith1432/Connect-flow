@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solutions | ConnectFlow</title>
+    <meta name="description" content="See how ConnectFlow solves outbound communication challenges across education, healthcare, finance, real estate and more.">
+    <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .page-hero { background: #0f172a; color: white; padding: 5rem 0 4rem; text-align: center; }
+        .page-hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; }
+        .page-hero p { color: #94a3b8; font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+        .solutions-section { padding: 5rem 0; background: #f8fafc; }
+        .solution-card { background: white; border-radius: 20px; padding: 2.5rem; border: 1px solid #e2e8f0; margin-bottom: 2rem; display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: start; }
+        .solution-icon { width: 64px; height: 64px; border-radius: 16px; background: #0f172a; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .solution-icon i { font-size: 1.75rem; color: white; }
+        .solution-card h3 { font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem; }
+        .solution-card .industry-tag { display: inline-block; background: #f1f5f9; color: #475569; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 20px; margin-bottom: 0.75rem; }
+        .solution-card p { color: #64748b; line-height: 1.7; margin-bottom: 1rem; }
+        .use-cases { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .use-case-tag { background: #f8fafc; border: 1px solid #e2e8f0; color: #475569; padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="container nav-content">
+            <a href="/" class="logo">Connect<span>Flow</span></a>
+            <div class="nav-auth">
+                <a href="{{ url_for('org.login') }}" class="btn-outline">Login</a>
+                <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-hero">
+        <div class="container">
+            <a href="/" style="color:#94a3b8; text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem; margin-bottom:2rem;"><i class="bi bi-arrow-left"></i> Back to Home</a>
+            <h1>Solutions for Every Industry</h1>
+            <p>ConnectFlow powers automated outbound communication for a wide range of industries. See how organisations like yours are scaling their outreach.</p>
+        </div>
+    </div>
+
+    <section class="solutions-section">
+        <div class="container">
+            {% for s in [
+                ('bi-mortarboard-fill', 'Education', 'Schools, Colleges & Universities',
+                 'Automate parent communication, exam reminders, fee due alerts, and event announcements. Reach thousands of parents and students simultaneously — in their preferred language.',
+                 ['Fee Due Alerts', 'Exam Reminders', 'Parent-Teacher Meeting Invites', 'Result Notifications', 'Admission Follow-ups']),
+                ('bi-heart-pulse-fill', 'Healthcare', 'Hospitals, Clinics & Diagnostic Centres',
+                 'Reduce no-shows by automatically reminding patients of upcoming appointments. Send health check-up reminders, lab result notifications, and discharge follow-up calls.',
+                 ['Appointment Reminders', 'Lab Result Alerts', 'Discharge Follow-ups', 'Vaccination Drives', 'Health Camp Announcements']),
+                ('bi-bank2', 'Finance & Banking', 'NBFCs, Microfinance & Collection Teams',
+                 'Streamline loan repayment reminders, EMI due date alerts, and account statement notifications. Reach thousands of borrowers daily without hiring a single calling agent.',
+                 ['EMI Reminders', 'Overdue Payment Alerts', 'KYC Update Notices', 'Loan Disbursement Updates', 'Insurance Renewal']),
+                ('bi-buildings-fill', 'Real Estate', 'Developers, Brokers & Property Managers',
+                 'Keep prospects and property owners informed automatically. Send site visit confirmations, maintenance updates, society meeting reminders, and rental due notices.',
+                 ['Site Visit Confirmations', 'Maintenance Notices', 'Society Meeting Alerts', 'Rent Due Reminders', 'Project Launch Updates']),
+                ('bi-truck', 'Logistics & Delivery', 'Courier Companies & Supply Chain',
+                 'Keep customers updated about their deliveries in real time. Trigger automatic call or WhatsApp alerts on shipment dispatch, out-for-delivery, and delivery confirmation.',
+                 ['Shipment Dispatch Alerts', 'Out-for-Delivery Calls', 'Delivery Confirmation', 'Return Pickup Scheduling', 'Delay Notifications']),
+                ('bi-person-workspace', 'HR & Workforce', 'Enterprises & Staffing Agencies',
+                 'Streamline employee communication at scale. Send payslip alerts, shift reminders, compliance deadlines, and policy updates across your entire workforce instantly.',
+                 ['Payslip Notifications', 'Shift Reminders', 'Compliance Deadlines', 'Policy Updates', 'Survey Invitations'])
+            ] %}
+            <div class="solution-card">
+                <div class="solution-icon"><i class="bi {{ s[0] }}"></i></div>
+                <div>
+                    <span class="industry-tag">{{ s[1] }}</span>
+                    <h3>{{ s[2] }}</h3>
+                    <p>{{ s[3] }}</p>
+                    <div class="use-cases">
+                        {% for uc in s[4] %}
+                        <span class="use-case-tag"><i class="bi bi-check2"></i> {{ uc }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section style="background:#0f172a; padding:4rem 0; text-align:center; color:white;">
+        <div class="container">
+            <h2 style="font-size:2rem; font-weight:800; margin-bottom:1rem;">Your industry not listed? We still have you covered.</h2>
+            <p style="color:#94a3b8; margin-bottom:2rem;">ConnectFlow's no-code module builder works for any dataset and any outreach need.</p>
+            <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                <a href="{{ url_for('org.register') }}" class="btn-white">
+                    <i class="bi bi-rocket-takeoff-fill"></i> Start Free Trial
+                </a>
+                <a href="{{ url_for('main.contact') }}" class="btn-outline-dark">
+                    <i class="bi bi-chat-dots"></i> Talk to Sales
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer style="background:#020617; color:#64748b; padding:2rem 0; text-align:center; font-size:0.875rem;">
+        <p>&copy; 2026 ConnectFlow. All rights reserved. &nbsp;|&nbsp; <a href="{{ url_for('main.privacy_policy') }}" style="color:#64748b;">Privacy</a> &nbsp;|&nbsp; <a href="{{ url_for('main.terms_of_service') }}" style="color:#64748b;">Terms</a></p>
+    </footer>
+</body>
+</html>

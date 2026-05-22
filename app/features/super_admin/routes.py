@@ -904,20 +904,26 @@ def delete_admin(aid):
 @platform_required
 def helpdesk():
     from app.models.helpdesk import HelpdeskQuery
-    # Query all helpdesk tickets in chronological order
+    from app.models.inquiry import Inquiry
+
+    # Support tickets
     queries = HelpdeskQuery.query.order_by(HelpdeskQuery.created_at.desc()).all()
-    
-    # Simple KPI counts
     total_queries = len(queries)
     pending_queries = sum(1 for q in queries if q.status == "Pending")
     resolved_queries = total_queries - pending_queries
-    
+
+    # Inquiries / Talk-to-Us leads
+    inquiries = Inquiry.query.order_by(Inquiry.created_at.desc()).all()
+    new_inquiry_count = sum(1 for i in inquiries if i.status == "New")
+
     return render_template(
         "platform/helpdesk.html",
         queries=queries,
         total_queries=total_queries,
         pending_queries=pending_queries,
-        resolved_queries=resolved_queries
+        resolved_queries=resolved_queries,
+        inquiries=inquiries,
+        new_inquiry_count=new_inquiry_count,
     )
 
 
@@ -954,3 +960,38 @@ def logout():
 
     SessionManager.logout_and_clean()
     return redirect(url_for("main.index"))
+
+
+# ── Inquiry / Talk-to-Us Leads ─────────────────────────────────────────────────
+@super_admin_bp.route("/inquiries")
+@platform_required
+def inquiries():
+    from app.models.inquiry import Inquiry
+    all_inquiries = Inquiry.query.order_by(Inquiry.created_at.desc()).all()
+    total = len(all_inquiries)
+    new_count = sum(1 for i in all_inquiries if i.status == "New")
+    contacted = sum(1 for i in all_inquiries if i.status == "Contacted")
+    qualified = sum(1 for i in all_inquiries if i.status == "Qualified")
+    return render_template(
+        "platform/inquiries.html",
+        inquiries=all_inquiries,
+        total=total,
+        new_count=new_count,
+        contacted=contacted,
+        qualified=qualified,
+    )
+
+
+@super_admin_bp.route("/inquiries/<int:iid>/remark", methods=["POST"])
+@platform_required
+def inquiry_remark(iid):
+    from app.models.inquiry import Inquiry
+    inquiry = db.get_or_404(Inquiry, iid)
+    remark = request.form.get("remark", "").strip()
+    status = request.form.get("status", inquiry.status).strip()
+    inquiry.admin_remark = remark
+    inquiry.status = status
+    db.session.commit()
+    flash("Inquiry updated successfully.", "success")
+    return redirect(url_for("super_admin.helpdesk") + "#inquiries")
+

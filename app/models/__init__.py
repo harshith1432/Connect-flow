@@ -27,6 +27,9 @@ from .chat import ChatMessage, DashboardNotification
 # Platform Helpdesk tickets model
 from .helpdesk import HelpdeskQuery
 
+# Public landing page inquiry / talk-to-us leads
+from .inquiry import Inquiry
+
 # Security infrastructure models
 from .security import (
     MfaConfiguration,

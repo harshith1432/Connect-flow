@@ -59,8 +59,7 @@
                     {{ current_user.email[0].upper() }}
                 </div>
                 <div class="user-info">
-                    <h6 style="color: white; margin-bottom: 2px;">{{ current_user.organization.name }}</h6>
-                    <p style="color: var(--grey-400); margin: 0;">{{ current_user.email }}</p>
+                    <h6 style="color: white; margin-bottom: 2px;">{{ current_user.full_name or current_user.organization.name }}</h6>
                 </div>
             </a>
             <a href="{{ url_for('org.logout') }}" class="nav-item" style="margin-top: 1rem; color: #ef4444;">

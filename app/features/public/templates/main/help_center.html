@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help Center | ConnectFlow</title>
+    <meta name="description" content="Find answers to common ConnectFlow questions. Browse FAQs, setup guides, and troubleshooting articles.">
+    <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .page-hero { background: #0f172a; color: white; padding: 5rem 0 4rem; text-align: center; }
+        .page-hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; }
+        .page-hero p { color: #94a3b8; max-width:600px; margin:0 auto 2rem; }
+        .search-bar { max-width: 520px; margin: 0 auto; display: flex; background: white; border-radius: 12px; overflow: hidden; }
+        .search-bar input { flex-grow:1; border:none; outline:none; padding:1rem 1.25rem; font-size:0.95rem; color:#0f172a; }
+        .search-bar button { background:#10b981; color:white; border:none; padding:0 1.5rem; font-weight:700; cursor:pointer; font-size:0.9rem; }
+        .help-section { padding: 5rem 0; background: #f8fafc; }
+        .category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 4rem; }
+        .category-card { background: white; border-radius: 16px; padding: 1.75rem; border: 1px solid #e2e8f0; text-decoration:none; transition: all 0.2s; display:block; }
+        .category-card:hover { transform:translateY(-3px); box-shadow:0 8px 24px rgba(0,0,0,0.08); border-color:#0f172a; }
+        .category-card i { font-size:2rem; color:#0f172a; margin-bottom:1rem; display:block; }
+        .category-card h3 { font-weight:800; color:#0f172a; font-size:1rem; margin-bottom:0.5rem; }
+        .category-card p { color:#64748b; font-size:0.875rem; margin:0; line-height:1.6; }
+        .category-card .count { font-size:0.75rem; color:#94a3b8; margin-top:0.75rem; display:block; }
+        .faq-section { padding:4rem 0; }
+        .faq-item { background:white; border:1px solid #e2e8f0; border-radius:12px; margin-bottom:0.75rem; overflow:hidden; }
+        .faq-q { padding:1.25rem 1.5rem; font-weight:700; color:#0f172a; display:flex; justify-content:space-between; align-items:center; cursor:pointer; }
+        .faq-q i { transition:transform 0.2s; color:#94a3b8; }
+        .faq-a { padding:0 1.5rem 1.25rem; color:#64748b; font-size:0.9rem; line-height:1.7; display:none; }
+        .faq-item.open .faq-a { display:block; }
+        .faq-item.open .faq-q i { transform:rotate(45deg); }
+        .contact-cta { background:#0f172a; border-radius:20px; padding:3rem; text-align:center; color:white; margin-top:3rem; }
+        .contact-cta h3 { font-size:1.5rem; font-weight:800; margin-bottom:0.5rem; }
+        .contact-cta p { color:#94a3b8; margin-bottom:1.5rem; }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="container nav-content">
+            <a href="/" class="logo">Connect<span>Flow</span></a>
+            <div class="nav-auth">
+                <a href="{{ url_for('org.login') }}" class="btn-outline">Login</a>
+                <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-hero">
+        <div class="container">
+            <a href="/" style="color:#94a3b8; text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem; margin-bottom:2rem;"><i class="bi bi-arrow-left"></i> Back to Home</a>
+            <h1>Help Center</h1>
+            <p>Find answers, read guides, and get your questions resolved quickly.</p>
+            <div class="search-bar">
+                <input type="text" placeholder="Search for answers... e.g. 'how to import data'">
+                <button><i class="bi bi-search"></i> Search</button>
+            </div>
+        </div>
+    </div>
+
+    <section class="help-section">
+        <div class="container">
+            <div class="category-grid">
+                <a href="{{ url_for('main.documentation') }}#quickstart" class="category-card">
+                    <i class="bi bi-rocket-takeoff-fill"></i>
+                    <h3>Getting Started</h3>
+                    <p>Register your organisation, configure API keys, and launch your first campaign.</p>
+                    <span class="count">5 articles</span>
+                </a>
+                <a href="{{ url_for('main.documentation') }}#modules" class="category-card">
+                    <i class="bi bi-grid-3x3-gap-fill"></i>
+                    <h3>Modules & Data Import</h3>
+                    <p>Create custom modules, define fields, and import audience data from Excel or CSV.</p>
+                    <span class="count">7 articles</span>
+                </a>
+                <a href="{{ url_for('main.documentation') }}#voice" class="category-card">
+                    <i class="bi bi-telephone-fill"></i>
+                    <h3>Voice Campaigns</h3>
+                    <p>Set up automated voice calls, configure TTS scripts, and track call delivery status.</p>
+                    <span class="count">6 articles</span>
+                </a>
+                <a href="{{ url_for('main.documentation') }}#campaigns" class="category-card">
+                    <i class="bi bi-whatsapp"></i>
+                    <h3>WhatsApp Broadcasting</h3>
+                    <p>Send personalised WhatsApp messages to thousands of recipients automatically.</p>
+                    <span class="count">5 articles</span>
+                </a>
+                <a href="{{ url_for('main.documentation') }}#security" class="category-card">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    <h3>Security & MFA</h3>
+                    <p>Enable Multi-Factor Authentication, manage sessions, and configure security settings.</p>
+                    <span class="count">4 articles</span>
+                </a>
+                <a href="{{ url_for('main.documentation') }}#plans" class="category-card">
+                    <i class="bi bi-credit-card-fill"></i>
+                    <h3>Billing & Plans</h3>
+                    <p>Understand plans, manage subscriptions, and download tax invoices.</p>
+                    <span class="count">4 articles</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="faq-section">
+        <div class="container" style="max-width:800px;">
+            <h2 style="text-align:center; font-size:1.75rem; font-weight:800; color:#0f172a; margin-bottom:2.5rem;">Frequently Asked Questions</h2>
+            {% for q, a in [
+                ('How do I start my first campaign?', 'Register your organisation, wait for admin approval, then go to Modules → create a module → import your audience data. Next, go to Scripts → create a message template. Finally, go to Campaigns → New Campaign, select your module, channel, and script, then click Launch.'),
+                ('What file format should I use to import data?', 'ConnectFlow accepts both Excel (.xlsx) and CSV (.csv) files. Your column headers must match the field names you defined in your module. Make sure there is a "phone" column with valid 10-digit mobile numbers.'),
+                ('How does the Text-to-Speech work for voice calls?', 'You write your voice script as text in the Script editor. ConnectFlow uses either Google TTS or Microsoft Edge TTS (you can choose) to automatically convert it to audio. Dynamic placeholders like {{name}} are replaced with each recipient\'s actual data before synthesis.'),
+                ('Can I use my own Twilio account?', 'Yes. Go to Organisation → Settings → Integrations and enter your Twilio Account SID, Auth Token, and phone number. If you don\'t have Twilio, you can use platform-default credits if your subscription includes them.'),
+                ('How are different organisation\'s data kept separate?', 'ConnectFlow uses strict multi-tenant architecture. Every database query is filtered by organisation ID. No organisation can see, access, or interact with any other organisation\'s data, workers, campaigns, or modules.'),
+                ('How do I enable MFA for my account?', 'Go to your Profile page and click "Enable Two-Factor Authentication". Scan the QR code with Google Authenticator or Authy, then verify the 6-digit code to activate MFA on your account.'),
+                ('What happens if a campaign message fails to deliver?', 'ConnectFlow receives real-time delivery status updates via Twilio webhooks. Failed messages are logged with their failure reason (busy, no-answer, failed, etc.) and are visible in your Campaign Report. You can filter and re-target failed contacts for a follow-up campaign.'),
+            ] %}
+            <div class="faq-item">
+                <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
+                    {{ q }} <i class="bi bi-plus-lg"></i>
+                </div>
+                <div class="faq-a">{{ a }}</div>
+            </div>
+            {% endfor %}
+
+            <div class="contact-cta">
+                <h3>Still need help?</h3>
+                <p>Our support team typically responds within 24 hours on business days.</p>
+                <a href="{{ url_for('main.contact') }}" class="btn-white" style="font-size:0.9rem; padding:0.875rem 2rem;">Contact Support</a>
+            </div>
+        </div>
+    </section>
+
+    <footer style="background:#020617; color:#64748b; padding:2rem 0; text-align:center; font-size:0.875rem;">
+        <p>&copy; 2026 ConnectFlow. All rights reserved. &nbsp;|&nbsp; <a href="{{ url_for('main.privacy_policy') }}" style="color:#64748b;">Privacy</a></p>
+    </footer>
+</body>
+</html>

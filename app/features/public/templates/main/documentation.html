@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation | ConnectFlow</title>
+    <meta name="description" content="ConnectFlow developer and user documentation. Learn how to set up campaigns, use the API, configure channels and more.">
+    <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background: #f8fafc; }
+        .docs-layout { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+        .docs-sidebar { background: #0f172a; color: #94a3b8; padding: 2rem 1.5rem; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+        .docs-sidebar .logo { color: white; font-size: 1.1rem; font-weight: 800; display: block; margin-bottom: 2rem; text-decoration: none; }
+        .docs-sidebar .logo span { color: #94a3b8; }
+        .docs-nav-title { font-size: 0.65rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #475569; margin: 1.5rem 0 0.75rem; }
+        .docs-nav-link { display: block; padding: 0.5rem 0.75rem; border-radius: 8px; color: #94a3b8; text-decoration: none; font-size: 0.875rem; transition: all 0.15s; margin-bottom: 0.25rem; }
+        .docs-nav-link:hover, .docs-nav-link.active { background: rgba(255,255,255,0.08); color: white; }
+        .docs-content { padding: 3rem 4rem; max-width: 900px; }
+        .docs-content h1 { font-size: 2.5rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem; }
+        .docs-content h2 { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 2.5rem 0 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; }
+        .docs-content h3 { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin: 1.5rem 0 0.5rem; }
+        .docs-content p { color: #475569; line-height: 1.8; margin-bottom: 1rem; }
+        .docs-content ul { color: #475569; line-height: 1.8; padding-left: 1.5rem; margin-bottom: 1rem; }
+        .docs-content li { margin-bottom: 0.5rem; }
+        .step-block { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; margin-bottom: 1rem; display: flex; gap: 1rem; align-items: flex-start; }
+        .step-num { width: 32px; height: 32px; border-radius: 8px; background: #0f172a; color: white; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.9rem; flex-shrink: 0; }
+        .step-block h4 { font-weight: 700; color: #0f172a; margin: 0 0 0.25rem; }
+        .step-block p { color: #64748b; margin: 0; font-size: 0.875rem; line-height: 1.6; }
+        .code-block { background: #1e293b; border-radius: 10px; padding: 1.25rem 1.5rem; font-family: 'Courier New', monospace; font-size: 0.85rem; color: #e2e8f0; margin: 1rem 0; overflow-x: auto; }
+        .code-block .key { color: #38bdf8; } .code-block .val { color: #34d399; } .code-block .str { color: #fbbf24; }
+        .info-box { background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; margin: 1rem 0; }
+        .info-box p { color: #1e40af; margin: 0; font-size: 0.875rem; }
+        .breadcrumb { color: #94a3b8; font-size: 0.85rem; margin-bottom: 2rem; }
+        .breadcrumb a { color: #94a3b8; text-decoration: none; }
+        .breadcrumb a:hover { color: #0f172a; }
+    </style>
+</head>
+<body>
+    <div class="docs-layout">
+        <aside class="docs-sidebar">
+            <a href="/" class="logo">Connect<span>Flow</span></a>
+            <div class="docs-nav-title">Getting Started</div>
+            <a href="#quickstart" class="docs-nav-link active">Quick Start Guide</a>
+            <a href="#registration" class="docs-nav-link">Registration & Approval</a>
+            <a href="#first-campaign" class="docs-nav-link">Your First Campaign</a>
+
+            <div class="docs-nav-title">Core Concepts</div>
+            <a href="#modules" class="docs-nav-link">Modules & Data</a>
+            <a href="#campaigns" class="docs-nav-link">Campaigns</a>
+            <a href="#scripts" class="docs-nav-link">Voice Scripts</a>
+            <a href="#workers" class="docs-nav-link">Workers</a>
+
+            <div class="docs-nav-title">Channels</div>
+            <a href="#voice" class="docs-nav-link">Automated Voice Calls</a>
+            <a href="#whatsapp" class="docs-nav-link">WhatsApp Broadcasting</a>
+
+            <div class="docs-nav-title">Administration</div>
+            <a href="#keys" class="docs-nav-link">API Key Configuration</a>
+            <a href="#plans" class="docs-nav-link">Plan & Billing</a>
+            <a href="#security" class="docs-nav-link">Security & MFA</a>
+
+            <div class="docs-nav-title">Resources</div>
+            <a href="{{ url_for('main.api_reference') }}" class="docs-nav-link">API Reference</a>
+            <a href="{{ url_for('main.help_center') }}" class="docs-nav-link">Help Center</a>
+            <a href="{{ url_for('main.contact') }}" class="docs-nav-link">Contact Support</a>
+        </aside>
+
+        <main class="docs-content">
+            <div class="breadcrumb"><a href="/">Home</a> / Documentation</div>
+            <h1>ConnectFlow Documentation</h1>
+            <p style="color:#64748b; font-size:1.1rem; margin-bottom:2rem;">Everything you need to set up, run, and optimise your outbound communication campaigns.</p>
+
+            <h2 id="quickstart">Quick Start Guide</h2>
+            <p>Get your first campaign running in under 10 minutes. Follow these steps:</p>
+            <div class="step-block"><div class="step-num">1</div><div><h4>Register your Organisation</h4><p>Go to <a href="{{ url_for('org.register') }}">Get Started</a> and complete the 3-step organisation registration form. Your account will be reviewed and activated by a platform administrator — usually within a few hours.</p></div></div>
+            <div class="step-block"><div class="step-num">2</div><div><h4>Configure Communication Keys</h4><p>Navigate to <strong>Organisation → Settings → Integrations</strong> and enter your Twilio Account SID, Auth Token, and phone number. Alternatively, use platform-default credits if provided.</p></div></div>
+            <div class="step-block"><div class="step-num">3</div><div><h4>Create a Module</h4><p>Go to <strong>Modules</strong> and click <em>New Module</em>. Define your custom fields (name, phone, amount, etc.) then upload your audience data via Excel or CSV.</p></div></div>
+            <div class="step-block"><div class="step-num">4</div><div><h4>Write a Script</h4><p>Navigate to <strong>Scripts</strong> and create a message template. Use <code>{{field_name}}</code> placeholders to personalise the message for each recipient.</p></div></div>
+            <div class="step-block"><div class="step-num">5</div><div><h4>Launch a Campaign</h4><p>Go to <strong>Campaigns → New Campaign</strong>, select your module, choose the channel (Voice or WhatsApp), assign workers, pick your script, and click <em>Launch</em>.</p></div></div>
+
+            <h2 id="modules">Modules & Data</h2>
+            <p>Modules are the core data containers in ConnectFlow. Each module represents a specific communication use-case (e.g., "Student Fee Reminders", "Loan EMI Follow-ups").</p>
+            <h3>Creating Fields</h3>
+            <p>Each module can have unlimited custom fields of the following types:</p>
+            <ul>
+                <li><strong>Text</strong> — Free-form text like names, addresses, or IDs</li>
+                <li><strong>Number</strong> — Numeric values like fees, amounts, or scores</li>
+                <li><strong>Boolean</strong> — True/false flags like "payment_done" or "call_answered"</li>
+                <li><strong>Calculated</strong> — Auto-computed values based on other field values using expressions</li>
+            </ul>
+            <h3>Importing Data</h3>
+            <p>Upload audience data as <strong>.xlsx</strong> or <strong>.csv</strong>. ConnectFlow will automatically map your column headers to your module fields. You can also export the full dataset at any time.</p>
+            <div class="info-box"><p><strong>Tip:</strong> Ensure your spreadsheet has a <code>phone</code> column with valid 10-digit mobile numbers. This is required for both voice and WhatsApp campaigns.</p></div>
+
+            <h2 id="voice">Automated Voice Calls</h2>
+            <p>ConnectFlow uses Twilio's voice API to auto-dial each recipient. The system plays a custom audio script generated from your text template.</p>
+            <h3>Text-to-Speech Engines</h3>
+            <ul>
+                <li><strong>Google TTS (gTTS)</strong> — Supports 40+ languages, natural-sounding voice</li>
+                <li><strong>Microsoft Edge TTS</strong> — Neural voices, highly natural, supports Indian English, Hindi, Tamil, Telugu, and more</li>
+            </ul>
+            <h3>Call Status Tracking</h3>
+            <p>Twilio sends real-time webhook callbacks to ConnectFlow. Every call result is logged instantly: <code>completed</code>, <code>busy</code>, <code>no-answer</code>, <code>failed</code>.</p>
+
+            <h2 id="keys">API Key Configuration</h2>
+            <p>Configure your Twilio credentials from <strong>Organisation → Settings → Integrations</strong>.</p>
+            <div class="code-block">
+<span class="key">TWILIO_ACCOUNT_SID</span> = <span class="str">"ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"</span><br>
+<span class="key">TWILIO_AUTH_TOKEN</span>  = <span class="str">"your_auth_token_here"</span><br>
+<span class="key">TWILIO_PHONE_NUMBER</span> = <span class="str">"+91XXXXXXXXXX"</span>
+            </div>
+            <div class="info-box"><p>ConnectFlow encrypts your API credentials using AES-256 before storing them. They are never exposed in logs or API responses.</p></div>
+
+            <h2 id="security">Security & MFA</h2>
+            <p>ConnectFlow includes enterprise-grade security out of the box:</p>
+            <ul>
+                <li><strong>Multi-Factor Authentication (MFA)</strong> — TOTP-based 2FA via Google Authenticator or Authy</li>
+                <li><strong>Brute-Force Protection</strong> — Accounts are locked after repeated failed login attempts</li>
+                <li><strong>Session Management</strong> — Secure, fingerprinted sessions with CSRF protection</li>
+                <li><strong>Multi-Tenant Isolation</strong> — Zero data crossover between organisations</li>
+                <li><strong>Content Security Policy</strong> — XSS and clickjacking protection headers on all pages</li>
+            </ul>
+        </main>
+    </div>
+</body>
+</html>

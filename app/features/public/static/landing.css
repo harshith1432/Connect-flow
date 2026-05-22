@@ -172,6 +172,58 @@ ul {
     background: var(--grey-50);
 }
 
+/* White button — for use on dark/navy backgrounds */
+.btn-white {
+    background: #ffffff;
+    color: #0f172a !important;
+    padding: 1rem 2.5rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    border: none;
+    transition: var(--transition-base);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: var(--font-body);
+    text-decoration: none;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+}
+
+.btn-white:hover {
+    background: #f1f5f9;
+    color: #0f172a !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+}
+
+/* Outline button for dark backgrounds — white border, white text */
+.btn-outline-dark {
+    background: transparent;
+    color: #ffffff !important;
+    padding: 1rem 2.5rem;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 1rem;
+    border: 2px solid rgba(255,255,255,0.4);
+    transition: var(--transition-base);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-family: var(--font-body);
+    text-decoration: none;
+}
+
+.btn-outline-dark:hover {
+    border-color: #ffffff;
+    background: rgba(255,255,255,0.1);
+    color: #ffffff !important;
+}
+
 /* Hero Section */
 .hero {
     padding: 10rem 0 6rem;

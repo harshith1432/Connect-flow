@@ -1,311 +1,324 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Processing Agreement (DPA) - Connect & Grow</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Data Processing Agreement | ConnectFlow</title>
+    <meta name="description" content="ConnectFlow Data Processing Agreement (DPA) — GDPR and PDPB compliant data processing terms for enterprise organisations.">
+    <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            line-height: 1.8;
-            color: #334155;
-        }
-
-        .legal-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 3rem 0;
-        }
-
-        .legal-content {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 3rem 1rem;
-        }
-
-        h1 {
-            color: white;
-            font-weight: 700;
-        }
-
-        h2 {
-            color: #667eea;
-            font-weight: 600;
-            margin-top: 2rem;
-        }
-
-        h3 {
-            color: #475569;
-            font-weight: 600;
-            margin-top: 1.5rem;
-        }
-
-        .last-updated {
-            color: #94a3b8;
-            font-size: 0.9rem;
-        }
-
-        ul {
-            margin-left: 1.5rem;
-        }
-
-        li {
-            margin-bottom: 0.5rem;
-        }
-
-        .highlight-box {
-            background: #f1f5f9;
-            border-left: 4px solid #667eea;
-            padding: 1rem;
-            margin: 1.5rem 0;
-        }
-
-        .definition {
-            font-style: italic;
-            color: #64748b;
-        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #334155; }
+        .navbar { background: #0f172a; padding: 1rem 0; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .nav-content { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; }
+        .logo { color: white; font-size: 1.25rem; font-weight: 800; text-decoration: none; }
+        .logo span { color: #64748b; }
+        .nav-links-right { display: flex; gap: 1rem; align-items: center; }
+        .btn-outline-nav { border: 1.5px solid rgba(255,255,255,0.2); color: white; padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 0.875rem; }
+        .btn-outline-nav:hover { background: rgba(255,255,255,0.1); color: white; }
+        .btn-solid-nav { background: white; color: #0f172a; padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 0.875rem; }
+        .btn-solid-nav:hover { background: #f1f5f9; color: #0f172a; }
+        .page-hero { background: #0f172a; padding: 5rem 0 4rem; text-align: center; position: relative; overflow: hidden; }
+        .page-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 70% 30%, rgba(16,185,129,0.06) 0%, transparent 70%); pointer-events: none; }
+        .page-hero .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #64748b; text-decoration: none; font-size: 0.875rem; margin-bottom: 2rem; }
+        .page-hero .back-link:hover { color: #94a3b8; }
+        .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; padding: 0.4rem 1rem; border-radius: 20px; margin-bottom: 1.5rem; }
+        .page-hero h1 { font-size: 3rem; font-weight: 800; color: white; margin: 0 0 1rem; }
+        .page-hero p { color: #64748b; font-size: 1rem; max-width: 560px; margin: 0 auto 2rem; line-height: 1.7; }
+        .meta-row { display: inline-flex; align-items: center; gap: 1.5rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 0.75rem 1.5rem; }
+        .meta-item { display: flex; align-items: center; gap: 0.5rem; color: #64748b; font-size: 0.8rem; }
+        .meta-item i { color: #10b981; }
+        .content-layout { max-width: 1200px; margin: 0 auto; padding: 4rem 2rem; display: grid; grid-template-columns: 260px 1fr; gap: 4rem; align-items: start; }
+        .toc { background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 1.5rem; position: sticky; top: 90px; }
+        .toc h4 { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin: 0 0 1rem; }
+        .toc a { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 8px; color: #64748b; text-decoration: none; font-size: 0.825rem; transition: all 0.15s; margin-bottom: 0.25rem; }
+        .toc a:hover { background: #f8fafc; color: #0f172a; }
+        .toc a.active { background: #0f172a; color: white; }
+        .legal-article { background: white; border-radius: 20px; border: 1px solid #e2e8f0; padding: 3rem; }
+        .section-block { margin-bottom: 3rem; scroll-margin-top: 100px; }
+        .section-block:last-child { margin-bottom: 0; }
+        .section-num { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: #0f172a; color: white; font-weight: 800; font-size: 0.85rem; margin-bottom: 1rem; }
+        .section-block h2 { font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0 0 1rem; }
+        .section-block h3 { font-size: 1rem; font-weight: 700; color: #1e293b; margin: 1.5rem 0 0.5rem; }
+        .section-block p { color: #475569; line-height: 1.8; margin-bottom: 0.75rem; }
+        .section-block ul { color: #475569; line-height: 1.8; padding-left: 1.5rem; margin-bottom: 0.75rem; }
+        .section-block li { margin-bottom: 0.4rem; }
+        .divider { border: none; border-top: 1px solid #f1f5f9; margin: 2.5rem 0; }
+        .highlight-box { background: #f0fdf4; border-left: 3px solid #10b981; border-radius: 0 10px 10px 0; padding: 1rem 1.25rem; margin: 1rem 0; }
+        .highlight-box p { color: #065f46; margin: 0; font-size: 0.875rem; }
+        .warn-box { background: #fff7ed; border-left: 3px solid #f59e0b; border-radius: 0 10px 10px 0; padding: 1rem 1.25rem; margin: 1rem 0; }
+        .warn-box p { color: #92400e; margin: 0; font-size: 0.875rem; }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; margin: 1rem 0; }
+        .data-table th { background: #f8fafc; font-weight: 700; color: #475569; padding: 0.75rem 1rem; text-align: left; border-bottom: 2px solid #e2e8f0; }
+        .data-table td { padding: 0.75rem 1rem; color: #475569; border-bottom: 1px solid #f1f5f9; }
+        .contact-box { background: #0f172a; border-radius: 16px; padding: 2rem; text-align: center; margin-top: 2rem; }
+        .contact-box h4 { color: white; font-weight: 800; margin-bottom: 0.5rem; }
+        .contact-box p { color: #64748b; margin-bottom: 1.25rem; font-size: 0.9rem; }
+        .contact-box a { background: white; color: #0f172a; padding: 0.75rem 1.75rem; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block; }
+        .contact-box a:hover { background: #f1f5f9; }
+        .site-footer { background: #020617; color: #475569; padding: 2rem 0; text-align: center; font-size: 0.825rem; }
+        .site-footer a { color: #475569; text-decoration: none; }
+        .site-footer a:hover { color: #94a3b8; }
+        .footer-links { display: inline-flex; gap: 1.5rem; margin-top: 0.5rem; }
+        @media (max-width: 768px) { .content-layout { grid-template-columns: 1fr; } .toc { position: static; } .page-hero h1 { font-size: 2rem; } .legal-article { padding: 1.5rem; } }
     </style>
 </head>
-
 <body>
-    <div class="legal-header text-center">
-        <div class="container">
-            <h1>Data Processing Agreement (DPA)</h1>
-            <p class="last-updated">Last Updated: January 24, 2026</p>
+
+<nav class="navbar">
+    <div class="nav-content">
+        <a href="/" class="logo">Connect<span>Flow</span></a>
+        <div class="nav-links-right">
+            <a href="{{ url_for('org.login') }}" class="btn-outline-nav">Login</a>
+            <a href="{{ url_for('org.register') }}" class="btn-solid-nav">Get Started</a>
         </div>
     </div>
+</nav>
 
-    <div class="legal-content">
-        <div class="highlight-box">
-            <strong>Important:</strong> This Data Processing Agreement governs how Connect & Grow processes personal
-            data on your behalf. By using our services, you agree to these terms.
-        </div>
-
-        <h2>1. Definitions</h2>
-        <ul>
-            <li><strong>"Controller":</strong> <span class="definition">You, the customer organization using our
-                    Platform</span></li>
-            <li><strong>"Processor":</strong> <span class="definition">Connect & Grow, processing data on your
-                    behalf</span></li>
-            <li><strong>"Personal Data":</strong> <span class="definition">Contact information, phone numbers, names,
-                    and other data you upload</span></li>
-            <li><strong>"Processing":</strong> <span class="definition">Any operation performed on data (collection,
-                    storage, transmission, deletion)</span></li>
-            <li><strong>"Sub-processor":</strong> <span class="definition">Third-party services we use (e.g., Twilio,
-                    cloud hosting)</span></li>
-            <li><strong>"Data Subject":</strong> <span class="definition">Individuals whose data is processed (your
-                    contacts)</span></li>
-        </ul>
-
-        <h2>2. Scope and Purpose</h2>
-        <p>This DPA applies to all personal data processed by Connect & Grow on your behalf through our Platform,
-            including:</p>
-        <ul>
-            <li>Contact lists and customer databases</li>
-            <li>Phone numbers and names</li>
-            <li>Campaign messages and scripts</li>
-            <li>Call recordings and message logs</li>
-            <li>Delivery and response data</li>
-        </ul>
-
-        <h2>3. Roles and Responsibilities</h2>
-
-        <h3>3.1 Your Responsibilities (as Controller)</h3>
-        <p>You are responsible for:</p>
-        <ul>
-            <li>Ensuring you have legal basis to process personal data</li>
-            <li>Obtaining necessary consents from data subjects</li>
-            <li>Providing privacy notices to data subjects</li>
-            <li>Ensuring data accuracy and relevance</li>
-            <li>Complying with applicable data protection laws</li>
-            <li>Responding to data subject requests (access, deletion, etc.)</li>
-            <li>Maintaining records of processing activities</li>
-        </ul>
-
-        <h3>3.2 Our Responsibilities (as Processor)</h3>
-        <p>We will:</p>
-        <ul>
-            <li>Process data only according to your documented instructions</li>
-            <li>Implement appropriate security measures</li>
-            <li>Maintain confidentiality of personal data</li>
-            <li>Assist with data subject requests when feasible</li>
-            <li>Notify you of data breaches within 72 hours</li>
-            <li>Delete or return data upon termination</li>
-            <li>Provide information necessary for compliance audits</li>
-        </ul>
-
-        <h2>4. Data Processing Instructions</h2>
-        <p>We will process personal data only for the following purposes:</p>
-        <ul>
-            <li>Sending voice calls and WhatsApp messages as instructed by you</li>
-            <li>Storing contact lists and campaign data</li>
-            <li>Generating analytics and delivery reports</li>
-            <li>Providing customer support</li>
-            <li>Maintaining platform security and functionality</li>
-        </ul>
-
-        <div class="highlight-box">
-            <strong>Important:</strong> We will not process data for any other purpose without your prior written
-            consent.
-        </div>
-
-        <h2>5. Security Measures</h2>
-        <p>We implement technical and organizational measures including:</p>
-
-        <h3>5.1 Technical Measures</h3>
-        <ul>
-            <li>Encryption of data in transit (TLS/HTTPS)</li>
-            <li>Encryption of data at rest</li>
-            <li>Access controls and authentication (2FA available)</li>
-            <li>Regular security updates and patches</li>
-            <li>Intrusion detection and prevention systems</li>
-            <li>Regular security audits and penetration testing</li>
-        </ul>
-
-        <h3>5.2 Organizational Measures</h3>
-        <ul>
-            <li>Employee confidentiality agreements</li>
-            <li>Security awareness training</li>
-            <li>Access limited to authorized personnel only</li>
-            <li>Incident response procedures</li>
-            <li>Data breach notification protocols</li>
-        </ul>
-
-        <h2>6. Sub-processors</h2>
-        <p>We use the following sub-processors to provide our services:</p>
-
-        <table class="table table-bordered mt-3">
-            <thead class="table-light">
-                <tr>
-                    <th>Sub-processor</th>
-                    <th>Purpose</th>
-                    <th>Location</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>Twilio Inc.</td>
-                    <td>Voice and messaging services</td>
-                    <td>USA (GDPR compliant)</td>
-                </tr>
-                <tr>
-                    <td>Cloud Hosting Provider</td>
-                    <td>Data storage and platform hosting</td>
-                    <td>India/USA</td>
-                </tr>
-                <tr>
-                    <td>Payment Gateway</td>
-                    <td>Payment processing</td>
-                    <td>India</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <p>We will notify you of any changes to sub-processors with 30 days notice. You may object to new sub-processors
-            within this period.</p>
-
-        <h2>7. Data Subject Rights</h2>
-        <p>We will assist you in responding to data subject requests for:</p>
-        <ul>
-            <li><strong>Access:</strong> Providing copies of personal data</li>
-            <li><strong>Rectification:</strong> Correcting inaccurate data</li>
-            <li><strong>Erasure:</strong> Deleting data ("right to be forgotten")</li>
-            <li><strong>Restriction:</strong> Limiting processing of data</li>
-            <li><strong>Portability:</strong> Exporting data in machine-readable format</li>
-            <li><strong>Objection:</strong> Stopping certain types of processing</li>
-        </ul>
-
-        <h2>8. Data Breach Notification</h2>
-        <p>In case of a personal data breach, we will:</p>
-        <ul>
-            <li>Notify you within <strong>72 hours</strong> of becoming aware</li>
-            <li>Provide details of the breach (nature, affected data, estimated impact)</li>
-            <li>Describe measures taken to address the breach</li>
-            <li>Recommend actions you should take</li>
-            <li>Assist in notifying affected data subjects if required</li>
-        </ul>
-
-        <h2>9. Data Transfers</h2>
-        <p>If data is transferred outside India, we ensure:</p>
-        <ul>
-            <li>Adequate level of protection in destination country</li>
-            <li>Standard contractual clauses are in place</li>
-            <li>Compliance with applicable data transfer regulations</li>
-            <li>Your explicit consent when required</li>
-        </ul>
-
-        <h2>10. Data Retention and Deletion</h2>
-
-        <h3>10.1 Retention Period</h3>
-        <p>We retain personal data for:</p>
-        <ul>
-            <li>Duration of your active subscription</li>
-            <li><strong>90 days</strong> after account termination (configurable)</li>
-            <li>Longer periods if required by law</li>
-        </ul>
-
-        <h3>10.2 Deletion</h3>
-        <p>Upon termination or your request, we will:</p>
-        <ul>
-            <li>Delete all personal data within 30 days</li>
-            <li>Provide certification of deletion upon request</li>
-            <li>Ensure sub-processors also delete the data</li>
-            <li>Retain only what is legally required</li>
-        </ul>
-
-        <h2>11. Audits and Compliance</h2>
-        <p>You have the right to:</p>
-        <ul>
-            <li>Request information about our processing activities</li>
-            <li>Conduct audits (with reasonable notice)</li>
-            <li>Review our security certifications</li>
-            <li>Inspect our data processing facilities (by appointment)</li>
-        </ul>
-
-        <h2>12. Liability and Indemnification</h2>
-        <p>Each party is liable for damages caused by:</p>
-        <ul>
-            <li>Failure to comply with data protection obligations</li>
-            <li>Processing data outside the scope of instructions</li>
-            <li>Inadequate security measures</li>
-        </ul>
-
-        <h2>13. Term and Termination</h2>
-        <p>This DPA:</p>
-        <ul>
-            <li>Begins when you start using our services</li>
-            <li>Continues for the duration of your subscription</li>
-            <li>Survives termination for obligations related to data deletion</li>
-        </ul>
-
-        <h2>14. Governing Law</h2>
-        <p>This DPA is governed by:</p>
-        <ul>
-            <li>Information Technology Act, 2000 (India)</li>
-            <li>Personal Data Protection Bill (India)</li>
-            <li>GDPR (for EU data subjects)</li>
-            <li>Applicable state and central laws of India</li>
-        </ul>
-
-        <h2>15. Contact for DPA Matters</h2>
-        <p>For questions or concerns about data processing:</p>
-        <ul>
-            <li><strong>Data Protection Officer:</strong> dpo@connectandgrow.com</li>
-            <li><strong>Legal Team:</strong> legal@connectandgrow.com</li>
-            <li><strong>Address:</strong> [Your Business Address]</li>
-        </ul>
-
-        <div class="highlight-box mt-4">
-            <strong>Acknowledgment:</strong> By using Connect & Grow, you acknowledge that you have read, understood,
-            and agree to this Data Processing Agreement.
-        </div>
-
-        <div class="text-center mt-5 mb-4">
-            <a href="javascript:window.close()" class="btn btn-primary">Close</a>
+<div class="page-hero">
+    <div class="container" style="max-width:1200px; margin:0 auto; padding:0 2rem;">
+        <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Back to Home</a>
+        <div class="hero-badge"><i class="bi bi-database-lock-fill"></i> LEGAL DOCUMENT</div>
+        <h1>Data Processing Agreement</h1>
+        <p>This DPA governs how ConnectFlow processes personal data on behalf of your organisation, in accordance with applicable data protection laws including India's PDPB and the EU GDPR.</p>
+        <div class="meta-row">
+            <div class="meta-item"><i class="bi bi-calendar3"></i> Last Updated: January 24, 2026</div>
+            <div class="meta-item"><i class="bi bi-shield-check"></i> GDPR & PDPB Compliant</div>
+            <div class="meta-item"><i class="bi bi-file-earmark-check"></i> Version 2.0</div>
         </div>
     </div>
+</div>
+
+<div class="content-layout">
+    <aside class="toc">
+        <h4>Contents</h4>
+        <a href="#s1"><i class="bi bi-chevron-right"></i> 1. Definitions</a>
+        <a href="#s2"><i class="bi bi-chevron-right"></i> 2. Roles & Responsibilities</a>
+        <a href="#s3"><i class="bi bi-chevron-right"></i> 3. Data We Process</a>
+        <a href="#s4"><i class="bi bi-chevron-right"></i> 4. Purpose of Processing</a>
+        <a href="#s5"><i class="bi bi-chevron-right"></i> 5. Sub-Processors</a>
+        <a href="#s6"><i class="bi bi-chevron-right"></i> 6. Security Measures</a>
+        <a href="#s7"><i class="bi bi-chevron-right"></i> 7. Data Subject Rights</a>
+        <a href="#s8"><i class="bi bi-chevron-right"></i> 8. Data Breach</a>
+        <a href="#s9"><i class="bi bi-chevron-right"></i> 9. International Transfers</a>
+        <a href="#s10"><i class="bi bi-chevron-right"></i> 10. Retention & Deletion</a>
+        <a href="#s11"><i class="bi bi-chevron-right"></i> 11. Audit Rights</a>
+        <a href="#s12"><i class="bi bi-chevron-right"></i> 12. Governing Law</a>
+        <a href="#s13"><i class="bi bi-chevron-right"></i> 13. Contact DPO</a>
+    </aside>
+
+    <article class="legal-article">
+
+        <div class="highlight-box" style="margin-bottom:2rem;">
+            <p><strong>This DPA is incorporated into and forms part of the ConnectFlow Terms of Service.</strong> By using the platform, your organisation (as Data Controller) agrees to these data processing terms, and ConnectFlow (as Data Processor) agrees to process data only as described herein.</p>
+        </div>
+
+        <div class="section-block" id="s1">
+            <div class="section-num">1</div>
+            <h2>Definitions</h2>
+            <ul>
+                <li><strong>"Data Controller"</strong> — the Organisation that determines the purposes and means of processing Personal Data (i.e., you, our customer)</li>
+                <li><strong>"Data Processor"</strong> — ConnectFlow, which processes Personal Data on behalf of the Data Controller</li>
+                <li><strong>"Personal Data"</strong> — any information relating to an identified or identifiable natural person (e.g., names and phone numbers of your audience contacts)</li>
+                <li><strong>"Processing"</strong> — any operation performed on Personal Data (collection, storage, transmission, deletion)</li>
+                <li><strong>"Data Subject"</strong> — the individuals whose Personal Data is being processed (your audience contacts)</li>
+                <li><strong>"Sub-Processor"</strong> — a third-party engaged by ConnectFlow to assist in processing (e.g., Twilio, Google TTS)</li>
+            </ul>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-block" id="s2">
+            <div class="section-num">2</div>
+            <h2>Roles & Responsibilities</h2>
+            <p>For the purposes of this DPA:</p>
+            <ul>
+                <li>Your organisation acts as the <strong>Data Controller</strong> — you determine what contact data is uploaded, for what purpose, and to whom messages are sent</li>
+                <li>ConnectFlow acts as the <strong>Data Processor</strong> — we process that data solely on your documented instructions to deliver campaigns</li>
+                <li>ConnectFlow will not process your data for any purpose other than providing the contracted services</li>
+            </ul>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-block" id="s3">
+            <div class="section-num">3</div>
+            <h2>Categories of Data We Process</h2>
+            <table class="data-table">
+                <thead>
+                    <tr><th>Category</th><th>Data Types</th><th>Source</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Audience Contact Data</td><td>Names, phone numbers, custom module fields</td><td>Uploaded by your organisation</td></tr>
+                    <tr><td>Account Data</td><td>Admin names, emails, phone numbers, designation</td><td>Provided during registration</td></tr>
+                    <tr><td>Communication Data</td><td>Call recordings (not stored), delivery logs, message status</td><td>Generated by campaigns</td></tr>
+                    <tr><td>Worker Data</td><td>Worker names, emails, roles, campaign assignments</td><td>Created by Organisation Admin</td></tr>
+                    <tr><td>Technical Data</td><td>IP addresses, session tokens, login timestamps</td><td>Automatically collected</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-block" id="s4">
+            <div class="section-num">4</div>
+            <h2>Purpose of Processing</h2>
+            <p>ConnectFlow processes Personal Data exclusively for the following purposes, as instructed by you:</p>
+            <ul>
+                <li>Delivering automated voice call campaigns to your audience contacts</li>
+                <li>Sending WhatsApp messages to your audience contacts via approved providers</li>
+                <li>Storing and managing your campaign data and delivery logs</li>
+                <li>Providing analytics and reports on campaign performance</li>
+                <li>Maintaining platform security and fraud prevention</li>
+                <li>Billing and subscription management</li>
+            </ul>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-block" id="s5">
+            <div class="section-num">5</div>
+            <h2>Sub-Processors</h2>
+            <p>ConnectFlow uses the following approved sub-processors to deliver services. We ensure each has appropriate data protection agreements in place:</p>
+            <table class="data-table">
+                <thead>
+                    <tr><th>Sub-Processor</th><th>Purpose</th><th>Location</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td><strong>Twilio Inc.</strong></td><td>Voice calls and WhatsApp delivery</td><td>USA (SCCs in place)</td></tr>
+                    <tr><td><strong>Hooman Labs</strong></td><td>Alternative WhatsApp messaging</td><td>India</td></tr>
+                    <tr><td><strong>Google LLC</strong></td><td>Text-to-Speech synthesis (gTTS API)</td><td>USA (SCCs in place)</td></tr>
+                    <tr><td><strong>Microsoft Corp.</strong></td><td>Edge TTS neural voice synthesis</td><td>USA (SCCs in place)</td></tr>
+                </tbody>
+            </table>
+            <p>We will notify you of any intended changes to sub-processors at least 14 days in advance.</p>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-block" id="s6">
+            <div class="section-num">6</div>
+            <h2>Technical & Organisational Security Measures</h2>
+            <p>ConnectFlow implements and maintains the following security measures:</p>
+            <ul>
+                <li><strong>Encryption at rest:</strong> AES-256 for stored credentials and sensitive fields</li>
+                <li><strong>Encryption in transit:</strong> TLS 1.2+ for all data transmission</li>
+                <li><strong>Access control:</strong> Role-based access control (RBAC) with principle of least privilege</li>
+                <li><strong>Multi-tenant isolation:</strong> All database queries are scoped to the requesting organisation</li>
+                <li><strong>Authentication:</strong> MFA enforcement, brute-force lockout, and session fingerprinting</li>
+                <li><strong>Audit logging:</strong> Comprehensive audit trail of all administrative actions</li>
+                <li><strong>Vulnerability management:</strong> Regular dependency updates and security patch deployment</li>
+            </ul>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-block" id="s7">
+            <div class="section-num">7</div>
+            <h2>Data Subject Rights Assistance</h2>
+            <p>When you receive a request from a Data Subject (one of your audience contacts) exercising their rights (access, deletion, correction, etc.), ConnectFlow will:</p>
+            <ul>
+                <li>Provide reasonable technical assistance to help you fulfil the request within your platform data</li>
+                <li>Not independently respond to Data Subject requests on your behalf</li>
+                <li>Notify you if we receive a Data Subject request addressed directly to us</li>
+            </ul>
+            <p>You remain responsible for responding to your own Data Subjects within the legally required timelines.</p>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-block" id="s8">
+            <div class="section-num">8</div>
+            <h2>Data Breach Notification</h2>
+            <p>In the event of a confirmed personal data breach affecting your organisation's data, ConnectFlow will:</p>
+            <ul>
+                <li>Notify you by email within <strong>72 hours</strong> of becoming aware of the breach</li>
+                <li>Provide a description of the nature of the breach, categories affected, and likely consequences</li>
+                <li>Describe the measures taken or proposed to address the breach</li>
+            </ul>
+            <p>You are responsible for notifying your own Data Subjects and relevant supervisory authorities as required by law.</p>
+            <div class="warn-box"><p><strong>Security incidents must be reported immediately to:</strong> security@connectflow.io</p></div>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-block" id="s9">
+            <div class="section-num">9</div>
+            <h2>International Data Transfers</h2>
+            <p>Some of our sub-processors (Twilio, Google, Microsoft) are based in the USA. Where personal data is transferred outside India or the EEA, ConnectFlow ensures appropriate safeguards are in place, including Standard Contractual Clauses (SCCs) and adequacy decisions where applicable.</p>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-block" id="s10">
+            <div class="section-num">10</div>
+            <h2>Data Retention & Deletion</h2>
+            <p>Upon termination of your subscription:</p>
+            <ul>
+                <li>Your module records and campaign data are retained for a 90-day recovery period</li>
+                <li>After 90 days, all data is permanently and irreversibly deleted from our systems</li>
+                <li>Delivery logs and audit trails are deleted after 12 months from creation</li>
+                <li>Billing records are retained for 7 years as required by Indian GST regulations</li>
+            </ul>
+            <p>You may request earlier deletion of any specific dataset by contacting privacy@connectflow.io.</p>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-block" id="s11">
+            <div class="section-num">11</div>
+            <h2>Audit Rights</h2>
+            <p>Enterprise plan customers may request a written summary of ConnectFlow's security and data processing practices once per calendar year. We will respond within 30 business days. Physical or technical audits of ConnectFlow's infrastructure are not available for security reasons but may be replaced with certified third-party audit reports upon request.</p>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-block" id="s12">
+            <div class="section-num">12</div>
+            <h2>Governing Law</h2>
+            <p>This DPA is governed by the laws of India, including the Information Technology Act 2000 and applicable data protection regulations. For customers in the EU/EEA, GDPR provisions shall apply to the extent relevant.</p>
+        </div>
+
+        <hr class="divider">
+
+        <div class="section-block" id="s13">
+            <div class="section-num">13</div>
+            <h2>Contact the Data Protection Officer</h2>
+            <p>For questions, concerns, or formal requests related to this DPA or data processing:</p>
+            <ul>
+                <li><strong>DPO Email:</strong> dpo@connectflow.io</li>
+                <li><strong>General Privacy:</strong> privacy@connectflow.io</li>
+                <li><strong>Response time:</strong> 5 business days</li>
+            </ul>
+            <div class="contact-box">
+                <h4>Enterprise DPA customisation</h4>
+                <p>Need a custom DPA for your organisation? Contact our legal team to discuss bespoke data processing terms.</p>
+                <a href="{{ url_for('main.contact') }}">Talk to Legal Team</a>
+            </div>
+        </div>
+
+    </article>
+</div>
+
+<footer class="site-footer">
+    <p>&copy; 2026 ConnectFlow. All rights reserved.</p>
+    <div class="footer-links">
+        <a href="{{ url_for('main.privacy_policy') }}">Privacy</a>
+        <a href="{{ url_for('main.terms_of_service') }}">Terms</a>
+        <a href="{{ url_for('main.dpa') }}">DPA</a>
+        <a href="{{ url_for('main.contact') }}">Contact</a>
+    </div>
+</footer>
+
+<script>
+    const sections = document.querySelectorAll('.section-block');
+    const tocLinks = document.querySelectorAll('.toc a');
+    window.addEventListener('scroll', () => {
+        let current = '';
+        sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) current = s.id; });
+        tocLinks.forEach(a => { a.classList.toggle('active', a.getAttribute('href') === '#' + current); });
+    });
+</script>
 </body>
-
 </html>

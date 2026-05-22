@@ -61,26 +61,79 @@
             </div>
             
             <div class="hero-visual reveal" style="animation-delay: 0.2s;">
-                <div class="hero-image-container">
-                    <img src="{{ url_for('static', filename='dashboard_mockup.png') }}" alt="ConnectFlow Dashboard Preview">
+                <div class="hero-image-container mockup-container">
+                    <div class="dashboard-mockup">
+                        <!-- Sidebar -->
+                        <div class="mockup-sidebar">
+                            <div class="mockup-logo">Connect<span>Flow</span></div>
+                            <div class="mockup-nav">
+                                <div class="mockup-nav-item active"><i class="bi bi-grid"></i> Dashboard</div>
+                                <div class="mockup-nav-item"><i class="bi bi-people"></i> Workers</div>
+                                <div class="mockup-nav-item"><i class="bi bi-chat-left-dots"></i> Communication</div>
+                                <div class="mockup-nav-item"><i class="bi bi-megaphone"></i> Campaigns</div>
+                                <div class="mockup-nav-item"><i class="bi bi-bar-chart"></i> Reports</div>
+                            </div>
+                            <div class="mockup-user">
+                                <div class="mockup-avatar">Y</div>
+                                <div class="mockup-user-info">
+                                    <strong>youtube</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Main Content -->
+                        <div class="mockup-main">
+                            <div class="mockup-header">
+                                <h3>Executive Dashboard</h3>
+                                <div class="mockup-search">
+                                    <i class="bi bi-search"></i> Search modules, workers...
+                                </div>
+                            </div>
+                            <div class="mockup-hero">
+                                <div class="mockup-hero-left">
+                                    <span class="mockup-badge">EXECUTIVE CONTROL PANEL</span>
+                                    <h2>Welcome Back, youtube 👋</h2>
+                                    <p>All communication channels and workflows are operating at peak efficiency.</p>
+                                </div>
+                                <div class="mockup-actions">
+                                    <div class="mockup-btn white"><i class="bi bi-megaphone-fill"></i> Launch Campaign</div>
+                                    <div class="mockup-btn outline"><i class="bi bi-gear-fill"></i> Configure Channels</div>
+                                </div>
+                            </div>
+                            <div class="mockup-cards">
+                                <div class="mockup-card">
+                                    <div class="mockup-card-header">
+                                        <h5>Active Workforce</h5>
+                                        <i class="bi bi-people-fill"></i>
+                                    </div>
+                                    <h2>2</h2>
+                                    <span class="up"><i class="bi bi-arrow-up-short"></i> 12.5% <small>vs last month</small></span>
+                                </div>
+                                <div class="mockup-card">
+                                    <div class="mockup-card-header">
+                                        <h5>Messages Sent</h5>
+                                        <i class="bi bi-chat-dots-fill"></i>
+                                    </div>
+                                    <h2>13</h2>
+                                    <span class="up"><i class="bi bi-arrow-up-short"></i> 8.2% <small>vs yesterday</small></span>
+                                </div>
+                                <div class="mockup-card">
+                                    <div class="mockup-card-header">
+                                        <h5>Calls Completed</h5>
+                                        <i class="bi bi-telephone-fill"></i>
+                                    </div>
+                                    <h2>160</h2>
+                                    <span class="neutral"><i class="bi bi-dash"></i> Stable <small>vs yesterday</small></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Trust Section -->
-    <section class="trust">
-        <div class="container">
-            <p>Trusted by growing enterprises</p>
-            <div class="logo-grid">
-                <div class="logo-placeholder">VELOCITY</div>
-                <div class="logo-placeholder">NEXUS</div>
-                <div class="logo-placeholder">STRATA</div>
-                <div class="logo-placeholder">QUANTUM</div>
-                <div class="logo-placeholder">ZENITH</div>
-            </div>
-        </div>
-    </section>
+
 
     <!-- Feature Section -->
     <section class="features" id="features">
@@ -296,7 +349,6 @@
         </div>
     </section>
 
-    <!-- Footer -->
     <footer>
         <div class="container">
             <div class="footer-grid">
@@ -308,30 +360,30 @@
                 <div class="footer-column">
                     <h5>Product</h5>
                     <ul>
-                        <li><a href="#features">Features</a></li>
-                        <li><a href="#solutions">Solutions</a></li>
-                        <li><a href="#pricing">Pricing</a></li>
-                        <li><a href="#updates">Changelog</a></li>
+                        <li><a href="{{ url_for('main.features') }}">Features</a></li>
+                        <li><a href="{{ url_for('main.solutions') }}">Solutions</a></li>
+                        <li><a href="{{ url_for('main.pricing') }}">Pricing</a></li>
+                        <li><a href="{{ url_for('main.changelog') }}">Changelog</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-column">
                     <h5>Company</h5>
                     <ul>
-                        <li><a href="#about">About</a></li>
-                        <li><a href="#careers">Careers</a></li>
-                        <li><a href="#blog">Blog</a></li>
-                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="{{ url_for('main.about') }}">About</a></li>
+                        <li><a href="{{ url_for('main.careers') }}">Careers</a></li>
+                        <li><a href="{{ url_for('main.blog') }}">Blog</a></li>
+                        <li><a href="{{ url_for('main.contact') }}">Contact</a></li>
                     </ul>
                 </div>
                 
                 <div class="footer-column">
                     <h5>Resources</h5>
                     <ul>
-                        <li><a href="#docs">Documentation</a></li>
-                        <li><a href="#api">API Reference</a></li>
-                        <li><a href="#status">System Status</a></li>
-                        <li><a href="#help">Help Center</a></li>
+                        <li><a href="{{ url_for('main.documentation') }}">Documentation</a></li>
+                        <li><a href="{{ url_for('main.api_reference') }}">API Reference</a></li>
+                        <li><a href="{{ url_for('main.system_status') }}">System Status</a></li>
+                        <li><a href="{{ url_for('main.help_center') }}">Help Center</a></li>
                     </ul>
                 </div>
                 
@@ -350,7 +402,7 @@
                 <div class="social-links">
                     <a href="#"><i class="bi bi-twitter-x"></i></a>
                     <a href="#"><i class="bi bi-linkedin"></i></a>
-                    <a href="#"><i class="bi bi-github"></i></a>
+                    <a href="https://github.com/harshith1432/Connect-flow" target="_blank"><i class="bi bi-github"></i></a>
                 </div>
             </div>
         </div>
@@ -462,6 +514,222 @@
         
         .social-links a:hover {
             color: var(--black);
+        }
+
+        /* Dashboard Mockup CSS */
+        .mockup-container {
+            padding: 0;
+            background: transparent;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .dashboard-mockup {
+            display: flex;
+            height: 450px;
+            background: #f8fafc;
+            font-family: 'Inter', sans-serif;
+            text-align: left;
+        }
+        .mockup-sidebar {
+            width: 220px;
+            background: #0f172a;
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem 1rem;
+        }
+        .mockup-logo {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: white;
+            margin-bottom: 2rem;
+            padding-left: 0.5rem;
+        }
+        .mockup-logo span {
+            color: #94a3b8;
+        }
+        .mockup-nav {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        .mockup-nav-item {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .mockup-nav-item.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+        .mockup-user {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-top: auto;
+        }
+        .mockup-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+        .mockup-user-info strong {
+            color: white;
+            font-size: 0.85rem;
+            display: block;
+        }
+        .mockup-main {
+            flex-grow: 1;
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            overflow: hidden;
+        }
+        .mockup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .mockup-header h3 {
+            font-size: 1.2rem;
+            font-weight: 800;
+            margin: 0;
+            color: #0f172a;
+        }
+        .mockup-search {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: 250px;
+        }
+        .mockup-hero {
+            background: #1e293b;
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+        }
+        .mockup-hero-left h2 {
+            font-size: 1.5rem;
+            margin: 0.5rem 0;
+            font-weight: 700;
+            color: white;
+        }
+        .mockup-hero-left p {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            margin: 0;
+            max-width: 350px;
+        }
+        .mockup-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .mockup-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+        .mockup-btn {
+            padding: 0.6rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .mockup-btn.white {
+            background: white;
+            color: #0f172a;
+        }
+        .mockup-btn.outline {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+        }
+        .mockup-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        .mockup-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
+        }
+        .mockup-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+        .mockup-card h5 {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin: 0;
+            font-weight: 600;
+        }
+        .mockup-card i {
+            color: #cbd5e1;
+            font-size: 1rem;
+        }
+        .mockup-card h2 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            margin: 0 0 0.5rem 0;
+            color: #0f172a;
+        }
+        .mockup-card span {
+            font-size: 0.75rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+        }
+        .mockup-card span.up {
+            color: #10b981;
+        }
+        .mockup-card span.neutral {
+            color: #64748b;
+        }
+        .mockup-card span small {
+            color: #94a3b8;
+            font-weight: 500;
+            margin-left: 0.25rem;
         }
     </style>
 </body>

@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference | ConnectFlow</title>
+    <meta name="description" content="ConnectFlow REST API Reference. Integrate ConnectFlow's communication automation into your own systems.">
+    <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { background: #f8fafc; }
+        .api-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+        .api-sidebar { background: #020617; padding: 2rem 1.5rem; height: 100vh; position: sticky; top: 0; overflow-y: auto; }
+        .api-sidebar .logo { color: white; font-size: 1rem; font-weight: 800; display: block; margin-bottom: 2rem; text-decoration: none; }
+        .api-sidebar .logo span { color: #475569; }
+        .nav-title { font-size: 0.65rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #475569; margin: 1.5rem 0 0.5rem; }
+        .api-link { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.5rem; border-radius: 6px; color: #64748b; text-decoration: none; font-size: 0.8rem; margin-bottom: 0.2rem; }
+        .api-link:hover { color: white; }
+        .method { font-size: 0.65rem; font-weight: 800; padding: 0.15rem 0.4rem; border-radius: 4px; flex-shrink: 0; }
+        .get { background: #065f46; color: #34d399; }
+        .post { background: #1e3a5f; color: #60a5fa; }
+        .api-content { padding: 3rem 4rem; max-width: 860px; }
+        .api-content h1 { font-size: 2.5rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem; }
+        .api-content h2 { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 2.5rem 0 1rem; border-top: 1px solid #e2e8f0; padding-top: 1.5rem; }
+        .api-content p { color: #475569; line-height: 1.8; }
+        .endpoint-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .endpoint-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
+        .endpoint-method { font-size: 0.75rem; font-weight: 800; padding: 0.3rem 0.75rem; border-radius: 6px; }
+        .endpoint-path { font-family: 'Courier New', monospace; font-size: 1rem; font-weight: 700; color: #0f172a; }
+        .endpoint-desc { color: #64748b; font-size: 0.875rem; margin-bottom: 1rem; line-height: 1.6; }
+        .params-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .params-table th { background: #f8fafc; font-weight: 700; color: #475569; padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .params-table td { padding: 0.6rem 0.75rem; color: #64748b; border-bottom: 1px solid #f1f5f9; }
+        .params-table td code { background: #f1f5f9; padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.8rem; color: #0f172a; }
+        .required-badge { background: #fef2f2; color: #991b1b; font-size: 0.65rem; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700; }
+        .code-block { background: #1e293b; border-radius: 10px; padding: 1.25rem; font-family: 'Courier New', monospace; font-size: 0.8rem; color: #e2e8f0; margin: 1rem 0; overflow-x: auto; line-height: 1.7; }
+        .code-block .key { color: #38bdf8; } .code-block .val { color: #34d399; } .code-block .str { color: #fbbf24; }
+        .auth-box { background: #fffbeb; border: 1px solid #fbbf24; border-radius: 10px; padding: 1rem 1.25rem; margin: 1rem 0; }
+        .auth-box p { color: #92400e; margin: 0; font-size: 0.875rem; }
+    </style>
+</head>
+<body>
+    <div class="api-layout">
+        <aside class="api-sidebar">
+            <a href="/" class="logo">Connect<span>Flow</span> <span style="color:#475569; font-size:0.7rem; font-weight:400;">API v1</span></a>
+            <div class="nav-title">Authentication</div>
+            <a href="#auth" class="api-link">API Keys</a>
+            <div class="nav-title">Notifications</div>
+            <a href="#notifications" class="api-link"><span class="method get">GET</span> List Notifications</a>
+            <div class="nav-title">Campaigns</div>
+            <a href="#campaigns-list" class="api-link"><span class="method get">GET</span> List Campaigns</a>
+            <a href="#campaigns-launch" class="api-link"><span class="method post">POST</span> Launch Campaign</a>
+            <div class="nav-title">Modules</div>
+            <a href="#modules-list" class="api-link"><span class="method get">GET</span> List Modules</a>
+            <a href="#modules-records" class="api-link"><span class="method get">GET</span> Get Module Records</a>
+            <a href="#modules-import" class="api-link"><span class="method post">POST</span> Import Records</a>
+            <div class="nav-title">Workers</div>
+            <a href="#workers-list" class="api-link"><span class="method get">GET</span> List Workers</a>
+            <div class="nav-title">Webhooks</div>
+            <a href="#webhooks" class="api-link"><span class="method post">POST</span> Twilio Webhook</a>
+        </aside>
+
+        <main class="api-content">
+            <h1>ConnectFlow API Reference</h1>
+            <p style="color:#64748b; font-size:1rem; margin-bottom:2rem;">The ConnectFlow REST API lets you integrate campaign automation, data management, and delivery analytics into your own systems and workflows.</p>
+
+            <h2 id="auth">Authentication</h2>
+            <p>All API requests must be made over HTTPS. Authentication is handled via Flask-Login session cookies for browser-based integrations.</p>
+            <div class="auth-box"><p><strong>Note:</strong> The ConnectFlow API is currently session-authenticated. All endpoints are protected by <code>@login_required</code> and role-based access decorators. A public API key system is on the Enterprise roadmap.</p></div>
+            <div class="code-block">
+Base URL: <span class="str">http://your-domain.com/api</span><br><br>
+All responses return JSON with:<br>
+{<br>
+&nbsp;&nbsp;<span class="key">"status"</span>: <span class="str">"success" | "error"</span>,<br>
+&nbsp;&nbsp;<span class="key">"data"</span>:   <span class="val">{ ... }</span>,<br>
+&nbsp;&nbsp;<span class="key">"message"</span>: <span class="str">"..."</span><br>
+}
+            </div>
+
+            <h2 id="notifications">GET /api/notifications</h2>
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="endpoint-method get">GET</span>
+                    <span class="endpoint-path">/api/notifications</span>
+                </div>
+                <div class="endpoint-desc">Returns a list of in-app notifications for the currently authenticated user. Includes campaign alerts, system messages, and admin broadcasts.</div>
+                <div class="code-block">
+Response 200:<br>
+{<br>
+&nbsp;&nbsp;<span class="key">"notifications"</span>: [<br>
+&nbsp;&nbsp;&nbsp;&nbsp;{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"id"</span>: <span class="val">42</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"message"</span>: <span class="str">"Campaign 'Fee Reminder' completed"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"type"</span>: <span class="str">"campaign_complete"</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"is_read"</span>: <span class="val">false</span>,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="key">"created_at"</span>: <span class="str">"2026-05-22T04:50:22Z"</span><br>
+&nbsp;&nbsp;&nbsp;&nbsp;}<br>
+&nbsp;&nbsp;],<br>
+&nbsp;&nbsp;<span class="key">"unread_count"</span>: <span class="val">3</span><br>
+}
+                </div>
+            </div>
+
+            <h2 id="campaigns-launch">POST /api/campaigns/launch</h2>
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="endpoint-method post" style="background:#1e3a5f; color:#60a5fa;">POST</span>
+                    <span class="endpoint-path">/api/campaigns/launch</span>
+                </div>
+                <div class="endpoint-desc">Launches a new outbound communication campaign for the authenticated organisation. Requires campaign configuration and a valid module with records.</div>
+                <table class="params-table">
+                    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>module_id</code></td><td>integer</td><td><span class="required-badge">required</span></td><td>ID of the data module to use</td></tr>
+                        <tr><td><code>channel</code></td><td>string</td><td><span class="required-badge">required</span></td><td><code>voice</code> or <code>whatsapp</code></td></tr>
+                        <tr><td><code>script_id</code></td><td>integer</td><td><span class="required-badge">required</span></td><td>ID of the message script template</td></tr>
+                        <tr><td><code>worker_id</code></td><td>integer</td><td>optional</td><td>Assign campaign to a specific worker</td></tr>
+                        <tr><td><code>name</code></td><td>string</td><td>optional</td><td>Campaign display name</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="modules-import">POST /api/modules/&lt;id&gt;/import</h2>
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="endpoint-method post" style="background:#1e3a5f; color:#60a5fa;">POST</span>
+                    <span class="endpoint-path">/api/modules/&lt;module_id&gt;/import</span>
+                </div>
+                <div class="endpoint-desc">Imports records into a module from a multipart form upload. Accepts <code>.xlsx</code> and <code>.csv</code> files. Column names must match module field names.</div>
+                <table class="params-table">
+                    <thead><tr><th>Parameter</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+                    <tbody>
+                        <tr><td><code>file</code></td><td>file</td><td><span class="required-badge">required</span></td><td>Excel (.xlsx) or CSV file with records</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h2 id="webhooks">POST /webhooks/twilio/status</h2>
+            <div class="endpoint-card">
+                <div class="endpoint-header">
+                    <span class="endpoint-method post" style="background:#1e3a5f; color:#60a5fa;">POST</span>
+                    <span class="endpoint-path">/webhooks/twilio/status</span>
+                </div>
+                <div class="endpoint-desc">Twilio calls this endpoint automatically to update delivery status. Set this as your Twilio Status Callback URL in your campaign configuration. This endpoint is public (no auth required).</div>
+                <div class="code-block">
+Twilio POSTs form data:<br>
+<span class="key">CallSid</span>      = <span class="str">"CA..."</span><br>
+<span class="key">CallStatus</span>   = <span class="str">"completed" | "busy" | "no-answer" | "failed"</span><br>
+<span class="key">To</span>           = <span class="str">"+91XXXXXXXXXX"</span><br>
+<span class="key">CallDuration</span> = <span class="val">38</span>
+                </div>
+            </div>
+        </main>
+    </div>
+</body>
+</html>

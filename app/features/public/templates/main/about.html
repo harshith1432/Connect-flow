@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us | ConnectFlow</title>
+    <meta name="description" content="Learn about ConnectFlow — the intelligent outbound communication automation platform built for modern enterprises.">
+    <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .page-hero { background: #0f172a; color: white; padding: 5rem 0 4rem; text-align: center; }
+        .page-hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; }
+        .page-hero p { color: #94a3b8; font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+        .about-section { padding: 5rem 0; }
+        .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center; margin-bottom: 5rem; }
+        .about-grid h2 { font-size: 2rem; font-weight: 800; color: #0f172a; margin-bottom: 1.5rem; }
+        .about-grid p { color: #64748b; line-height: 1.8; margin-bottom: 1rem; }
+        .values-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-top: 3rem; }
+        .value-card { background: #f8fafc; border-radius: 16px; padding: 2rem; border: 1px solid #e2e8f0; }
+        .value-card i { font-size: 2rem; color: #0f172a; margin-bottom: 1rem; }
+        .value-card h4 { font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; }
+        .value-card p { color: #64748b; font-size: 0.9rem; margin: 0; }
+        .team-section { background: #f8fafc; padding: 5rem 0; }
+        .section-title { text-align: center; margin-bottom: 3rem; }
+        .section-title h2 { font-size: 2rem; font-weight: 800; color: #0f172a; }
+        .section-title p { color: #64748b; }
+        .stats-bar { background: #0f172a; padding: 4rem 0; }
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; text-align: center; }
+        .stat-item h3 { font-size: 3rem; font-weight: 800; color: #38bdf8; margin: 0; }
+        .stat-item p { color: #94a3b8; margin: 0.5rem 0 0; }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="container nav-content">
+            <a href="/" class="logo">Connect<span>Flow</span></a>
+            <div class="nav-auth">
+                <a href="{{ url_for('org.login') }}" class="btn-outline">Login</a>
+                <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-hero">
+        <div class="container">
+            <a href="/" style="color:#94a3b8; text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem; margin-bottom:2rem;"><i class="bi bi-arrow-left"></i> Back to Home</a>
+            <h1>Built to Automate the<br>Way the World Communicates</h1>
+            <p>ConnectFlow is an enterprise-grade outbound communication automation platform — enabling organisations to scale voice and WhatsApp outreach without lifting a finger.</p>
+        </div>
+    </div>
+
+    <div class="stats-bar">
+        <div class="container">
+            <div class="stats-row">
+                <div class="stat-item"><h3>10K+</h3><p>Campaigns Launched</p></div>
+                <div class="stat-item"><h3>99.9%</h3><p>Platform Uptime</p></div>
+                <div class="stat-item"><h3>12+</h3><p>Languages Supported</p></div>
+                <div class="stat-item"><h3>3</h3><p>User Role Tiers</p></div>
+            </div>
+        </div>
+    </div>
+
+    <section class="about-section">
+        <div class="container">
+            <div class="about-grid">
+                <div>
+                    <h2>Our Mission</h2>
+                    <p>ConnectFlow was built with one mission in mind: eliminate the repetitive, time-consuming process of manually calling and messaging large audiences.</p>
+                    <p>Whether it's a school reminding thousands of parents about fee dues, a healthcare provider sending appointment reminders, or a finance company notifying loan repayment schedules — ConnectFlow handles it all automatically, at any scale, in any language.</p>
+                    <p>We believe communication should be intelligent, scalable, and effortless. That's what we build every day.</p>
+                </div>
+                <div style="background:#1e293b; border-radius:20px; padding:3rem; color:white; text-align:center;">
+                    <i class="bi bi-megaphone-fill" style="font-size:4rem; color:#38bdf8; margin-bottom:1.5rem; display:block;"></i>
+                    <h3 style="font-size:1.5rem; font-weight:800;">Outbound-First Philosophy</h3>
+                    <p style="color:#94a3b8; margin:1rem 0 0;">We focus purely on sending information out, not managing two-way conversations. This keeps the platform lean, fast, and powerful for high-volume broadcasting.</p>
+                </div>
+            </div>
+
+            <div class="section-title">
+                <h2>Our Core Values</h2>
+                <p>Everything we build is guided by these principles</p>
+            </div>
+            <div class="values-grid">
+                <div class="value-card">
+                    <i class="bi bi-speedometer2"></i>
+                    <h4>Speed at Scale</h4>
+                    <p>We engineer systems that handle thousands of simultaneous broadcasts without degradation in delivery speed or accuracy.</p>
+                </div>
+                <div class="value-card">
+                    <i class="bi bi-shield-lock-fill"></i>
+                    <h4>Security First</h4>
+                    <p>Multi-tenant data isolation, MFA, brute-force protection, and encrypted communications are non-negotiable defaults — not optional add-ons.</p>
+                </div>
+                <div class="value-card">
+                    <i class="bi bi-people-fill"></i>
+                    <h4>User Empowerment</h4>
+                    <p>Our no-code module builder means any team member can build a campaign — no engineering degree required.</p>
+                </div>
+                <div class="value-card">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    <h4>Data-Driven Decisions</h4>
+                    <p>Real-time analytics on every campaign give operators the insight they need to refine and improve every outreach effort.</p>
+                </div>
+                <div class="value-card">
+                    <i class="bi bi-building"></i>
+                    <h4>Enterprise Ready</h4>
+                    <p>Multi-organisation SaaS architecture, custom plan management, and verified org approval pipelines built for B2B deployment.</p>
+                </div>
+                <div class="value-card">
+                    <i class="bi bi-cpu-fill"></i>
+                    <h4>Intelligent Automation</h4>
+                    <p>AI Text-to-Speech, dynamic script generation, and automated webhook processing make every campaign smarter than the last.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section style="background:#0f172a; padding:4rem 0; text-align:center; color:white;">
+        <div class="container">
+            <h2 style="font-size:2rem; font-weight:800; margin-bottom:1rem;">Join the organisations automating their outreach</h2>
+            <p style="color:#94a3b8; margin-bottom:2rem;">Register today and start your first automated campaign in under 10 minutes.</p>
+            <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+                <a href="{{ url_for('org.register') }}" class="btn-white">
+                    <i class="bi bi-rocket-takeoff-fill"></i> Get Started Free
+                </a>
+                <a href="{{ url_for('main.contact') }}" class="btn-outline-dark">
+                    <i class="bi bi-chat-dots"></i> Talk to Sales
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer style="background:#020617; color:#64748b; padding:2rem 0; text-align:center; font-size:0.875rem;">
+        <p>&copy; 2026 ConnectFlow. All rights reserved. &nbsp;|&nbsp; <a href="{{ url_for('main.privacy_policy') }}" style="color:#64748b;">Privacy</a> &nbsp;|&nbsp; <a href="{{ url_for('main.terms_of_service') }}" style="color:#64748b;">Terms</a></p>
+    </footer>
+</body>
+</html>

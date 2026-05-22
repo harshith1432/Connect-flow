@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog | ConnectFlow</title>
+    <meta name="description" content="ConnectFlow product changelog — see what's new, what's improved, and what's been fixed in every release.">
+    <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .page-hero { background: #0f172a; color: white; padding: 5rem 0 4rem; text-align: center; }
+        .page-hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; }
+        .page-hero p { color: #94a3b8; font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
+        .changelog-section { padding: 5rem 0; }
+        .timeline { position: relative; max-width: 860px; margin: 0 auto; }
+        .timeline::before { content: ''; position: absolute; left: 120px; top: 0; bottom: 0; width: 2px; background: #e2e8f0; }
+        .release { display: grid; grid-template-columns: 120px 1fr; gap: 2rem; margin-bottom: 3rem; position: relative; }
+        .release-date { text-align: right; padding-top: 0.25rem; }
+        .release-date h4 { font-size: 0.8rem; font-weight: 800; color: #64748b; margin: 0; }
+        .release-date .version { font-size: 0.7rem; color: #94a3b8; }
+        .release-dot { position: absolute; left: 112px; top: 6px; width: 16px; height: 16px; border-radius: 50%; background: #0f172a; border: 3px solid white; box-shadow: 0 0 0 2px #0f172a; }
+        .release-dot.latest { background: #10b981; box-shadow: 0 0 0 2px #10b981; }
+        .release-body { background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 1.75rem; }
+        .release-title { font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem; }
+        .latest-tag { background: #dcfce7; color: #166534; font-size: 0.7rem; font-weight: 800; padding: 0.2rem 0.6rem; border-radius: 20px; }
+        .change-group { margin-bottom: 1rem; }
+        .change-group h5 { font-size: 0.75rem; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .change-group.new h5 { color: #059669; }
+        .change-group.improved h5 { color: #2563eb; }
+        .change-group.fixed h5 { color: #dc2626; }
+        .change-list { list-style: none; padding: 0; margin: 0; }
+        .change-list li { padding: 0.4rem 0; display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.875rem; color: #475569; }
+        .change-list li i { margin-top: 2px; flex-shrink: 0; }
+        .change-group.new .change-list li i { color: #059669; }
+        .change-group.improved .change-list li i { color: #2563eb; }
+        .change-group.fixed .change-list li i { color: #dc2626; }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="mainNav">
+        <div class="container nav-content">
+            <a href="/" class="logo">Connect<span>Flow</span></a>
+            <div class="nav-auth">
+                <a href="{{ url_for('org.login') }}" class="btn-outline">Login</a>
+                <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="page-hero">
+        <div class="container">
+            <a href="/" style="color:#94a3b8; text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem; margin-bottom:2rem;"><i class="bi bi-arrow-left"></i> Back to Home</a>
+            <h1>Changelog</h1>
+            <p>Every release, every improvement, every fix — documented here so you always know what's new in ConnectFlow.</p>
+        </div>
+    </div>
+
+    <section class="changelog-section">
+        <div class="container">
+            <div class="timeline">
+
+                <div class="release">
+                    <div class="release-date"><h4>May 2026</h4><div class="version">v2.5.0</div></div>
+                    <div class="release-dot latest"></div>
+                    <div class="release-body">
+                        <div class="release-title">Major Release — Billing, Invoicing & Premium Dashboards <span class="latest-tag">LATEST</span></div>
+                        <div class="change-group new">
+                            <h5><i class="bi bi-plus-circle"></i> New</h5>
+                            <ul class="change-list">
+                                <li><i class="bi bi-check2"></i> Real-time Payments Ledger — live payment history per organisation</li>
+                                <li><i class="bi bi-check2"></i> Commercial Tax Invoice generation with CGST/SGST breakdown and digital seal</li>
+                                <li><i class="bi bi-check2"></i> Enterprise Checkout page with Razorpay integration support</li>
+                                <li><i class="bi bi-check2"></i> Subscription Plans page with usage tracking and visual utilisation bars</li>
+                                <li><i class="bi bi-check2"></i> Premium dual-pane Profile layout for both Organisation Admin and Worker dashboards</li>
+                                <li><i class="bi bi-check2"></i> Dark Mode / Light Mode theme switcher across all dashboard views</li>
+                                <li><i class="bi bi-check2"></i> Dedicated Billing sidebar with Payments, Invoices, Plans, and Subscriptions navigation</li>
+                                <li><i class="bi bi-check2"></i> Centralised logging system (<code>app/core/logging_system.py</code>) with rotating file handler</li>
+                            </ul>
+                        </div>
+                        <div class="change-group improved">
+                            <h5><i class="bi bi-arrow-up-circle"></i> Improved</h5>
+                            <ul class="change-list">
+                                <li><i class="bi bi-check2"></i> Notification detail modal — clicking a notification now shows full details</li>
+                                <li><i class="bi bi-check2"></i> Organisation Profile page now uses split-panel premium layout</li>
+                                <li><i class="bi bi-check2"></i> Worker Profile page redesigned to match Organisation Admin profile consistency</li>
+                                <li><i class="bi bi-check2"></i> Sidebar no longer shows email address under user profile — cleaner design</li>
+                            </ul>
+                        </div>
+                        <div class="change-group fixed">
+                            <h5><i class="bi bi-bug"></i> Fixed</h5>
+                            <ul class="change-list">
+                                <li><i class="bi bi-check2"></i> Fixed BuildError for <code>org.payments</code> endpoint — now correctly resolves to <code>org.process_payment</code></li>
+                                <li><i class="bi bi-check2"></i> Fixed UndefinedError for <code>limits</code> variable on the Plans page</li>
+                                <li><i class="bi bi-check2"></i> Fixed wrong sidebar rendering on Organisation Profile (was showing base sidebar instead of billing sidebar)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="release">
+                    <div class="release-date"><h4>Apr 2026</h4><div class="version">v2.0.0</div></div>
+                    <div class="release-dot"></div>
+                    <div class="release-body">
+                        <div class="release-title">Major Release — Campaign Engine & Worker Roles</div>
+                        <div class="change-group new">
+                            <h5><i class="bi bi-plus-circle"></i> New</h5>
+                            <ul class="change-list">
+                                <li><i class="bi bi-check2"></i> Full campaign management: create, assign, launch, and track campaigns</li>
+                                <li><i class="bi bi-check2"></i> Worker role with dedicated workspace — campaigns, scripts, modules, groups</li>
+                                <li><i class="bi bi-check2"></i> Real-time delivery log tracking via Twilio webhooks</li>
+                                <li><i class="bi bi-check2"></i> Automated voice call dispatch with Microsoft Edge TTS and Google TTS</li>
+                                <li><i class="bi bi-check2"></i> WhatsApp message broadcasting via Twilio API</li>
+                                <li><i class="bi bi-check2"></i> Excel/CSV bulk import for module records with column mapping</li>
+                                <li><i class="bi bi-check2"></i> Google OAuth2 login for Worker portal</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="release">
+                    <div class="release-date"><h4>Feb 2026</h4><div class="version">v1.0.0</div></div>
+                    <div class="release-dot"></div>
+                    <div class="release-body">
+                        <div class="release-title">Initial Release — Multi-Tenant SaaS Foundation</div>
+                        <div class="change-group new">
+                            <h5><i class="bi bi-plus-circle"></i> New</h5>
+                            <ul class="change-list">
+                                <li><i class="bi bi-check2"></i> Multi-tenant SaaS architecture with strict data isolation</li>
+                                <li><i class="bi bi-check2"></i> Three-tier RBAC: Platform Owner, Organisation Admin, Worker</li>
+                                <li><i class="bi bi-check2"></i> Organisation registration with admin approval workflow</li>
+                                <li><i class="bi bi-check2"></i> Subscription management with Trial, Starter, Growth, and Enterprise plans</li>
+                                <li><i class="bi bi-check2"></i> Multi-Factor Authentication (TOTP) for all user roles</li>
+                                <li><i class="bi bi-check2"></i> No-code custom module builder with dynamic field types</li>
+                                <li><i class="bi bi-check2"></i> Platform owner super admin dashboard</li>
+                                <li><i class="bi bi-check2"></i> Brute-force protection and session security</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <footer style="background:#020617; color:#64748b; padding:2rem 0; text-align:center; font-size:0.875rem;">
+        <p>&copy; 2026 ConnectFlow. All rights reserved. &nbsp;|&nbsp; <a href="https://github.com/harshith1432/Connect-flow" style="color:#64748b;" target="_blank">GitHub</a></p>
+    </footer>
+</body>
+</html>

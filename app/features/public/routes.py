@@ -252,3 +252,103 @@ def privacy_policy():
 @main_bp.route("/legal/dpa")
 def dpa():
     return render_template("legal/dpa.html")
+
+
+# ── Product Pages ──────────────────────────────────────────────────────────────
+@main_bp.route("/features")
+def features():
+    return render_template("main/features.html")
+
+
+@main_bp.route("/solutions")
+def solutions():
+    return render_template("main/solutions.html")
+
+
+@main_bp.route("/pricing")
+def pricing():
+    return render_template("main/pricing.html")
+
+
+@main_bp.route("/changelog")
+def changelog():
+    return render_template("main/changelog.html")
+
+
+# ── Company Pages ──────────────────────────────────────────────────────────────
+@main_bp.route("/about")
+def about():
+    return render_template("main/about.html")
+
+
+@main_bp.route("/careers")
+def careers():
+    return render_template("main/careers.html")
+
+
+@main_bp.route("/blog")
+def blog():
+    return render_template("main/blog.html")
+
+
+@main_bp.route("/contact", methods=["GET", "POST"])
+def contact():
+    submitted = False
+    if request.method == "POST":
+        submitted = True
+    return render_template("main/contact.html", submitted=submitted)
+
+
+# ── Resources Pages ────────────────────────────────────────────────────────────
+@main_bp.route("/docs")
+def documentation():
+    return render_template("main/documentation.html")
+
+
+@main_bp.route("/api-reference")
+def api_reference():
+    return render_template("main/api_reference.html")
+
+
+@main_bp.route("/status")
+def system_status():
+    return render_template("main/system_status.html")
+
+
+@main_bp.route("/help")
+def help_center():
+    return render_template("main/help_center.html")
+
+
+# ── Talk-to-Us Inquiry Submission ──────────────────────────────────────────────
+@main_bp.route("/inquiry", methods=["POST"])
+def submit_inquiry():
+    from app.models.inquiry import Inquiry
+    name = request.form.get("name", "").strip()
+    email = request.form.get("email", "").strip()
+    phone = request.form.get("phone", "").strip()
+    company_name = request.form.get("company_name", "").strip()
+    reason = request.form.get("reason", "General Enquiry").strip()
+    message = request.form.get("message", "").strip()
+    source_page = request.form.get("source_page", "unknown").strip()
+
+    if not name or not email:
+        flash("Name and email are required.", "danger")
+        return redirect(request.referrer or url_for("main.index"))
+
+    inquiry = Inquiry(
+        name=name,
+        email=email,
+        phone=phone,
+        company_name=company_name,
+        reason=reason,
+        message=message,
+        source_page=source_page,
+        status="New",
+    )
+    db.session.add(inquiry)
+    db.session.commit()
+    flash("Thank you! We'll be in touch shortly.", "success")
+    return redirect(request.referrer or url_for("main.index"))
+
+
