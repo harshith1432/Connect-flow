@@ -86,6 +86,10 @@ class DevelopmentConfig(BaseConfig):
     DEBUG = True
     TESTING = False
     
+    # ALWAYS use official test keys in local development so the widget actually displays on localhost
+    HCAPTCHA_SITEKEY = "10000000-ffff-ffff-ffff-000000000001"
+    HCAPTCHA_SECRET = "0x0000000000000000000000000000000000000000"
+    
     SQLALCHEMY_DATABASE_URI = BaseConfig._parse_db_url(
         os.environ.get("DATABASE_URL", "sqlite:///instance/dev.db"), 
         is_local=True
