@@ -40,7 +40,7 @@ body {
 
 .auth-wrapper {
     width: 100%;
-    max-width: 1000px;
+    max-width: 850px;
     height: auto;
     min-height: 500px;
     background: var(--white);
