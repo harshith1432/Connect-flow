@@ -2,7 +2,39 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://calltoconvey.onrender.com/:path*"
+      "destination": "https://calltoconvey.onrender.com/api/:path*"
+    },
+    {
+      "source": "/login",
+      "destination": "https://calltoconvey.onrender.com/login"
+    },
+    {
+      "source": "/callback",
+      "destination": "https://calltoconvey.onrender.com/callback"
+    },
+    {
+      "source": "/google-auth",
+      "destination": "https://calltoconvey.onrender.com/google-auth"
+    },
+    {
+      "source": "/org/:path*",
+      "destination": "https://calltoconvey.onrender.com/org/:path*"
+    },
+    {
+      "source": "/worker/:path*",
+      "destination": "https://calltoconvey.onrender.com/worker/:path*"
+    },
+    {
+      "source": "/platform-admin/:path*",
+      "destination": "https://calltoconvey.onrender.com/platform-admin/:path*"
+    },
+    {
+      "source": "/campaign-express/:path*",
+      "destination": "https://calltoconvey.onrender.com/campaign-express/:path*"
+    },
+    {
+      "source": "/static/:path*",
+      "destination": "https://calltoconvey.onrender.com/static/:path*"
     }
   ]
 }
