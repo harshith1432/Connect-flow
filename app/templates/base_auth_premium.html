@@ -113,11 +113,11 @@
             
             <div class="brand">
                 <div class="logo">
-                    {{ render_brand_logo(height=38, text_size=22) | safe }}
+                    <img src="{{ url_for('static', filename='images/calltoconvey_logo.png') }}" alt="Call to Convey" style="max-width: 280px; height: auto;">
                 </div>
                 {% block hero_content %}
-                <h2>Executive Operations.</h2>
-                <p class="tagline">The most advanced platform for managing your organization's communication and data workflow.</p>
+                <h2 style="color: #4d71e9; font-size: 2.25rem; font-weight: 700; margin-bottom: 0.5rem; text-align: center;">Welcome to Call to Convey</h2>
+                <p class="tagline" style="color: #6b7280; font-size: 1.1rem; line-height: 1.6; text-align: center; max-width: 80%;">Your unified platform for seamless communication, data orchestration, and growth.</p>
                 {% endblock %}
             </div>
             

@@ -57,26 +57,38 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Left Panel - The Illustration */
+/* Left Panel - The Brand */
 .auth-side {
     flex: 1.2;
-    background: url('../images/login_illustration.png') no-repeat center center;
-    background-size: contain;
-    mix-blend-mode: multiply; /* Removes white background from illustration */
-    padding: 0;
+    background: transparent;
+    padding: 3rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
+    align-items: center;
     position: relative;
     overflow: hidden;
+    text-align: center;
 }
 
-/* Hide the old text and badges on the left side to match the design */
+/* Show the text and logo */
 .auth-side::before,
 .auth-pattern,
-.brand,
 .auth-side-bottom {
-    display: none !important;
+    display: none !important; /* Keep decorative stuff hidden */
+}
+
+.brand {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+}
+
+.logo img {
+    max-width: 250px; /* Large logo */
+    height: auto;
 }
 
 /* Right Panel - The Form */
