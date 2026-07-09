@@ -40,8 +40,8 @@ body {
 
 .auth-wrapper {
     width: 100%;
-    max-width: 1200px;
-    height: min(750px, calc(100vh - 40px));
+    max-width: 1000px;
+    height: auto;
     min-height: 500px;
     background: var(--white);
     display: flex;
@@ -60,9 +60,9 @@ body {
 
 /* Left Panel - The Hero */
 .auth-side {
-    flex: 1.1;
+    flex: 1;
     background: var(--grey-900);
-    padding: 5rem 4rem;
+    padding: 3rem 2.5rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -178,7 +178,7 @@ body {
 /* Right Panel - The Form */
 .auth-content {
     flex: 1.2;
-    padding: 5rem;
+    padding: 3rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
