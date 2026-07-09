@@ -32,11 +32,17 @@
         </div>
     </div>
 
-    {% if config.HCAPTCHA_SITEKEY %}
-    <div style="display: flex; justify-content: center; margin-bottom: 1rem;">
-        <div class="h-captcha" data-sitekey="{{ config.HCAPTCHA_SITEKEY }}"></div>
+    <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label class="form-label">Security Check</label>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <div style="background: var(--grey-100); padding: 10px 20px; border-radius: 8px; font-weight: 800; letter-spacing: 2px; font-size: 1.2rem; color: var(--black); user-select: none;">
+                7 3 9 2
+            </div>
+            <div class="input-container" style="flex: 1;">
+                <input type="text" name="captcha_input" class="premium-input" placeholder="Enter the numbers" required style="padding-left: 15px;" />
+            </div>
+        </div>
     </div>
-    {% endif %}
 
     <button type="submit" class="btn-premium-dark" style="margin-bottom: 1rem; width: 100%;">
         Sign In <i class="bi bi-arrow-right"></i>
