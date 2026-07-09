@@ -337,6 +337,26 @@ def verification_pending():
     return render_template("auth/verification_pending.html")
 
 
+# OAuth routes
+@main_bp.route("/google-auth")
+def google_auth():
+    import urllib.parse
+    from flask import current_app, redirect, url_for
+
+    client_id = current_app.config.get("GOOGLE_CLIENT_ID")
+    redirect_uri = url_for("main.google_callback", _external=True)
+    scope = "openid email profile"
+    params = {
+        "client_id": client_id,
+        "redirect_uri": redirect_uri,
+        "response_type": "code",
+        "scope": scope,
+        "access_type": "offline",
+        "prompt": "consent",
+    }
+    google_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
+    return redirect(google_url)
+
 # OAuth callback
 @main_bp.route("/callback")
 def google_callback():

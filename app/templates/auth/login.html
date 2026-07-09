@@ -35,9 +35,20 @@
         </div>
     </div>
 
-    <button type="submit" class="btn-premium-dark">
+    <button type="submit" class="btn-premium-dark" style="margin-bottom: 1rem; width: 100%;">
         Sign In <i class="bi bi-arrow-right"></i>
     </button>
+    
+    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+        <hr style="flex-grow: 1; border: none; border-top: 1px solid var(--grey-200); margin: 0;">
+        <span style="padding: 0 10px; font-size: 0.85rem; color: var(--grey-500);">or</span>
+        <hr style="flex-grow: 1; border: none; border-top: 1px solid var(--grey-200); margin: 0;">
+    </div>
+
+    <a href="{{ url_for('main.google_auth') }}" class="btn-premium-outline" style="width: 100%; display: flex; align-items: center; justify-content: center; margin-bottom: 1.5rem; text-decoration: none; color: inherit; background-color: white; border: 1px solid var(--grey-300); border-radius: 8px; padding: 0.75rem 1rem; font-weight: 500; font-size: 0.95rem; transition: all 0.2s ease;">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" style="width:18px;height:18px;margin-right:8px;">
+        Continue with Google
+    </a>
 
     <div class="auth-footer-links">
         <p style="font-size: 0.935rem; color: var(--grey-500); width: 100%; text-align: center; margin-bottom: 2rem;">
