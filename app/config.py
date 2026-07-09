@@ -57,9 +57,9 @@ class BaseConfig:
     RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
     RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 
-    # hCaptcha (using official test keys as fallback for local dev)
-    HCAPTCHA_SITEKEY = os.environ.get("HCAPTCHA_SITEKEY", "10000000-ffff-ffff-ffff-000000000001")
-    HCAPTCHA_SECRET = os.environ.get("HCAPTCHA_SECRET", "0x0000000000000000000000000000000000000000")
+    # hCaptcha (using official test keys as fallback for local dev if empty)
+    HCAPTCHA_SITEKEY = os.environ.get("HCAPTCHA_SITEKEY") or "10000000-ffff-ffff-ffff-000000000001"
+    HCAPTCHA_SECRET = os.environ.get("HCAPTCHA_SECRET") or "0x0000000000000000000000000000000000000000"
 
     @staticmethod
     def _parse_db_url(url: str, is_local: bool = False) -> str:
