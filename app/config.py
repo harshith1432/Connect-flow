@@ -143,3 +143,5 @@ config = {
     'default': DevelopmentConfig
 }
 
+Config = BaseConfig
+
