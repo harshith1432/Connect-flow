@@ -179,9 +179,13 @@ def setup_full_debug_logging(app):
     if not os.path.exists("logs"):
         os.makedirs("logs")
 
-    file_handler = RotatingFileHandler(
-        "logs/app.log", maxBytes=10 * 1024 * 1024, backupCount=5
-    )
+    if os.name == 'nt' and app.debug:
+        # Avoid WinError 32 on Windows with Werkzeug reloader
+        file_handler = logging.FileHandler("logs/app.log", encoding="utf-8")
+    else:
+        file_handler = RotatingFileHandler(
+            "logs/app.log", maxBytes=10 * 1024 * 1024, backupCount=5
+        )
     file_formatter = logging.Formatter(
         '%(asctime)s | %(levelname)s | %(name)s | %(message)s'
     )
