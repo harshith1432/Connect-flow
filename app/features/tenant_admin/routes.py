@@ -504,6 +504,8 @@ def manage_workers():
 @org_bp.route("/workers/create", methods=["GET", "POST"])
 @verified_org_required
 def create_worker():
+    from app.services.organization_user_service import OrganizationUserService
+    
     if not hasattr(current_user, "organization_id"):
         flash("Access denied", "danger")
         return redirect(url_for("org.login"))
@@ -539,19 +541,19 @@ def create_worker():
         email = request.form["email"]
         password = request.form["password"]
 
+        user_service = OrganizationUserService()
+
         # Check existing
-        if OrganizationUser.query.filter_by(email=email).first():
+        if user_service.get_by_email(email, current_user.organization_id):
             flash("Email already exists", "danger")
             return redirect(url_for("org.create_worker"))
 
-        worker = OrganizationUser(
-            organization_id=current_user.organization_id,
-            email=email,
-            password_hash=generate_password_hash(password),
-            role="worker",
+        # Create using service
+        user_service.create_worker(
+            org_id=current_user.organization_id,
+            data={"email": email, "password": password, "role": "worker"}
         )
-        db.session.add(worker)
-        db.session.commit()
+        
         flash("Worker created successfully", "success")
         return redirect(url_for("org.manage_workers"))
 

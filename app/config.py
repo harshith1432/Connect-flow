@@ -1,77 +1,21 @@
 import os
-from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+from datetime import timedelta
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
+class BaseConfig:
+    """Base configuration."""
+    SECRET_KEY = os.environ.get("SECRET_KEY")
+    if not SECRET_KEY:
+        raise ValueError("SECRET_KEY must be set in environment variables.")
 
-class Config:
-    # Core
-    SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-secret-change-me"
-
-    # Database
-    _raw_db = os.environ.get("DATABASE_URL")
-    if not _raw_db:
-        raise RuntimeError("DATABASE_URL must be set in environment or .env")
-
-    if _raw_db.startswith("sqlite:/") and not _raw_db.startswith("sqlite:///"):
-        _raw_db = _raw_db.replace("sqlite:/", "sqlite:///")
-
-    try:
-        parsed = urlparse(_raw_db)
-        is_local = parsed.hostname in ("localhost", "127.0.0.1")
-
-        if parsed.scheme.startswith("postgres"):
-            qs = parse_qs(parsed.query)
-            if not is_local and "sslmode" not in qs:
-                qs["sslmode"] = ["require"]
-                new_query = urlencode(qs, doseq=True)
-                parsed = parsed._replace(query=new_query)
-            SQLALCHEMY_DATABASE_URI = urlunparse(parsed)
-        else:
-            SQLALCHEMY_DATABASE_URI = _raw_db
-    except Exception:
-        SQLALCHEMY_DATABASE_URI = _raw_db
-        is_local = False
-
-    if parsed.scheme.startswith("postgres"):
-        SQLALCHEMY_ENGINE_OPTIONS = {
-            "pool_pre_ping": True,
-            "pool_recycle": 300,
-            "pool_size": 10,
-            "max_overflow": 20,
-        }
-        if not is_local:
-            SQLALCHEMY_ENGINE_OPTIONS["connect_args"] = {"sslmode": "require"}
-    else:
-        SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SQLALCHEMY_ECHO = False  # Disabled — terminal monitor tracks DB queries via events
-
-
-    # Twilio
-    TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
-    TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
-
-    TWILIO_WHATSAPP_NUMBER = os.environ.get(
-        "TWILIO_WHATSAPP_NUMBER", os.environ.get("DEFAULT_TWILIO_NUMBER", "")
-    )
-    TWILIO_VOICE_NUMBER = os.environ.get(
-        "TWILIO_VOICE_NUMBER", os.environ.get("TWILIO_PHONE_NUMBER", "")
-    )
-
-    DEFAULT_TWILIO_NUMBER = TWILIO_WHATSAPP_NUMBER
-    BOT_SERVER_URL = os.environ.get("BOT_SERVER_URL", "")
-
-    DEFAULT_ADMIN_EMAIL = os.environ.get("DEFAULT_ADMIN_EMAIL", "")
-    DEFAULT_ADMIN_PASSWORD = os.environ.get("DEFAULT_ADMIN_PASSWORD", "")
-
+    # Core Application
     BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
     PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", BASE_URL)
-
-    # Session / security
-    from datetime import timedelta
-
+    
+    # Session / Security
     _env_secure = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SECURE = _env_secure
@@ -80,39 +24,122 @@ class Config:
     REMEMBER_COOKIE_HTTPONLY = True
     REMEMBER_COOKIE_SAMESITE = "Lax"
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=20)
+    
+    # Database default setup
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ECHO = False
+    
+    # Platform Admins
+    DEFAULT_ADMIN_EMAIL = os.environ.get("DEFAULT_ADMIN_EMAIL", "")
+    DEFAULT_ADMIN_PASSWORD = os.environ.get("DEFAULT_ADMIN_PASSWORD", "")
+
+    # Twilio Integration
+    TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "")
+    TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_AUTH_TOKEN", "")
+    TWILIO_WHATSAPP_NUMBER = os.environ.get("TWILIO_WHATSAPP_NUMBER", os.environ.get("DEFAULT_TWILIO_NUMBER", ""))
+    TWILIO_VOICE_NUMBER = os.environ.get("TWILIO_VOICE_NUMBER", os.environ.get("TWILIO_PHONE_NUMBER", ""))
+    DEFAULT_TWILIO_NUMBER = TWILIO_WHATSAPP_NUMBER
+    BOT_SERVER_URL = os.environ.get("BOT_SERVER_URL", "")
 
     # Google OAuth
     GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
-    GOOGLE_DISCOVERY_URL = os.environ.get(
-        "GOOGLE_DISCOVERY_URL",
-        "https://accounts.google.com/.well-known/openid-configuration",
-    )
+    GOOGLE_DISCOVERY_URL = os.environ.get("GOOGLE_DISCOVERY_URL", "https://accounts.google.com/.well-known/openid-configuration")
 
-    # Hooman Labs — API Key & From Number are per-org (DB only, not in config)
-
-    # Hooman Labs Agents
-    HOOMAN_AGENT_HINDI = os.environ.get("HOOMAN_AGENT_HINDI", "")
-    HOOMAN_AGENT_ENGLISH = os.environ.get("HOOMAN_AGENT_ENGLISH", "")
-    HOOMAN_AGENT_TAMIL = os.environ.get("HOOMAN_AGENT_TAMIL", "")
-    HOOMAN_AGENT_KANNADA = os.environ.get("HOOMAN_AGENT_KANNADA", "")
-    HOOMAN_AGENT_TELUGU = os.environ.get("HOOMAN_AGENT_TELUGU", "")
-    HOOMAN_CAMPAIGN_ID = os.environ.get("HOOMAN_CAMPAIGN_ID", "AvltYGFZt3IDKEsX9uO7")
-    HOOMAN_CAMPAIGN_ID_TELUGU = os.environ.get("HOOMAN_CAMPAIGN_ID_TELUGU", "")
-    HOOMAN_CAMPAIGN_ID_MALAYALAM = os.environ.get("HOOMAN_CAMPAIGN_ID_MALAYALAM", "")
-    HOOMAN_CAMPAIGN_ID_MARATHI = os.environ.get("HOOMAN_CAMPAIGN_ID_MARATHI", "")
-    HOOMAN_CAMPAIGN_ID_TAMIL = os.environ.get("HOOMAN_CAMPAIGN_ID_TAMIL", "")
-    HOOMAN_CAMPAIGN_ID_KANNADA = os.environ.get("HOOMAN_CAMPAIGN_ID_KANNADA", "")
-    HOOMAN_CAMPAIGN_ID_HINDI = os.environ.get("HOOMAN_CAMPAIGN_ID_HINDI", "")
-    HOOMAN_CAMPAIGN_ID_ENGLISH = os.environ.get("HOOMAN_CAMPAIGN_ID_ENGLISH", "")
-
-    HOOMAN_AGENT_MARATHI = os.environ.get("HOOMAN_AGENT_MARATHI", "")
-    HOOMAN_AGENT_PUNJABI = os.environ.get("HOOMAN_AGENT_PUNJABI", "")
-    HOOMAN_AGENT_GUJARATI = os.environ.get("HOOMAN_AGENT_GUJARATI", "")
-    HOOMAN_AGENT_MALAYALAM = os.environ.get("HOOMAN_AGENT_MALAYALAM", "")
-    HOOMAN_AGENT_VOICE_CALL = os.environ.get("HOOMAN_AGENT_VOICE_CALL", "")
+    # Hooman Labs
     HOOMAN_ORGANIZATION_ID = os.environ.get("HOOMAN_ORGANIZATION_ID", "")
+    HOOMAN_CAMPAIGN_ID = os.environ.get("HOOMAN_CAMPAIGN_ID", "")
+    HOOMAN_AGENT_ENGLISH = os.environ.get("HOOMAN_AGENT_ENGLISH", "")
+    HOOMAN_AGENT_HINDI = os.environ.get("HOOMAN_AGENT_HINDI", "")
+    # Add other regional agents...
 
     # Razorpay
     RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
     RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
+
+    @staticmethod
+    def _parse_db_url(url: str, is_local: bool = False) -> str:
+        if not url:
+            return ""
+        if url.startswith("sqlite:/") and not url.startswith("sqlite:///"):
+            url = url.replace("sqlite:/", "sqlite:///")
+        
+        try:
+            parsed = urlparse(url)
+            if parsed.scheme.startswith("postgres"):
+                qs = parse_qs(parsed.query)
+                if not is_local and "sslmode" not in qs:
+                    qs["sslmode"] = ["require"]
+                    new_query = urlencode(qs, doseq=True)
+                    parsed = parsed._replace(query=new_query)
+                return urlunparse(parsed)
+            return url
+        except Exception:
+            return url
+
+class DevelopmentConfig(BaseConfig):
+    """Development configuration."""
+    DEBUG = True
+    TESTING = False
+    
+    SQLALCHEMY_DATABASE_URI = BaseConfig._parse_db_url(
+        os.environ.get("DATABASE_URL", "sqlite:///instance/dev.db"), 
+        is_local=True
+    )
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
+    SQLALCHEMY_ECHO = True
+
+class TestingConfig(BaseConfig):
+    """Testing configuration."""
+    TESTING = True
+    DEBUG = True
+    
+    SQLALCHEMY_DATABASE_URI = os.environ.get("TEST_DATABASE_URL", "sqlite:///:memory:")
+    SQLALCHEMY_ENGINE_OPTIONS = {}
+    
+    WTF_CSRF_ENABLED = False
+    PRESERVE_CONTEXT_ON_EXCEPTION = False
+
+class StagingConfig(BaseConfig):
+    """Staging configuration."""
+    DEBUG = False
+    TESTING = False
+    
+    SQLALCHEMY_DATABASE_URI = BaseConfig._parse_db_url(os.environ.get("DATABASE_URL"))
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+        "pool_size": 5,
+        "max_overflow": 10,
+        "connect_args": {"sslmode": "require"}
+    }
+    
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
+
+class ProductionConfig(BaseConfig):
+    """Production configuration."""
+    DEBUG = False
+    TESTING = False
+    
+    SQLALCHEMY_DATABASE_URI = BaseConfig._parse_db_url(os.environ.get("DATABASE_URL"))
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,
+        "pool_recycle": 300,
+        "pool_size": 20,
+        "max_overflow": 40,
+        "connect_args": {"sslmode": "require"}
+    }
+    
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
+
+config = {
+    'development': DevelopmentConfig,
+    'testing': TestingConfig,
+    'staging': StagingConfig,
+    'production': ProductionConfig,
+    
+    'default': DevelopmentConfig
+}
+

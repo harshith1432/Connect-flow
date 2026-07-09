@@ -34,13 +34,14 @@ from flask_migrate import Migrate
 from sqlalchemy import text
 from datetime import datetime
 
-from app.config import Config
+from app.config import config
 from app.extensions import db, migrate, login_manager, csrf
 
 
 def create_app():
     app = Flask(__name__)
-    app.config.from_object(Config)
+    env = os.environ.get('FLASK_ENV', 'development')
+    app.config.from_object(config.get(env, config['default']))
 
     # Configure Upload Folder
     app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "instance", "uploads")
@@ -577,7 +578,7 @@ def create_app():
 
         # Create tables if they do not exist (for development)
         db.create_all()
-        admin = PlatformAdmin.query.filter_by(email=Config.DEFAULT_ADMIN_EMAIL).first()
+        admin = PlatformAdmin.query.filter_by(email=app.config.get("DEFAULT_ADMIN_EMAIL")).first()
         if not admin:
             admin = PlatformAdmin.create_default()
             db.session.add(admin)
