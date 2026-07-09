@@ -65,6 +65,29 @@ def login():
         account_type = request.form.get("account_type")
         account_id = request.form.get("account_id")
 
+        import requests
+        from flask import current_app
+
+        hcaptcha_response = request.form.get("h-captcha-response")
+        if not hcaptcha_response:
+            flash("Please complete the Captcha verification.", "danger")
+            return render_template("auth/login.html")
+
+        hcaptcha_secret = current_app.config.get("HCAPTCHA_SECRET")
+        if hcaptcha_secret:
+            try:
+                r = requests.post("https://api.hcaptcha.com/siteverify", data={
+                    "secret": hcaptcha_secret,
+                    "response": hcaptcha_response
+                }, timeout=5)
+                result = r.json()
+                if not result.get("success"):
+                    flash("Captcha verification failed. Please try again.", "danger")
+                    return render_template("auth/login.html")
+            except requests.exceptions.RequestException:
+                flash("Failed to contact Captcha service. Please try again later.", "danger")
+                return render_template("auth/login.html")
+
         locked, lock_msg = BruteForceProtection.is_locked_out(email)
         if locked:
             flash(lock_msg, "danger")

@@ -10,6 +10,7 @@
 {% block auth_header %}
 <h1>Welcome Back</h1>
 <p>Sign in to your portal securely.</p>
+<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 {% endblock %}
 
 {% block content %}
@@ -33,6 +34,10 @@
             <i class="bi bi-lock"></i>
             <input type="password" name="password" class="premium-input" placeholder="••••••••" required autocomplete="current-password" />
         </div>
+    </div>
+
+    <div style="display: flex; justify-content: center; margin-bottom: 1rem;">
+        <div class="h-captcha" data-sitekey="{{ config.HCAPTCHA_SITEKEY }}"></div>
     </div>
 
     <button type="submit" class="btn-premium-dark" style="margin-bottom: 1rem; width: 100%;">

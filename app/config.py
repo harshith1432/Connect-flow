@@ -57,6 +57,10 @@ class BaseConfig:
     RAZORPAY_KEY_ID = os.environ.get("RAZORPAY_KEY_ID", "")
     RAZORPAY_KEY_SECRET = os.environ.get("RAZORPAY_KEY_SECRET", "")
 
+    # hCaptcha
+    HCAPTCHA_SITEKEY = os.environ.get("HCAPTCHA_SITEKEY", "")
+    HCAPTCHA_SECRET = os.environ.get("HCAPTCHA_SECRET", "")
+
     @staticmethod
     def _parse_db_url(url: str, is_local: bool = False) -> str:
         if not url:
