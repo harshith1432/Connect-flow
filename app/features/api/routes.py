@@ -1241,3 +1241,27 @@ def submit_upi_payment():
     })
 
 
+
+@api_bp.route('/v1/modules/<int:module_id>/records', methods=['GET'])
+@login_required
+def get_module_records(module_id):
+    from app.models.modules import Module, ModuleRecord
+    
+    # Verify module belongs to user's org
+    module = db.get_or_404(Module, module_id)
+    if hasattr(current_user, 'organization_id') and module.organization_id != current_user.organization_id:
+        return jsonify({'error': 'Unauthorized'}), 403
+        
+    records = ModuleRecord.query.filter_by(module_id=module_id).order_by(ModuleRecord.created_at.desc()).all()
+    
+    data = []
+    for r in records:
+        record_data = r.named_values
+        record_data['id'] = r.id
+        record_data['created_at'] = r.created_at.isoformat()
+        data.append(record_data)
+        
+    return jsonify({
+        'module_name': module.name,
+        'records': data
+    })

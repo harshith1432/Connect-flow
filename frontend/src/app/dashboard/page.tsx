@@ -1,4 +1,6 @@
-import React from 'react';
+"use client";
+
+import React, { useEffect, useState } from 'react';
 import { 
   Settings2, 
   Plus, 
@@ -8,33 +10,39 @@ import {
   MoreHorizontal,
   ChevronLeft,
   ChevronRight,
-  Filter
+  Filter,
+  Loader2
 } from 'lucide-react';
-import { createClient } from '@/utils/supabase/server';
 
-export default async function Page() {
-  // Initialize Supabase client (ready for actual data fetching)
-  const supabase = await createClient();
-  // Example data fetch (commented out until tables exist)
-  // const { data: records } = await supabase.from('module_records').select('*');
+export default function Page() {
+  const [records, setRecords] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // MOCK DATA for layout purposes
+  useEffect(() => {
+    // Fetch real data from the Render API!
+    fetch('/api/v1/modules/1/records')
+      .then(res => res.json())
+      .then(data => {
+        if (data.records) {
+          setRecords(data.records);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching data:", err);
+        setLoading(false);
+      });
+  }, []);
+
+  // Columns for the module (these could also be fetched from the API dynamically)
   const dynamicColumns = [
-    { key: 'name', label: 'Name' },
-    { key: 'phone', label: 'Phone Number' },
-    { key: 'email', label: 'Email' },
-    { key: 'location', label: 'Location' },
-    { key: 'district', label: 'District' },
-    { key: 'language', label: 'Language' },
-    { key: 'status', label: 'Placement Stat' }
-  ];
-
-  const records = [
-    { id: 1, name: 'Alice Smith', phone: '+1 234 567 890', email: 'alice@example.com', location: 'New York', district: 'Manhattan', language: 'English', status: 'Placed' },
-    { id: 2, name: 'Bob Johnson', phone: '+1 987 654 321', email: 'bob@example.com', location: 'London', district: 'Westminster', language: 'English', status: 'Pending' },
-    { id: 3, name: 'Carlos Diaz', phone: '+34 600 123 456', email: 'carlos@example.com', location: 'Madrid', district: 'Centro', language: 'Spanish', status: 'Interviewing' },
-    { id: 4, name: 'Diana Chen', phone: '+86 139 1234 5678', email: 'diana@example.com', location: 'Shanghai', district: 'Pudong', language: 'Mandarin', status: 'Placed' },
-    { id: 5, name: 'Eva Muller', phone: '+49 151 2345 6789', email: 'eva@example.com', location: 'Berlin', district: 'Mitte', language: 'German', status: 'Pending' },
+    { key: 'Name', label: 'Name' },
+    { key: 'Phone Number', label: 'Phone Number' },
+    { key: 'Email', label: 'Email' },
+    { key: 'Location', label: 'Location' },
+    { key: 'District', label: 'District' },
+    { key: 'Language', label: 'Language' },
+    { key: 'Placement Stat', label: 'Placement Stat' }
   ];
 
   return (
@@ -137,28 +145,43 @@ export default async function Page() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                {records.map((record) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan={dynamicColumns.length + 2} className="px-6 py-12 text-center text-gray-500">
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                      Loading records...
+                    </td>
+                  </tr>
+                ) : records.length === 0 ? (
+                  <tr>
+                    <td colSpan={dynamicColumns.length + 2} className="px-6 py-12 text-center text-gray-500">
+                      No records found in this module.
+                    </td>
+                  </tr>
+                ) : records.map((record) => (
                   <tr key={record.id} className="hover:bg-gray-50 transition-colors group cursor-pointer">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input type="checkbox" className="rounded border-gray-300 text-black focus:ring-black" />
                     </td>
-                    {dynamicColumns.map((col) => (
+                    {dynamicColumns.map((col) => {
+                      const val = record[col.key] || "";
+                      return (
                       <td key={col.key} className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                        {col.key === 'status' ? (
+                        {col.key === 'Placement Stat' ? (
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
-                            ${record[col.key] === 'Placed' ? 'bg-gray-100 text-gray-800 border-gray-200' : 
-                              record[col.key] === 'Pending' ? 'bg-white text-gray-600 border-gray-300' : 
+                            ${val === 'Placed' ? 'bg-gray-100 text-gray-800 border-gray-200' : 
+                              val === 'Pending' ? 'bg-white text-gray-600 border-gray-300' : 
                               'bg-gray-50 text-gray-900 border-gray-300'}`}
                           >
-                            {record[col.key]}
+                            {val}
                           </span>
-                        ) : col.key === 'name' ? (
-                          <span className="font-medium text-gray-900">{record[col.key]}</span>
+                        ) : col.key === 'Name' ? (
+                          <span className="font-medium text-gray-900">{val}</span>
                         ) : (
-                          record[col.key as keyof typeof record]
+                          val
                         )}
                       </td>
-                    ))}
+                    )})}
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button className="text-gray-400 hover:text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none">
                         <MoreHorizontal className="w-5 h-5" />
