@@ -1029,7 +1029,7 @@ def list_helpdesk_queries():
     })
 
 
-@api_bp.route("/api/upi/submit-payment", methods=["POST"])
+@api_bp.route("/upi/submit-payment", methods=["POST"])
 @login_required
 def submit_upi_payment():
     from app.models.platform import PaymentGateway, PaymentMethod, Plan
