@@ -72,59 +72,100 @@ class CampaignExecutionService:
             target.next_retry_at   = None
             db.session.commit()
 
-            # Call Hooman Labs
-            result = HumanLabProvider.start_call(
-                {"campaign_id": campaign_id, "phone": phone,
-                 "script": script_text, "language": language},
-                campaign.organization_id
-            )
-            success  = result.get("success", False)
-            task_id  = result.get("task_id", "")
-            logger.info(f"[CALL START] [target={target_id}] Hooman result: success={success}, task_id={task_id}")
-            from app.core.logging_system import log_activity
-            log_activity("CALL_DISPATCH", f"Target {target_id} phone={phone}, success={success}, task_id={task_id}")
+            # Determine provider based on sender_number_id
+            provider = "hooman_labs" # default
+            if campaign.sender_number_id:
+                from app.models import CommunicationNumber
+                sender_number_record = db.session.get(CommunicationNumber, campaign.sender_number_id)
+                if sender_number_record:
+                    if sender_number_record.channel_type and sender_number_record.channel_type.lower() == "voice":
+                        provider = "twilio"
+                    elif sender_number_record.channel_type and sender_number_record.channel_type.lower() == "hooman_voice":
+                        provider = "hooman_labs"
 
-            # Normalize recipient to last-10 digits for consistent LIKE matching
-            import re as _re_r
-            _r = _re_r.sub(r'\D', '', phone)
-            if _r.startswith('91') and len(_r) == 12:
-                _r = _r[2:]
-            elif len(_r) > 10:
-                _r = _r[-10:]
-            _recipient = _r if _r else phone
-
-            # DeliveryLog
-            log = DeliveryLog(
-                organization_id=campaign.organization_id,
-                campaign_id=campaign_id,
-                record_id=target.record_id,
-                channel="hooman_voice",
-                recipient=_recipient,
-                status="waiting_webhook" if success else "failed",
-                error=result.get("error"),
-                sid=task_id,
-                meta={"language": language, "attempt": target.call_attempts,
-                      "provider": "hooman_labs", "webhook_received": False}
-            )
-            db.session.add(log)
-
-            if success:
-                target.status = "waiting_webhook"
-                target.conversation_id = task_id
-                target.external_task_id = task_id
-                target.last_call_status = "waiting_webhook"
+            if provider == "hooman_labs":
+                # Call Hooman Labs
+                result = HumanLabProvider.start_call(
+                    {"campaign_id": campaign_id, "phone": phone,
+                     "script": script_text, "language": language},
+                    campaign.organization_id
+                )
+                success  = result.get("success", False)
+                task_id  = result.get("task_id", "")
+                logger.info(f"[CALL START] [target={target_id}] Hooman result: success={success}, task_id={task_id}")
+                from app.core.logging_system import log_activity
+                log_activity("CALL_DISPATCH", f"Target {target_id} phone={phone}, success={success}, task_id={task_id}")
+    
+                # Normalize recipient to last-10 digits for consistent LIKE matching
+                import re as _re_r
+                _r = _re_r.sub(r'\D', '', phone)
+                if _r.startswith('91') and len(_r) == 12:
+                    _r = _r[2:]
+                elif len(_r) > 10:
+                    _r = _r[-10:]
+                _recipient = _r if _r else phone
+    
+                # DeliveryLog
+                log = DeliveryLog(
+                    organization_id=campaign.organization_id,
+                    campaign_id=campaign_id,
+                    record_id=target.record_id,
+                    channel="hooman_voice",
+                    recipient=_recipient,
+                    status="waiting_webhook" if success else "failed",
+                    error=result.get("error"),
+                    sid=task_id,
+                    meta={"language": language, "attempt": target.call_attempts,
+                          "provider": "hooman_labs", "webhook_received": False}
+                )
+                db.session.add(log)
+    
+                if success:
+                    target.status = "waiting_webhook"
+                    target.conversation_id = task_id
+                    target.external_task_id = task_id
+                    target.last_call_status = "waiting_webhook"
+                else:
+                    # Immediate failure — treat like a no-answer webhook
+                    target.status = "failed"
+                    target.last_call_status = "failed"
+                    target.end_reason = result.get("error", "API call failed")
+                    target.completed_at = datetime.utcnow()
+    
+                db.session.commit()
+    
+                if not success:
+                    # Decide retry or fallback right now
+                    CampaignExecutionService._handle_no_answer(app, target_id)
             else:
-                # Immediate failure — treat like a no-answer webhook
-                target.status = "failed"
-                target.last_call_status = "failed"
-                target.end_reason = result.get("error", "API call failed")
-                target.completed_at = datetime.utcnow()
-
-            db.session.commit()
-
-            if not success:
-                # Decide retry or fallback right now
-                CampaignExecutionService._handle_no_answer(app, target_id)
+                # Call Twilio
+                from app.common.notifications.twilio import make_call
+                
+                log = make_call(
+                    organization_id=campaign.organization_id,
+                    contact_id=target.contact_id,
+                    tts_text=script_text,
+                    language=language,
+                    campaign_id=campaign_id,
+                    sender_number_id=campaign.sender_number_id,
+                    phone=phone,
+                    record_id=target.record_id
+                )
+                
+                # Target status updates will be handled by webhook (voice-status)
+                # But we can mark it as waiting_webhook for consistency
+                if log.status != "failed":
+                    target.status = "waiting_webhook"
+                    target.last_call_status = "waiting_webhook"
+                else:
+                    target.status = "failed"
+                    target.last_call_status = "failed"
+                    target.end_reason = log.error or "Twilio API call failed"
+                    target.completed_at = datetime.utcnow()
+                db.session.commit()
+                
+                if log.status == "failed":
+                    CampaignExecutionService._handle_no_answer(app, target_id)
 
     # ══════════════════════════════════════════════════════════════
     # 1.5. EXECUTE WHATSAPP CAMPAIGN (TEXT + optional VOICE NOTE)

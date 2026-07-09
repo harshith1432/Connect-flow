@@ -534,6 +534,8 @@ def make_call(
     language="English",
     campaign_id=None,
     sender_number_id=None,
+    phone=None,
+    record_id=None,
 ):
     """
     Initiate a voice call via Twilio.
@@ -547,6 +549,7 @@ def make_call(
         organization_id=organization_id,
         campaign_id=campaign_id,
         contact_id=contact_id,
+        record_id=record_id,
         channel="call",
         status="queued",
     )
@@ -572,10 +575,16 @@ def make_call(
             thread_log = db.session.get(DeliveryLog, log_id)
             thread_contact = db.session.get(Contact, contact_id)
             try:
-                if not thread_contact:
-                    raise ValueError(
-                        f"Contact {contact_id} not found in background thread"
-                    )
+                phone_str = phone
+                if contact_id and not phone_str:
+                    if not thread_contact:
+                        raise ValueError(
+                            f"Contact {contact_id} not found in background thread"
+                        )
+                    phone_str = thread_contact.phone
+
+                if not phone_str:
+                    raise ValueError("No recipient phone provided")
 
                 from_raw = sender_number
                 print(f"DEBUG: Twilio using sender number: {from_raw}")
@@ -583,7 +592,7 @@ def make_call(
                     from_raw = from_raw.replace("whatsapp:", "")
 
                 # Normalization
-                to_num = re.sub(r"\D", "", thread_contact.phone)
+                to_num = re.sub(r"\D", "", phone_str)
                 if len(to_num) == 10:
                     to_num = "91" + to_num
                 if not to_num.startswith("+"):
