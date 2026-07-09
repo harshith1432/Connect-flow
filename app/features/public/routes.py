@@ -68,13 +68,13 @@ def login():
         import requests
         from flask import current_app
 
-        hcaptcha_response = request.form.get("h-captcha-response")
-        if not hcaptcha_response:
-            flash("Please complete the Captcha verification.", "danger")
-            return render_template("auth/login.html")
-
         hcaptcha_secret = current_app.config.get("HCAPTCHA_SECRET")
         if hcaptcha_secret:
+            hcaptcha_response = request.form.get("h-captcha-response")
+            if not hcaptcha_response:
+                flash("Please complete the Captcha verification.", "danger")
+                return render_template("auth/login.html")
+
             try:
                 r = requests.post("https://api.hcaptcha.com/siteverify", data={
                     "secret": hcaptcha_secret,

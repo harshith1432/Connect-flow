@@ -32,9 +32,11 @@
         </div>
     </div>
 
+    {% if config.HCAPTCHA_SITEKEY %}
     <div style="display: flex; justify-content: center; margin-bottom: 1rem;">
         <div class="h-captcha" data-sitekey="{{ config.HCAPTCHA_SITEKEY }}"></div>
     </div>
+    {% endif %}
 
     <button type="submit" class="btn-premium-dark" style="margin-bottom: 1rem; width: 100%;">
         Sign In <i class="bi bi-arrow-right"></i>
