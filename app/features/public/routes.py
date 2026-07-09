@@ -69,7 +69,8 @@ def login():
         from flask import current_app
 
         hcaptcha_secret = current_app.config.get("HCAPTCHA_SECRET")
-        if hcaptcha_secret:
+        hcaptcha_sitekey = current_app.config.get("HCAPTCHA_SITEKEY")
+        if hcaptcha_secret and hcaptcha_sitekey:
             hcaptcha_response = request.form.get("h-captcha-response")
             if not hcaptcha_response:
                 flash("Please complete the Captcha verification.", "danger")
