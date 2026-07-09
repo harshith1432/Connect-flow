@@ -1,0 +1,59 @@
+{% extends "base_platform_premium.html" %}
+{% block title %}CalltoConvey | CE Payments{% endblock %}
+{% block page_title %}Campaign Express Payments{% endblock %}
+
+{% block content %}
+<div class="premium-card mb-4">
+    <div class="card-header-premium">
+        <div class="header-left">
+            <h2>Transactions</h2>
+            <p>Monitor campaign express revenue</p>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle table-hover" style="border-collapse: separate; border-spacing: 0 0.5rem; padding: 0 1.5rem;">
+            <thead>
+                <tr style="color: var(--grey-400); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <th class="border-0 pb-3">Amount</th>
+                    <th class="border-0 pb-3">User</th>
+                    <th class="border-0 pb-3">Status</th>
+                    <th class="border-0 pb-3">Gateway</th>
+                    <th class="border-0 pb-3 text-end">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in payments %}
+                <tr style="background: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-radius: 8px;">
+                    <td class="border-0 rounded-start" style="padding: 1rem;">
+                        <div class="fw-bold" style="color: #22c55e;">₹{{ "%.2f"|format(p.amount) }}</div>
+                        <div class="small" style="color: var(--grey-400);">TXN: {{ p.transaction_id or 'N/A' }}</div>
+                    </td>
+                    <td class="border-0" style="padding: 1rem;">
+                        <div class="small fw-bold">{{ p.user.full_name }}</div>
+                        <div class="small text-muted">ID: {{ p.user.id }}</div>
+                    </td>
+                    <td class="border-0" style="padding: 1rem;">
+                        <span class="badge {% if p.status == 'completed' %}bg-success{% elif p.status == 'pending' %}bg-warning{% else %}bg-danger{% endif %}">{{ p.status|title }}</span>
+                    </td>
+                    <td class="border-0" style="padding: 1rem;">
+                        <span class="badge bg-secondary">{{ p.gateway_provider|title if p.gateway_provider else 'Manual' }}</span>
+                    </td>
+                    <td class="border-0 rounded-end text-end" style="padding: 1rem;">
+                        <span class="small text-muted">{{ p.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 border-0">
+                        <div class="empty-state">
+                            <i class="bi bi-receipt"></i>
+                            <p>No payments recorded yet.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

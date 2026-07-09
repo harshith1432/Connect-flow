@@ -1,5 +1,5 @@
 {% extends "base_worker_premium.html" %}
-{% block title %}{{ module.name }} — Data Groups | ConnectFlow{% endblock %}
+{% block title %}{{ module.name }} — Data Groups | CalltoConvey{% endblock %}
 {% block page_title %}{{ module.name }}{% endblock %}
 
 {% block head_extra %}
@@ -34,12 +34,12 @@
 .g-kpi-top { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:.75rem; }
 .g-kpi-label { font-size:.78rem; font-weight:700; color:#6b7280; text-transform:uppercase; letter-spacing:.5px; }
 .g-kpi-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.1rem; }
-.icon-purple { background: var(--accent-light); color: var(--accent); }
-.icon-green  { background: rgba(23,201,100,.1); color: var(--success); }
-.icon-amber  { background: rgba(245,165,36,.1);  color: var(--warning); }
-.icon-blue   { background: rgba(59,130,246,.1);  color:#3b82f6; }
-.g-kpi-value { font-family:'Outfit',sans-serif; font-size:2rem; font-weight:800; color:#111; margin-bottom:.2rem; }
-.g-kpi-sub   { font-size:.78rem; font-weight:600; color:#10b981; display:flex; align-items:center; gap:.3rem; }
+.icon-purple { background: var(--grey-50, #f9fafb); color: var(--black, #000000); border: 1px solid var(--grey-200, #e5e7eb); }
+.icon-green  { background: var(--grey-50, #f9fafb); color: var(--black, #000000); border: 1px solid var(--grey-200, #e5e7eb); }
+.icon-amber  { background: var(--grey-50, #f9fafb); color: var(--black, #000000); border: 1px solid var(--grey-200, #e5e7eb); }
+.icon-blue   { background: var(--grey-50, #f9fafb); color: var(--black, #000000); border: 1px solid var(--grey-200, #e5e7eb); }
+.g-kpi-value { font-family:'Outfit',sans-serif; font-size:2rem; font-weight:800; color:var(--black, #000000); margin-bottom:.2rem; }
+.g-kpi-sub   { font-size:.78rem; font-weight:600; color:var(--grey-500, #6b7280); display:flex; align-items:center; gap:.3rem; }
 
 /* ── Section card ──────────────────────────────────────────── */
 .section-card {

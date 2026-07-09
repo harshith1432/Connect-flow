@@ -210,7 +210,7 @@ def mfa_setup():
 
     # Generate provisioning URI
     email = current_user.email
-    issuer = "ConnectFlow CRM"
+    issuer = "CalltoConvey CRM"
     provisioning_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(
         name=email, issuer_name=issuer
     )
@@ -370,7 +370,8 @@ def revoke_session(token):
         flash(
             "You terminated your current session and have been logged out.", "warning"
         )
-        return redirect(url_for("main.index"))
+        login_endpoint = SessionManager._get_login_endpoint(request.path)
+        return redirect(url_for(login_endpoint))
 
     flash("Remote session revoked successfully.", "success")
     return redirect(url_for("security.sessions"))

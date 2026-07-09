@@ -1,0 +1,96 @@
+{% extends "base_ce_premium.html" %}
+
+{% block title %}Create Campaign | Campaign Express{% endblock %}
+{% block page_title %}Create Campaign{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="premium-card" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 2rem; margin-bottom: 2rem;">
+      <div class="card-header-premium" style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--grey-100); padding-bottom: 1.25rem; margin-bottom: 1.75rem;">
+        <div>
+          <h4 style="font-weight: 700; color: var(--grey-900); margin: 0;">Campaign Configuration</h4>
+          <p style="color: var(--grey-500); font-size: 0.85rem; margin: 0.25rem 0 0 0;">Fill in the details to create a new communication campaign.</p>
+        </div>
+        <a href="{{ url_for('campaign_express.campaigns') }}" class="btn-premium secondary" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.5rem 1rem; font-size: 0.85rem;">
+          <i class="bi bi-arrow-left"></i> Back to List
+        </a>
+      </div>
+
+      <form method="POST" action="{{ url_for('campaign_express.campaign_create') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Campaign Name -->
+        <div class="mb-4">
+          <label for="name" class="form-label" style="font-weight: 600; color: var(--grey-700); font-size: 0.875rem; margin-bottom: 0.4rem;">
+            <i class="bi bi-tag text-muted me-1"></i> Campaign Name <span class="text-danger">*</span>
+          </label>
+          <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Q2 Customer Satisfaction Survey" required
+            style="border-radius: 10px; border: 1.5px solid var(--grey-200); padding: 0.75rem 1rem; font-size: 0.95rem; font-family: var(--primary-font);">
+        </div>
+
+        <!-- Campaign Type -->
+        <div class="mb-4">
+          <label class="form-label" style="font-weight: 600; color: var(--grey-700); font-size: 0.875rem; margin-bottom: 0.4rem;">
+            <i class="bi bi-chat-left-dots text-muted me-1"></i> Channel / Type <span class="text-danger">*</span>
+          </label>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <input type="radio" class="btn-check" name="type" id="type_call" value="call" checked>
+              <label class="btn btn-outline-primary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center" for="type_call"
+                style="border-radius: 12px; border: 1.5px solid var(--grey-200); background: var(--white); color: var(--grey-700); transition: all 0.2s; cursor: pointer;">
+                <i class="bi bi-telephone-fill mb-2" style="font-size: 1.5rem; color: #6366f1;"></i>
+                <span style="font-weight: 600; font-size: 0.9rem;">Voice Call</span>
+                <span class="text-muted" style="font-size: 0.75rem; text-align: center; margin-top: 0.25rem;">Interactive voice broadcasting</span>
+              </label>
+            </div>
+            <div class="col-md-4">
+              <input type="radio" class="btn-check" name="type" id="type_whatsapp_text" value="whatsapp_text">
+              <label class="btn btn-outline-primary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center" for="type_whatsapp_text"
+                style="border-radius: 12px; border: 1.5px solid var(--grey-200); background: var(--white); color: var(--grey-700); transition: all 0.2s; cursor: pointer;">
+                <i class="bi bi-whatsapp mb-2" style="font-size: 1.5rem; color: #22c55e;"></i>
+                <span style="font-weight: 600; font-size: 0.9rem;">WhatsApp Text</span>
+                <span class="text-muted" style="font-size: 0.75rem; text-align: center; margin-top: 0.25rem;">Standard WhatsApp template messages</span>
+              </label>
+            </div>
+            <div class="col-md-4">
+              <input type="radio" class="btn-check" name="type" id="type_whatsapp_voice" value="whatsapp_voice">
+              <label class="btn btn-outline-primary w-100 p-3 h-100 d-flex flex-column align-items-center justify-content-center" for="type_whatsapp_voice"
+                style="border-radius: 12px; border: 1.5px solid var(--grey-200); background: var(--white); color: var(--grey-700); transition: all 0.2s; cursor: pointer;">
+                <i class="bi bi-chat-square-quote mb-2" style="font-size: 1.5rem; color: #f59e0b;"></i>
+                <span style="font-weight: 600; font-size: 0.9rem;">WhatsApp Voice</span>
+                <span class="text-muted" style="font-size: 0.75rem; text-align: center; margin-top: 0.25rem;">Audio files sent via WhatsApp</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="mb-4">
+          <label for="description" class="form-label" style="font-weight: 600; color: var(--grey-700); font-size: 0.875rem; margin-bottom: 0.4rem;">
+            <i class="bi bi-file-earmark-text text-muted me-1"></i> Campaign Description <span class="text-muted">(Optional)</span>
+          </label>
+          <textarea id="description" name="description" class="form-control" rows="4" placeholder="Enter notes or objectives for this campaign..."
+            style="border-radius: 10px; border: 1.5px solid var(--grey-200); padding: 0.75rem 1rem; font-size: 0.95rem; font-family: var(--primary-font);"></textarea>
+        </div>
+
+        <!-- Save Button -->
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+          <button type="submit" class="btn-premium primary" style="padding: 0.75rem 2rem; border-radius: 10px; font-weight: 600; border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white;">
+            Save as Draft
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<style>
+  /* Custom toggle styles to match premium design system */
+  .btn-check:checked + label {
+    border-color: #6366f1 !important;
+    background-color: rgba(99, 102, 241, 0.04) !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+  }
+</style>
+{% endblock %}

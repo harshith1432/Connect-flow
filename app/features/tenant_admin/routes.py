@@ -33,178 +33,7 @@ org_bp = Blueprint("org", __name__, template_folder="templates", static_folder="
 
 @org_bp.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-        selected_org_id = request.form.get("organization_id")
-
-        # --- Brute Force Protection ---
-        from app.security.auth_protection import BruteForceProtection
-
-        locked, lock_msg = BruteForceProtection.is_locked_out(email)
-        if locked:
-            flash(lock_msg, "danger")
-            return render_template("auth/org_login.html")
-
-        # Find all admin users with this email
-        matching_users = OrganizationUser.query.filter_by(
-            email=email, role="org_admin"
-        ).all()
-
-        # Filter by valid password
-        valid_users = [u for u in matching_users if u.check_password(password)]
-
-        if not valid_users:
-            BruteForceProtection.log_failed_attempt(identifier=email)
-            flash("Invalid credentials", "danger")
-            return render_template("auth/org_login.html")
-
-        # If specific org selected (from selection page)
-        if selected_org_id:
-            user = OrganizationUser.query.filter_by(
-                email=email, organization_id=selected_org_id
-            ).first()
-            if user and user.check_password(password):
-                # Check organization status
-                org_status = user.organization.status
-                if org_status == "pending":
-                    return render_template(
-                        "auth/access_denied.html",
-                        status="pending",
-                        org_name=user.organization.name,
-                    )
-                elif org_status == "rejected":
-                    return render_template(
-                        "auth/access_denied.html",
-                        status="rejected",
-                        org_name=user.organization.name,
-                        reason=user.organization.description,
-                    )
-                elif org_status == "suspended":
-                    flash(
-                        "Your organization has been suspended. Please contact platform admin.",
-                        "danger",
-                    )
-                    return render_template("auth/org_login.html")
-
-                # Track Activity
-                user.login_count = (user.login_count or 0) + 1
-                user.last_login = datetime.utcnow()
-                db.session.commit()
-
-                # Log to Recent Activity Feed
-                ChangeRequest.log(
-                    user.organization_id,
-                    user.id,
-                    "Admin Login",
-                    new_val=f"Session started from {request.remote_addr}",
-                )
-
-                # MFA Check
-                from app.security.mfa import MFAService
-                from flask import session
-
-                user_type = "org_user"
-                config = MFAService.get_mfa_config(user.id, user_type)
-
-                if config.is_enabled:
-                    session["pre_mfa_user_id"] = user.id
-                    session["pre_mfa_user_type"] = user_type
-                    session["pre_mfa_remember"] = "remember" in request.form
-
-                    success, msg = MFAService.generate_and_send_otp(
-                        user.id, user_type, method=config.mfa_type
-                    )
-                    if success:
-                        flash("Verification code sent.", "info")
-                        return redirect(url_for("security.verify_otp"))
-                    else:
-                        flash(f"Error sending verification code: {msg}", "danger")
-                        return render_template("auth/org_login.html")
-                else:
-                    from app.security.session_manager import SessionManager
-
-                    login_user(user, remember="remember" in request.form)
-                    SessionManager.regenerate_session()
-                    SessionManager.track_session(user.id, user_type)
-                    return redirect(url_for("org.dashboard"))
-
-        # If only one valid user, log in immediately (but check status first)
-        if len(valid_users) == 1:
-            user = valid_users[0]
-            org_status = user.organization.status
-
-            if org_status == "pending":
-                return render_template(
-                    "auth/access_denied.html",
-                    status="pending",
-                    org_name=user.organization.name,
-                )
-            elif org_status == "rejected":
-                return render_template(
-                    "auth/access_denied.html",
-                    status="rejected",
-                    org_name=user.organization.name,
-                    reason=user.organization.description,
-                )
-            elif org_status == "suspended":
-                flash(
-                    "Your organization has been suspended. Please contact platform admin.",
-                    "danger",
-                )
-                return render_template("auth/org_login.html")
-
-            # Track Activity
-            user.login_count = (user.login_count or 0) + 1
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-
-            # Log to Recent Activity Feed
-            ChangeRequest.log(
-                user.organization_id,
-                user.id,
-                "Admin Login",
-                new_val=f"Direct login from {request.remote_addr}",
-            )
-
-            # MFA Check
-            from app.security.mfa import MFAService
-            from flask import session
-
-            user_type = "org_user"
-            config = MFAService.get_mfa_config(user.id, user_type)
-
-            if config.is_enabled:
-                session["pre_mfa_user_id"] = user.id
-                session["pre_mfa_user_type"] = user_type
-                session["pre_mfa_remember"] = "remember" in request.form
-
-                success, msg = MFAService.generate_and_send_otp(
-                    user.id, user_type, method=config.mfa_type
-                )
-                if success:
-                    flash("Verification code sent.", "info")
-                    return redirect(url_for("security.verify_otp"))
-                else:
-                    flash(f"Error sending verification code: {msg}", "danger")
-                    return render_template("auth/org_login.html")
-            else:
-                from app.security.session_manager import SessionManager
-
-                login_user(user, remember="remember" in request.form)
-                SessionManager.regenerate_session()
-                SessionManager.track_session(user.id, user_type)
-                return redirect(url_for("org.dashboard"))
-
-        # Multiple orgs found, show selection page
-        return render_template(
-            "auth/select_org.html",
-            matching_users=valid_users,
-            email=email,
-            password=password,
-        )
-
-    return render_template("auth/org_login.html")
+    return redirect(url_for("main.login", **request.args))
 
 
 @org_bp.route("/forgot-password", methods=["GET", "POST"])
@@ -380,6 +209,73 @@ def dashboard():
         DeliveryLog.organization_id == org_id, DeliveryLog.channel.ilike("%whatsapp%")
     ).count()
 
+    # Real-time success rate
+    total_logs = DeliveryLog.query.filter_by(organization_id=org_id).count()
+    success_logs = DeliveryLog.query.filter(
+        DeliveryLog.organization_id == org_id,
+        DeliveryLog.status.in_(["completed", "delivered", "sent", "read", "answered"]),
+    ).count()
+    success_rate = round((success_logs / total_logs * 100), 1) if total_logs > 0 else 0
+
+    # Real-time Channel splits
+    total_delivery = total_calls + total_messages
+    whatsapp_percentage = 0
+    voice_percentage = 0
+    if total_delivery > 0:
+        whatsapp_percentage = round((total_messages / total_delivery) * 100)
+        voice_percentage = round((total_calls / total_delivery) * 100)
+
+    # Sparkline timeline datasets
+    from datetime import time
+    today_date = datetime.utcnow().date()
+    last_7_days = [today_date - timedelta(days=i) for i in range(6, -1, -1)]
+
+    daily_messages = []
+    daily_calls = []
+    daily_workers = []
+    daily_success = []
+
+    for d in last_7_days:
+        start_dt = datetime.combine(d, time.min)
+        end_dt = datetime.combine(d, time.max)
+
+        msg_cnt = DeliveryLog.query.filter(
+            DeliveryLog.organization_id == org_id,
+            DeliveryLog.channel.ilike("%whatsapp%"),
+            DeliveryLog.created_at >= start_dt,
+            DeliveryLog.created_at <= end_dt
+        ).count()
+        daily_messages.append(msg_cnt)
+
+        call_cnt = DeliveryLog.query.filter(
+            DeliveryLog.organization_id == org_id,
+            DeliveryLog.channel.in_(["call", "voice", "hooman_voice", "twilio_voice"]),
+            DeliveryLog.created_at >= start_dt,
+            DeliveryLog.created_at <= end_dt
+        ).count()
+        daily_calls.append(call_cnt)
+
+        wrk_cnt = OrganizationUser.query.filter(
+            OrganizationUser.organization_id == org_id,
+            OrganizationUser.role == "worker",
+            OrganizationUser.created_at <= end_dt
+        ).count()
+        daily_workers.append(wrk_cnt)
+
+        day_total = DeliveryLog.query.filter(
+            DeliveryLog.organization_id == org_id,
+            DeliveryLog.created_at >= start_dt,
+            DeliveryLog.created_at <= end_dt
+        ).count()
+        day_success = DeliveryLog.query.filter(
+            DeliveryLog.organization_id == org_id,
+            DeliveryLog.status.in_(["completed", "delivered", "sent", "read", "answered"]),
+            DeliveryLog.created_at >= start_dt,
+            DeliveryLog.created_at <= end_dt
+        ).count()
+        day_rate = round((day_success / day_total * 100), 1) if day_total > 0 else 0
+        daily_success.append(day_rate)
+
     # Recent Activities Feed
     activities = (
         ChangeRequest.query.filter_by(organization_id=org_id)
@@ -441,6 +337,13 @@ def dashboard():
         worker_count=worker_count,
         activities=activities,
         workflows=workflow_data,
+        success_rate=success_rate,
+        whatsapp_percentage=whatsapp_percentage,
+        voice_percentage=voice_percentage,
+        daily_messages=daily_messages,
+        daily_calls=daily_calls,
+        daily_workers=daily_workers,
+        daily_success=daily_success
     )
 
 
@@ -617,6 +520,22 @@ def create_worker():
             )
             return redirect(url_for("org.browse_plans"))
 
+        # Enforce worker limits
+        from app.core.constants import PLAN_LIMITS
+        plan_name = (sub.plan or "Free Trial").lower()
+        plan_limits = PLAN_LIMITS.get(plan_name, PLAN_LIMITS["free trial"])
+        
+        current_workers_count = OrganizationUser.query.filter_by(
+            organization_id=current_user.organization_id, role="worker"
+        ).count()
+        
+        if current_workers_count >= plan_limits["workers"]:
+            flash(
+                f"You have reached your plan limit of {plan_limits['workers']} workers. Please upgrade your subscription plan to add more.",
+                "danger"
+            )
+            return redirect(url_for("org.browse_plans"))
+
         email = request.form["email"]
         password = request.form["password"]
 
@@ -654,6 +573,40 @@ def delete_worker(wid):
     db.session.commit()
 
     flash("Worker deleted successfully", "success")
+    return redirect(url_for("org.manage_workers"))
+
+
+@org_bp.route("/workers/<int:wid>/edit", methods=["POST"])
+@verified_org_required
+def edit_worker(wid):
+    if not hasattr(current_user, "organization_id"):
+        flash("Access denied", "danger")
+        return redirect(url_for("org.login"))
+
+    worker = db.get_or_404(OrganizationUser, wid)
+    if worker.organization_id != current_user.organization_id:
+        flash("Access denied", "danger")
+        return redirect(url_for("org.manage_workers"))
+
+    email = request.form.get("email")
+    password = request.form.get("password")
+
+    if not email:
+        flash("Email is required", "danger")
+        return redirect(url_for("org.manage_workers"))
+
+    # Check if another user has this email
+    existing_user = OrganizationUser.query.filter_by(email=email).first()
+    if existing_user and existing_user.id != worker.id:
+        flash("Email already exists", "danger")
+        return redirect(url_for("org.manage_workers"))
+
+    worker.email = email
+    if password:
+        worker.password_hash = generate_password_hash(password)
+
+    db.session.commit()
+    flash("Worker updated successfully", "success")
     return redirect(url_for("org.manage_workers"))
 
 
@@ -878,15 +831,24 @@ def browse_plans():
     subscription = Subscription.query.filter_by(organization_id=org.id).first()
     
     # Calculate usage and limits
-    limits = {"workers": 10, "messages": 1000, "campaigns": 3}
-    if subscription:
-        if subscription.plan.lower() == "pro":
-            limits = {"workers": 50, "messages": 50000, "campaigns": 20}
-        elif subscription.plan.lower() == "enterprise":
-            limits = {"workers": 999, "messages": 999999, "campaigns": 100}
+    from app.core.constants import PLAN_LIMITS
+    plan_name = (subscription.plan or "Free Trial").lower() if subscription else "free trial"
+    plan_limits = PLAN_LIMITS.get(plan_name, PLAN_LIMITS["free trial"])
+    
+    limits = {
+        "workers": plan_limits["workers"],
+        "messages": plan_limits["messages"],
+        "campaigns": plan_limits["campaigns"],
+        "modules": plan_limits["modules"]
+    }
             
     workers_count = OrganizationUser.query.filter_by(organization_id=org.id, role="worker").count()
     campaigns_count = Campaign.query.filter_by(organization_id=org.id).count()
+    delivery_logs_count = DeliveryLog.query.filter_by(organization_id=org.id).count()
+    modules_count = Module.query.filter_by(organization_id=org.id).count()
+    
+    from app.models.organization import Payment
+    payments = Payment.query.filter_by(organization_id=org.id).order_by(Payment.created_at.desc()).limit(5).all()
     
     return render_template(
         "organization/plans.html", 
@@ -895,8 +857,9 @@ def browse_plans():
         limits=limits,
         workers_count=workers_count,
         campaigns_count=campaigns_count,
-        delivery_logs_count=0,
-        payments=[]
+        delivery_logs_count=delivery_logs_count,
+        modules_count=modules_count,
+        payments=payments
     )
 
 
@@ -922,11 +885,22 @@ def invoices():
 @org_bp.route("/checkout/<int:plan_id>")
 @login_required
 def checkout(plan_id):
-    from app.models.platform import PaymentGateway
+    from app.models.platform import PaymentGateway, PaymentMethod
+    import json
     plan = db.get_or_404(Plan, plan_id)
     org = current_user.organization
     gateways = PaymentGateway.query.filter_by(active=True).order_by(PaymentGateway.priority.desc()).all()
-    return render_template("organization/checkout.html", plan=plan, org=org, gateways=gateways)
+    
+    # Retrieve Dynamic UPI settings
+    upi_method = PaymentMethod.query.filter_by(type="dynamic_upi", is_active=True).first()
+    upi_config = {}
+    if upi_method:
+        try:
+            upi_config = json.loads(upi_method.instructions)
+        except Exception:
+            pass
+            
+    return render_template("organization/checkout.html", plan=plan, org=org, gateways=gateways, upi_config=upi_config)
 
 
 @org_bp.route("/payment/process", methods=["POST"])
@@ -1616,7 +1590,56 @@ def export_reports_excel():
         output,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
-        download_name=f"ConnectFlow_Report_{datetime.utcnow().strftime('%Y%m%d')}.xlsx",
+        download_name=f"CalltoConvey_Report_{datetime.utcnow().strftime('%Y%m%d')}.xlsx",
+    )
+
+
+@org_bp.route("/payment-verifications")
+@login_required
+def payment_verifications():
+    from app.models.payment_verification import PaymentVerification
+    from datetime import datetime, timedelta
+    
+    org_id = current_user.organization_id
+    
+    # Base query for this organization
+    query = PaymentVerification.query.filter_by(organization_id=org_id)
+    
+    # Calculate stats
+    pending_count = query.filter_by(status="pending").count()
+    approved_count = query.filter_by(status="approved").count()
+    rejected_count = query.filter_by(status="rejected").count()
+    
+    # Total approved amount
+    from sqlalchemy import func
+    total_amount_res = db.session.query(func.sum(PaymentVerification.amount)).filter_by(organization_id=org_id, status="approved").scalar()
+    total_amount = float(total_amount_res) if total_amount_res else 0.0
+    
+    # Today's pending
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_pending = query.filter(PaymentVerification.status == "pending", PaymentVerification.submitted_time >= today_start).count()
+    
+    # Average verification time (in minutes)
+    completed_requests = query.filter(PaymentVerification.status.in_(["approved", "rejected"]), PaymentVerification.verification_time.isnot(None)).all()
+    if completed_requests:
+        total_time_diff = sum((r.verification_time - r.submitted_time).total_seconds() for r in completed_requests)
+        avg_seconds = total_time_diff / len(completed_requests)
+        avg_verification_time = f"{int(avg_seconds // 60)}m {int(avg_seconds % 60)}s"
+    else:
+        avg_verification_time = "N/A"
+        
+    # Recent transactions
+    recent_transactions = query.order_by(PaymentVerification.submitted_time.desc()).limit(10).all()
+    
+    return render_template(
+        "organization/payment_verifications.html",
+        pending_count=pending_count,
+        approved_count=approved_count,
+        rejected_count=rejected_count,
+        total_amount=total_amount,
+        today_pending=today_pending,
+        avg_verification_time=avg_verification_time,
+        recent_transactions=recent_transactions
     )
 
 

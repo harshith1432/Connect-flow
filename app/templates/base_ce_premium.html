@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+{% set user_theme = current_user.preferences.get('theme', 'system') if current_user.is_authenticated and current_user.preferences else 'system' %}
+<html lang="en" data-theme="{{ user_theme }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>{% block title %}CalltoConvey | Campaign Express{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_premium.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard_extensions.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <style>
+        :root {
+            --primary-font: 'Inter', sans-serif;
+            --heading-font: 'Outfit', sans-serif;
+            --sidebar-width: 210px; /* Narrower sidebar */
+        }
+        body {
+            font-family: var(--primary-font);
+        }
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--heading-font);
+        }
+        
+        /* Compact Sidebar */
+        .premium-sidebar {
+            padding: 1.25rem 0.75rem;
+        }
+        .sidebar-logo {
+            margin-bottom: 2rem;
+            padding-left: 0.5rem;
+            font-size: 1.25rem;
+        }
+        .nav-item {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.8125rem;
+            gap: 0.6rem;
+            border-radius: 8px;
+        }
+        .nav-item i {
+            font-size: 1rem;
+        }
+        
+        /* Hide scrollbar for sidebar */
+        .sidebar-nav {
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none;  /* IE and Edge */
+        }
+        .sidebar-nav::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+        /* Verification status badge in sidebar */
+        .ce-verify-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            letter-spacing: 0.3px;
+            margin-top: 0.4rem;
+        }
+        .ce-verify-badge.verified {
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .ce-verify-badge.pending {
+            background: rgba(249, 115, 22, 0.15);
+            color: #f97316;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+        .ce-verify-badge.incomplete {
+            background: rgba(148, 163, 184, 0.15);
+            color: #94a3b8;
+            border: 1px solid rgba(148, 163, 184, 0.3);
+        }
+        /* Locked execution indicator */
+        .execution-locked-banner {
+            background: rgba(249, 115, 22, 0.08);
+            border: 1px solid rgba(249, 115, 22, 0.25);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            color: #f97316;
+            font-size: 0.875rem;
+        }
+        .execution-locked-banner i {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .execution-locked-banner a {
+            color: #f97316;
+            font-weight: 700;
+            text-decoration: underline;
+        }
+    </style>
+    {% block head_extra %}{% endblock %}
+</head>
+<body data-user-id="{{ current_user.id if (current_user.is_authenticated and current_user.id) else '' }}"
+      data-user-role="{{ current_user.role if (current_user.is_authenticated and current_user.role) else '' }}"
+      data-onboarding-completed="{{ 'true' if (current_user.is_authenticated and ((current_user.onboarding_completed is defined and current_user.onboarding_completed) or (current_user.role is defined and current_user.role == 'platform_owner'))) else 'false' }}">
+
+    <!-- Premium Sidebar (CE version) -->
+    <aside class="premium-sidebar">
+        <div class="sidebar-logo" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+            <div>
+                {{ render_brand_logo(height=32, text_size=18, font_color='white') | safe }}
+            </div>
+            <button class="btn-close-sidebar" id="close-sidebar-btn">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Campaign Express label -->
+        <div style="padding: 0.25rem 0.75rem 1rem; margin-top: -0.5rem;">
+            <span style="font-size: 0.6rem; font-weight: 800; letter-spacing: 1px; color: var(--grey-400); text-transform: uppercase;">Campaign Express</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="{{ url_for('campaign_express.dashboard') }}" class="nav-item {% if request.endpoint == 'campaign_express.dashboard' %}active{% endif %}">
+                <i class="bi bi-grid-1x2"></i> Overview
+            </a>
+            <a href="{{ url_for('campaign_express.campaigns') }}" class="nav-item {% if 'campaign_express.campaign' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-megaphone"></i> Campaigns
+            </a>
+            <a href="{{ url_for('campaign_express.reports') }}" class="nav-item {% if 'campaign_express.report' in request.endpoint %}active{% endif %}">
+                <i class="bi bi-bar-chart"></i> Reports
+            </a>
+            <a href="{{ url_for('campaign_express.payments') }}" class="nav-item {% if request.endpoint == 'campaign_express.payments' %}active{% endif %}">
+                <i class="bi bi-credit-card"></i> Payments
+            </a>
+
+            <div style="height: 1px; background: var(--grey-800); margin: 0.75rem 0;"></div>
+
+            <a href="{{ url_for('campaign_express.support') }}" class="nav-item {% if request.endpoint == 'campaign_express.support' %}active{% endif %}">
+                <i class="bi bi-headset"></i> Support
+            </a>
+            <a href="#" class="nav-item">
+                <i class="bi bi-robot"></i> AI Assistant
+            </a>
+            <a href="{{ url_for('campaign_express.guides') }}" class="nav-item {% if request.endpoint == 'campaign_express.guides' %}active{% endif %}">
+                <i class="bi bi-book"></i> Guides
+            </a>
+        </nav>
+
+        <div class="sidebar-footer" style="padding: 0.5rem 0.75rem;">
+            <!-- Verification badge -->
+            {% if current_user.is_authenticated %}
+            <div style="padding: 0 0.5rem 0.75rem;">
+                {% if current_user.verification_status == 'verified' %}
+                <span class="ce-verify-badge verified"><i class="bi bi-shield-check"></i> Verified</span>
+                {% elif current_user.verification_status == 'verification_pending' %}
+                <span class="ce-verify-badge pending"><i class="bi bi-clock"></i> Verification Pending</span>
+                {% else %}
+                <a href="{{ url_for('campaign_express.verification') }}" style="text-decoration:none;">
+                    <span class="ce-verify-badge incomplete"><i class="bi bi-exclamation-triangle"></i> Complete Verification</span>
+                </a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <a href="{{ url_for('campaign_express.profile') }}" class="nav-item {% if request.endpoint == 'campaign_express.profile' %}active{% endif %}" style="color: var(--grey-400); display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; border-radius: 8px; text-decoration: none; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='transparent'">
+                <i class="bi bi-gear" style="font-size: 1rem;"></i> <span style="font-weight: 500;">Settings</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <main class="main-wrapper">
+        <header class="premium-topbar">
+            <div class="topbar-left" style="display: flex; align-items: center; gap: 1rem;">
+                <button class="btn-hamburger" id="toggle-sidebar-btn">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h1>{% block page_title %}Campaign Express{% endblock %}</h1>
+            </div>
+
+            <div class="topbar-right" style="display: flex; align-items: center; gap: 1rem;">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text" placeholder="Search campaigns...">
+                </div>
+                <div class="topbar-actions" style="display: flex; align-items: center; gap: 1rem;">
+                    <button class="btn-icon">
+                        <i class="bi bi-bell"></i>
+                        <span class="notification-badge" style="display: none;">0</span>
+                    </button>
+                    <a href="{{ url_for('campaign_express.campaign_create') }}" class="btn-premium primary" style="margin-left: 0.5rem; font-size: 0.8rem; padding: 0.5rem 1rem;">
+                        <i class="bi bi-plus-lg"></i> New Campaign
+                    </a>
+                    <!-- Profile Dropdown -->
+                    {% if current_user.is_authenticated %}
+                    <div class="dropdown">
+                        <button class="btn-icon" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border: none; background: transparent; padding: 0; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background-color: var(--primary-500, #3b82f6); color: white; cursor: pointer;">
+                            <span style="font-weight: 600; font-size: 1rem;">{{ (current_user.first_name or current_user.email)[0].upper() }}</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown" style="border-radius: 12px; border: 1px solid var(--grey-100, #e2e8f0); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); padding: 0.5rem; min-width: 220px; margin-top: 0.5rem;">
+                            <li>
+                                <div class="px-3 py-2">
+                                    <p class="mb-0 fw-semibold text-dark" style="font-size: 0.9rem;">{{ current_user.full_name }}</p>
+                                    <p class="mb-0 text-muted" style="font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis;">{{ current_user.email }}</p>
+                                </div>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('campaign_express.profile') }}" style="border-radius: 6px; padding: 0.5rem 1rem; font-size: 0.9rem; display: flex; align-items: center;"><i class="bi bi-person me-2"></i> Profile</a></li>
+                            <li><a class="dropdown-item text-danger" href="{{ url_for('campaign_express.logout') }}" style="border-radius: 6px; padding: 0.5rem 1rem; font-size: 0.9rem; display: flex; align-items: center;"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+
+        <section class="dashboard-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            {% for category, msg in messages %}
+                                showToast({{ msg | tojson }}, "{{ 'success' if category == 'success' else 'danger' if category == 'error' or category == 'danger' else 'info' }}");
+                            {% endfor %}
+                        });
+                    </script>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleBtn = document.getElementById('toggle-sidebar-btn');
+            const closeBtn  = document.getElementById('close-sidebar-btn');
+            const sidebar   = document.querySelector('.premium-sidebar');
+
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    sidebar.classList.add('active');
+                    let overlay = document.querySelector('.sidebar-overlay');
+                    if (!overlay) {
+                        overlay = document.createElement('div');
+                        overlay.className = 'sidebar-overlay';
+                        document.body.appendChild(overlay);
+                        overlay.addEventListener('click', function() {
+                            sidebar.classList.remove('active');
+                            overlay.classList.remove('active');
+                        });
+                    }
+                    setTimeout(() => { overlay.classList.add('active'); }, 50);
+                });
+            }
+            if (closeBtn && sidebar) {
+                closeBtn.addEventListener('click', function() {
+                    sidebar.classList.remove('active');
+                    const overlay = document.querySelector('.sidebar-overlay');
+                    if (overlay) overlay.classList.remove('active');
+                });
+            }
+        });
+    </script>
+    <script src="{{ url_for('static', filename='js/dashboard_extensions.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

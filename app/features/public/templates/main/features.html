@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Features | ConnectFlow</title>
-    <meta name="description" content="Explore all ConnectFlow features: automated voice calls, WhatsApp broadcasting, custom modules, real-time delivery tracking and more.">
+    <title>Features | CalltoConvey</title>
+    <meta name="description" content="Explore all CalltoConvey features: automated voice calls, WhatsApp broadcasting, custom modules, real-time delivery tracking and more.">
     <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -34,7 +34,7 @@
 <body>
     <nav class="navbar" id="mainNav" style="position:sticky;">
         <div class="container nav-content">
-            <a href="/" class="logo">Connect<span>Flow</span></a>
+            <a href="/" class="logo"><img src="{{ url_for('main.static', filename='logo.jpg') }}" alt="CalltoConvey Logo" style="height: 38px; width: auto; object-fit: contain; border-radius: 6px; vertical-align: middle;"></a>
             <div class="nav-auth">
                 <a href="{{ url_for('org.login') }}" class="btn-outline">Login</a>
                 <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
@@ -46,7 +46,7 @@
         <div class="container">
             <a href="/" class="nav-back"><i class="bi bi-arrow-left"></i> Back to Home</a>
             <h1>Everything You Need to<br>Automate at Scale</h1>
-            <p>ConnectFlow is packed with powerful features that let you broadcast voice calls and WhatsApp messages to thousands of recipients — automatically, without any manual effort.</p>
+            <p>CalltoConvey is packed with powerful features that let you broadcast voice calls and WhatsApp messages to thousands of recipients — automatically, without any manual effort.</p>
         </div>
     </div>
 
@@ -58,7 +58,7 @@
                 <div>
                     <div class="feature-icon-large"><i class="bi bi-telephone-outbound-fill"></i></div>
                     <h2>Automated Voice Calls</h2>
-                    <p>Launch outbound voice call campaigns to thousands of contacts in minutes. ConnectFlow auto-dials each number, plays your custom audio script, and logs the result in real-time — no human agent required.</p>
+                    <p>Launch outbound voice call campaigns to thousands of contacts in minutes. CalltoConvey auto-dials each number, plays your custom audio script, and logs the result in real-time — no human agent required.</p>
                     <ul class="feature-list">
                         <li><i class="bi bi-check-circle-fill"></i> AI Text-to-Speech with Google & Microsoft Edge TTS</li>
                         <li><i class="bi bi-check-circle-fill"></i> Multi-language support including Hindi, English, Tamil & more</li>
@@ -97,7 +97,7 @@
                         Hello <strong style="color:#38bdf8;">{{name}}</strong>,<br><br>
                         Your outstanding fee of <strong style="color:#34d399;">₹{{amount}}</strong> is due on <strong style="color:#fbbf24;">{{due_date}}</strong>.<br><br>
                         Please contact us at <strong>{{support_phone}}</strong> for assistance.<br><br>
-                        — ConnectFlow Automation
+                        — CalltoConvey Automation
                     </div>
                 </div>
             </div>
@@ -132,7 +132,7 @@
                 <div>
                     <div class="feature-icon-large"><i class="bi bi-bar-chart-fill"></i></div>
                     <h2>Real-Time Delivery Analytics</h2>
-                    <p>Track every single campaign interaction in real time. From the moment a call is dialled or a message is sent, ConnectFlow captures and displays live delivery data directly on your dashboard.</p>
+                    <p>Track every single campaign interaction in real time. From the moment a call is dialled or a message is sent, CalltoConvey captures and displays live delivery data directly on your dashboard.</p>
                     <ul class="feature-list">
                         <li><i class="bi bi-check-circle-fill"></i> Live call & message logs per campaign</li>
                         <li><i class="bi bi-check-circle-fill"></i> Success rate, fail rate, and answer rate charts</li>
@@ -170,7 +170,7 @@
     </section>
 
     <footer style="background:#020617; color:#64748b; padding:2rem 0; text-align:center; font-size:0.875rem;">
-        <p>&copy; 2026 ConnectFlow. All rights reserved. &nbsp;|&nbsp; <a href="{{ url_for('main.privacy_policy') }}" style="color:#64748b;">Privacy</a> &nbsp;|&nbsp; <a href="{{ url_for('main.terms_of_service') }}" style="color:#64748b;">Terms</a></p>
+        <p>&copy; 2026 CalltoConvey. All rights reserved. &nbsp;|&nbsp; <a href="{{ url_for('main.privacy_policy') }}" style="color:#64748b;">Privacy</a> &nbsp;|&nbsp; <a href="{{ url_for('main.terms_of_service') }}" style="color:#64748b;">Terms</a></p>
     </footer>
 </body>
 </html>

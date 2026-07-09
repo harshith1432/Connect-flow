@@ -1,5 +1,5 @@
 {% extends 'base_auth.html' %}
-{% block title %}Onboarding | ConnectFlow{% endblock %}
+{% block title %}Onboarding | CalltoConvey{% endblock %}
 
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding_premium.css') }}">
@@ -14,8 +14,8 @@
         
         <div class="side-content-wrapper">
             <div class="brand">
-                <div class="logo">Connect<span>Flow</span></div>
-                <h2>Join ConnectFlow</h2>
+                <div class="logo">{{ render_brand_logo(height=38, text_size=22) | safe }}</div>
+                <h2>Join CalltoConvey</h2>
                 <p class="tagline">Launch your organization and communication infrastructure in minutes.</p>
                 <p class="tagline" style="font-size: 0.95rem; opacity: 0.8; margin-top: -1rem;">Built for scale, automation, and enterprise workflow management.</p>
             </div>
@@ -53,7 +53,6 @@
 
             <div class="auth-side-bottom">
                 <div class="trust-text">ENTERPRISE OS FOR OPERATIONS</div>
-                <div class="dev-text">Designed & Developed by Harshith D</div>
             </div>
         </div>
     </aside>

@@ -1,0 +1,133 @@
+{% extends "base_ce_premium.html" %}
+
+{% block title %}Guides & Tutorials | Campaign Express{% endblock %}
+{% block page_title %}Guides & Tutorials{% endblock %}
+
+{% block content %}
+{# ── Header ── #}
+<div style="margin-bottom: 2.5rem;">
+  <h2 style="font-weight: 800; color: var(--grey-900); margin: 0;">Getting Started with Campaign Express</h2>
+  <p style="color: var(--grey-400); font-size: 0.875rem; margin: 0.25rem 0 0 0;">Follow these guides and workflows to set up, fund, and launch successful campaigns.</p>
+</div>
+
+{# ── Topic Cards Grid ── #}
+<div class="row g-4 mb-5">
+  <!-- Card 1 -->
+  <div class="col-md-6 col-lg-3">
+    <div class="premium-card h-100" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 1.5rem;">
+      <div style="width: 44px; height: 44px; border-radius: 8px; background: rgba(99, 102, 241, 0.08); display: flex; align-items: center; justify-content: center; color: #6366f1; margin-bottom: 1.25rem;">
+        <i class="bi bi-rocket-takeoff" style="font-size: 1.25rem;"></i>
+      </div>
+      <h5 style="font-weight: 700; color: var(--grey-800); margin-bottom: 0.5rem;">1. Getting Started</h5>
+      <p style="color: var(--grey-400); font-size: 0.825rem; line-height: 1.5; margin: 0;">Create your account, understand account dashboard limits, and setup billing preferences.</p>
+    </div>
+  </div>
+
+  <!-- Card 2 -->
+  <div class="col-md-6 col-lg-3">
+    <div class="premium-card h-100" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 1.5rem;">
+      <div style="width: 44px; height: 44px; border-radius: 8px; background: rgba(139, 92, 246, 0.08); display: flex; align-items: center; justify-content: center; color: #8b5cf6; margin-bottom: 1.25rem;">
+        <i class="bi bi-megaphone-fill" style="font-size: 1.25rem;"></i>
+      </div>
+      <h5 style="font-weight: 700; color: var(--grey-800); margin-bottom: 0.5rem;">2. Create Campaign</h5>
+      <p style="color: var(--grey-400); font-size: 0.825rem; line-height: 1.5; margin: 0;">Step-by-step campaign config: setting voice speed, WhatsApp tags, and writing interactive script templates.</p>
+    </div>
+  </div>
+
+  <!-- Card 3 -->
+  <div class="col-md-6 col-lg-3">
+    <div class="premium-card h-100" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 1.5rem;">
+      <div style="width: 44px; height: 44px; border-radius: 8px; background: rgba(34, 197, 94, 0.08); display: flex; align-items: center; justify-content: center; color: #22c55e; margin-bottom: 1.25rem;">
+        <i class="bi bi-people-fill" style="font-size: 1.25rem;"></i>
+      </div>
+      <h5 style="font-weight: 700; color: var(--grey-800); margin-bottom: 0.5rem;">3. Upload Contacts</h5>
+      <p style="color: var(--grey-400); font-size: 0.825rem; line-height: 1.5; margin: 0;">Format contact CSV spreadsheets, map custom data parameters, and diagnose phone number verification.</p>
+    </div>
+  </div>
+
+  <!-- Card 4 -->
+  <div class="col-md-6 col-lg-3">
+    <div class="premium-card h-100" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 1.5rem;">
+      <div style="width: 44px; height: 44px; border-radius: 8px; background: rgba(245, 158, 11, 0.08); display: flex; align-items: center; justify-content: center; color: #f59e0b; margin-bottom: 1.25rem;">
+        <i class="bi bi-bar-chart-line-fill" style="font-size: 1.25rem;"></i>
+      </div>
+      <h5 style="font-weight: 700; color: var(--grey-800); margin-bottom: 0.5rem;">4. Launch & Reports</h5>
+      <p style="color: var(--grey-400); font-size: 0.825rem; line-height: 1.5; margin: 0;">Process Razorpay funding transactions, execute runs, monitor webhooks, and download analytics.</p>
+    </div>
+  </div>
+</div>
+
+{# ── Workflow Timeline ── #}
+<div class="premium-card" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 2.5rem 2rem;">
+  <h4 style="font-weight: 800; color: var(--grey-800); margin-bottom: 2.5rem; text-align: center;">Standard Campaign Express Lifecycle</h4>
+  
+  <div style="position: relative; display: flex; flex-direction: column; gap: 2rem;">
+    <!-- Line background -->
+    <div style="position: absolute; left: 19px; top: 10px; bottom: 10px; width: 2px; background: var(--grey-100); z-index: 1;"></div>
+    
+    <!-- Step 1 -->
+    <div style="display: flex; gap: 1.5rem; position: relative; z-index: 2;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);">1</div>
+      <div>
+        <h6 style="font-weight: 700; color: var(--grey-800); margin: 0 0 0.25rem 0; font-size: 1rem;">Register Individual Profile</h6>
+        <p style="color: var(--grey-400); font-size: 0.85rem; line-height: 1.5; margin: 0; max-width: 600px;">Sign up instantly using Google Auth or manual email registration. Access the Campaign Express panel immediately.</p>
+      </div>
+    </div>
+
+    <!-- Step 2 -->
+    <div style="display: flex; gap: 1.5rem; position: relative; z-index: 2;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);">2</div>
+      <div>
+        <h6 style="font-weight: 700; color: var(--grey-800); margin: 0 0 0.25rem 0; font-size: 1rem;">Create Campaign Draft</h6>
+        <p style="color: var(--grey-400); font-size: 0.85rem; line-height: 1.5; margin: 0; max-width: 600px;">Click "New Campaign". Choose voice calling or WhatsApp text channels to configure your objectives.</p>
+      </div>
+    </div>
+
+    <!-- Step 3 -->
+    <div style="display: flex; gap: 1.5rem; position: relative; z-index: 2;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);">3</div>
+      <div>
+        <h6 style="font-weight: 700; color: var(--grey-800); margin: 0 0 0.25rem 0; font-size: 1rem;">Upload Contact spreadsheet</h6>
+        <p style="color: var(--grey-400); font-size: 0.85rem; line-height: 1.5; margin: 0; max-width: 600px;">Drag-and-drop a CSV spreadsheet containing recipient details. Make sure to define a phone number column clearly.</p>
+      </div>
+    </div>
+
+    <!-- Step 4 -->
+    <div style="display: flex; gap: 1.5rem; position: relative; z-index: 2;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);">4</div>
+      <div>
+        <h6 style="font-weight: 700; color: var(--grey-800); margin: 0 0 0.25rem 0; font-size: 1rem;">Configure Script Placeholders</h6>
+        <p style="color: var(--grey-400); font-size: 0.85rem; line-height: 1.5; margin: 0; max-width: 600px;">Draft the text content of your script. Link columns in your CSV using dynamic tags like <code>{{"{{"}}name{{"}}"}}</code>.</p>
+      </div>
+    </div>
+
+    <!-- Step 5 -->
+    <div style="display: flex; gap: 1.5rem; position: relative; z-index: 2;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);">5</div>
+      <div>
+        <h6 style="font-weight: 700; color: var(--grey-800); margin: 0 0 0.25rem 0; font-size: 1rem;">Submit Identity verification</h6>
+        <p style="color: var(--grey-400); font-size: 0.85rem; line-height: 1.5; margin: 0; max-width: 600px;">To comply with telecom standards, upload government documents (Aadhaar, PAN, Voter ID) to unlock campaign runs.</p>
+      </div>
+    </div>
+
+    <!-- Step 6 -->
+    <div style="display: flex; gap: 1.5rem; position: relative; z-index: 2;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: #6366f1; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.3);">6</div>
+      <div>
+        <h6 style="font-weight: 700; color: var(--grey-800); margin: 0 0 0.25rem 0; font-size: 1rem;">Pay & Launch Run</h6>
+        <p style="color: var(--grey-400); font-size: 0.85rem; line-height: 1.5; margin: 0; max-width: 600px;">Initiate checkout. Process the calculated charge securely via Razorpay. Your campaign begins immediately on success.</p>
+      </div>
+    </div>
+
+    <!-- Step 7 -->
+    <div style="display: flex; gap: 1.5rem; position: relative; z-index: 2;">
+      <div style="width: 40px; height: 40px; border-radius: 50%; background: #10b981; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.95rem; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3);">7</div>
+      <div>
+        <h6 style="font-weight: 700; color: #10b981; margin: 0 0 0.25rem 0; font-size: 1rem;">Receive Reports & Analytics</h6>
+        <p style="color: var(--grey-400); font-size: 0.85rem; line-height: 1.5; margin: 0; max-width: 600px;">Review delivery success rates and call summaries. Download transaction invoices and export CSV reports.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

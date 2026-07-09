@@ -25,6 +25,7 @@ from app.models import (
     ContactGroup,
     Module,
 )
+from app.models.campaign_express import CampaignExpressPayment
 from app.core.decorators import platform_required
 from app.config import Config
 
@@ -81,10 +82,17 @@ def login():
                     return render_template("auth/platform_login.html")
             else:
                 from app.security.session_manager import SessionManager
+                from urllib.parse import urlparse
 
                 login_user(admin, remember="remember" in request.form)
                 SessionManager.regenerate_session()
                 SessionManager.track_session(admin.id, user_type)
+                
+                next_page = request.args.get("next")
+                if next_page:
+                    parsed = urlparse(next_page)
+                    if parsed.netloc == "" or parsed.netloc == request.host:
+                        return redirect(next_page)
                 return redirect(url_for("super_admin.dashboard"))
         BruteForceProtection.log_failed_attempt(identifier=email)
         flash("Invalid credentials", "danger")
@@ -103,14 +111,20 @@ def dashboard():
     # System Overview Stats
     total_orgs = len(orgs)
 
-    # Calculate revenue (completed payments)
-    total_revenue = (
+    # Calculate revenue (completed payments from Organizations + Campaign Express)
+    org_revenue = (
         db.session.query(func.sum(Payment.amount))
         .filter(Payment.status == "completed")
         .scalar()
     )
-    if total_revenue is None:
-        total_revenue = 0.0
+    
+    ce_revenue = (
+        db.session.query(func.sum(CampaignExpressPayment.amount))
+        .filter(CampaignExpressPayment.status == "completed")
+        .scalar()
+    )
+    
+    total_revenue = (float(org_revenue) if org_revenue else 0.0) + (float(ce_revenue) if ce_revenue else 0.0)
 
     # Active Subscriptions
     active_subs = Subscription.query.filter_by(status="active").count()
@@ -178,6 +192,30 @@ def dashboard():
         unread_notifs=unread_notifs,
         growth_categories=growth_categories,
         growth_data=growth_data,
+    )
+
+@super_admin_bp.route("/ce/dashboard")
+@platform_required
+def ce_dashboard():
+    from app.models.campaign_express import CampaignExpressUser, CampaignExpressPayment
+    from app.models.ce_number_pool import CeNumberPool
+    from app.models import Campaign
+    
+    total_ce_users = CampaignExpressUser.query.count()
+    running_ce_campaigns = Campaign.query.filter(Campaign.campaign_express_user_id.isnot(None), Campaign.status == 'running').count()
+    total_ce_revenue = db.session.query(func.sum(CampaignExpressPayment.amount)).filter(CampaignExpressPayment.status == "completed").scalar() or 0.0
+    
+    ce_numbers_all = CeNumberPool.query.all()
+    ce_numbers_total = len(ce_numbers_all)
+    ce_numbers_active = sum(1 for n in ce_numbers_all if n.active_campaigns_count and n.active_campaigns_count > 0)
+
+    return render_template(
+        "platform/ce/ce_dashboard.html",
+        total_ce_users=total_ce_users,
+        running_ce_campaigns=running_ce_campaigns,
+        total_ce_revenue=total_ce_revenue,
+        ce_numbers_active=ce_numbers_active,
+        ce_numbers_total=ce_numbers_total
     )
 
 
@@ -283,6 +321,9 @@ def view_org_detail(org_id):
         organization_id=org_id, field_name="number_request", status="pending"
     ).first()
 
+    # 6. Available plans
+    plans = Plan.query.order_by(Plan.price.asc()).all()
+
     return render_template(
         "platform/org_detail.html",
         org=org,
@@ -293,7 +334,73 @@ def view_org_detail(org_id):
         subscription=subscription,
         payments=payments,
         pending_request=pending_request,
+        plans=plans,
     )
+
+
+@super_admin_bp.route("/orgs/<int:org_id>/edit-profile", methods=["POST"])
+@platform_required
+def edit_org_profile(org_id):
+    org = db.get_or_404(Organization, org_id)
+    
+    org.name = request.form.get("name")
+    org.org_type = request.form.get("org_type")
+    org.industry = request.form.get("industry")
+    org.support_email = request.form.get("support_email")
+    org.support_phone = request.form.get("support_phone")
+    org.country = request.form.get("country")
+    org.language_preference = request.form.get("language_preference")
+    org.office_address = request.form.get("office_address")
+    
+    # Also update admin email
+    admin_email = request.form.get("admin_email")
+    if admin_email:
+        admin = OrganizationUser.query.filter_by(
+            organization_id=org_id, role="org_admin"
+        ).first()
+        if admin:
+            existing = OrganizationUser.query.filter_by(
+                email=admin_email, organization_id=org_id
+            ).first()
+            if existing and existing.id != admin.id:
+                flash("Error: Email is already used by another user in this organization.", "danger")
+                return redirect(url_for("super_admin.view_org_detail", org_id=org_id))
+            admin.email = admin_email
+            
+    db.session.commit()
+    flash("Organization profile updated successfully.", "success")
+    return redirect(url_for("super_admin.view_org_detail", org_id=org_id))
+
+
+@super_admin_bp.route("/orgs/<int:org_id>/reset-password", methods=["POST"])
+@platform_required
+def reset_org_password(org_id):
+    from werkzeug.security import generate_password_hash
+    org = db.get_or_404(Organization, org_id)
+    admin = OrganizationUser.query.filter_by(
+        organization_id=org_id, role="org_admin"
+    ).first()
+    
+    if not admin:
+        flash("Error: Primary administrator account not found for this organization.", "danger")
+        return redirect(url_for("super_admin.view_org_detail", org_id=org_id))
+        
+    new_password = request.form.get("password")
+    confirm_password = request.form.get("confirm_password")
+    
+    if not new_password or len(new_password) < 6:
+        flash("Error: Password must be at least 6 characters long.", "danger")
+        return redirect(url_for("super_admin.view_org_detail", org_id=org_id))
+        
+    if new_password != confirm_password:
+        flash("Error: Passwords do not match.", "danger")
+        return redirect(url_for("super_admin.view_org_detail", org_id=org_id))
+        
+    admin.password_hash = generate_password_hash(new_password)
+    db.session.commit()
+    
+    flash(f"Password for {admin.email} has been successfully reset.", "success")
+    return redirect(url_for("super_admin.view_org_detail", org_id=org_id))
 
 
 @super_admin_bp.route("/orgs/<int:org_id>/approve", methods=["POST"])
@@ -395,6 +502,37 @@ def toggle_subscription_status(org_id):
         f"Subscription status for organization updated to {sub.status.upper()}",
         "success",
     )
+    return redirect(url_for("super_admin.view_org_detail", org_id=org_id))
+
+
+@super_admin_bp.route("/orgs/<int:org_id>/update_subscription", methods=["POST"])
+@platform_required
+def update_subscription(org_id):
+    plan = request.form.get("plan")
+    expires_at_str = request.form.get("expires_at")
+    status = request.form.get("status")
+    billing_interval = request.form.get("billing_interval", "monthly")
+
+    sub = Subscription.query.filter_by(organization_id=org_id).first()
+    if not sub:
+        sub = Subscription(organization_id=org_id)
+        db.session.add(sub)
+
+    sub.plan = plan
+    sub.status = status
+    sub.billing_interval = billing_interval
+
+    if expires_at_str:
+        try:
+            sub.expires_at = datetime.strptime(expires_at_str, "%Y-%m-%d")
+        except ValueError:
+            flash("Invalid date format. Use YYYY-MM-DD.", "danger")
+            return redirect(url_for("super_admin.view_org_detail", org_id=org_id))
+    else:
+        sub.expires_at = None
+
+    db.session.commit()
+    flash("Subscription updated successfully.", "success")
     return redirect(url_for("super_admin.view_org_detail", org_id=org_id))
 
 
@@ -618,6 +756,7 @@ def manage_payments():
         name = request.form.get("name")
         method_type = request.form.get("type", "manual")
         instructions = request.form.get("instructions")
+        is_active = request.form.get("is_active") == "on"
 
         method_id = request.form.get("method_id")
         if method_id:
@@ -626,11 +765,28 @@ def manage_payments():
                 pm.name = name
                 pm.type = method_type
                 pm.instructions = instructions
+                pm.is_active = is_active
                 flash(f"Payment method {name} updated", "success")
         else:
-            pm = PaymentMethod(name=name, type=method_type, instructions=instructions)
+            pm = PaymentMethod(name=name, type=method_type, instructions=instructions, is_active=is_active)
             db.session.add(pm)
             flash(f"Payment method {name} added", "success")
+
+        # Synchronize dynamic_upi gateway active state
+        if method_type == "dynamic_upi":
+            from app.models.platform import PaymentGateway
+            gw = PaymentGateway.query.filter_by(provider="dynamic_upi").first()
+            if gw:
+                gw.active = is_active
+            else:
+                gw = PaymentGateway(
+                    name="Dynamic UPI Payment",
+                    provider="dynamic_upi",
+                    gateway_type="manual",
+                    active=is_active,
+                    priority=2
+                )
+                db.session.add(gw)
 
         db.session.commit()
         return redirect(url_for("super_admin.manage_payments"))
@@ -757,6 +913,176 @@ def delete_payment_method(method_id):
     return redirect(url_for("super_admin.manage_payments"))
 
 
+@super_admin_bp.route("/payment-verifications", methods=["GET"])
+@platform_required
+def payment_verifications():
+    from app.models.payment_verification import PaymentVerification
+    status_filter = request.args.get("status", "pending")
+    
+    verifications = (
+        PaymentVerification.query.filter_by(status=status_filter)
+        .order_by(PaymentVerification.submitted_time.desc())
+        .all()
+    )
+    
+    # Calculate stats
+    pending_count = PaymentVerification.query.filter_by(status="pending").count()
+    approved_count = PaymentVerification.query.filter_by(status="approved").count()
+    rejected_count = PaymentVerification.query.filter_by(status="rejected").count()
+    
+    return render_template(
+        "platform/payment_verifications.html",
+        verifications=verifications,
+        current_filter=status_filter,
+        pending_count=pending_count,
+        approved_count=approved_count,
+        rejected_count=rejected_count
+    )
+
+
+@super_admin_bp.route("/payment-verifications/<int:vid>/verify", methods=["POST"])
+@platform_required
+def verify_payment_request(vid):
+    from app.models.payment_verification import PaymentVerification
+    from app.models.organization import Payment, Subscription
+    from app.models.platform import Plan
+    from datetime import datetime, timedelta
+    
+    verification = db.get_or_404(PaymentVerification, vid)
+    action = request.form.get("action")
+    remarks = request.form.get("remarks", "").strip()
+    
+    if verification.status != "pending":
+        flash("This payment request has already been processed.", "warning")
+        return redirect(url_for("super_admin.payment_verifications"))
+        
+    # Find the corresponding Payment record
+    payment = Payment.query.filter_by(transaction_id=verification.transaction_id).first()
+    
+    if action == "approve":
+        verification.status = "approved"
+        verification.verification_time = datetime.utcnow()
+        verification.verified_by = current_user.email
+        verification.remarks = remarks or "Approved by Administrator."
+        
+        audit_log = list(verification.audit_log or [])
+        audit_log.append({
+            "timestamp": datetime.utcnow().isoformat(),
+            "action": "approved",
+            "user_email": current_user.email,
+            "details": f"Payment approved. Remarks: {remarks or 'None'}"
+        })
+        verification.audit_log = audit_log
+        
+        if payment:
+            payment.status = "completed"
+            
+        # Process order/subscription details
+        if verification.order_id.startswith("SUB-"):
+            plan_id = int(verification.order_id.split("-")[1])
+            plan = Plan.query.get(plan_id)
+            if plan:
+                sub = Subscription.query.filter_by(organization_id=verification.organization_id).first()
+                if not sub:
+                    sub = Subscription(organization_id=verification.organization_id)
+                    db.session.add(sub)
+                sub.plan = plan.name
+                sub.status = "active"
+                sub.billing_interval = plan.billing_interval
+                sub.starts_at = datetime.utcnow()
+                if plan.billing_interval == "yearly":
+                    sub.expires_at = sub.starts_at + timedelta(days=365)
+                else:
+                    sub.expires_at = sub.starts_at + timedelta(days=30)
+        elif verification.order_id.startswith("CE-"):
+            from app.models import Campaign
+            from app.models.campaign_express import CampaignExpressPayment
+            from app.services.ce_number_allocator import CeNumberAllocator
+            from app.services.campaign_runner import CampaignExecutionService
+
+            campaign_id = int(verification.order_id.split("-")[1])
+            campaign = Campaign.query.get(campaign_id)
+            ce_payment = CampaignExpressPayment.query.filter_by(
+                campaign_id=campaign_id, status="pending"
+            ).order_by(CampaignExpressPayment.created_at.desc()).first()
+
+            if ce_payment:
+                ce_payment.status = "completed"
+                ce_payment.transaction_id = verification.transaction_id
+                ce_payment.completed_at = datetime.utcnow()
+
+            if campaign:
+                campaign.status = "ready"
+                db.session.commit()
+
+                # Allocate a pool number and trigger campaign execution
+                assigned_number = CeNumberAllocator.allocate(campaign.id)
+                if not assigned_number:
+                    campaign.status = "queued"
+                    db.session.commit()
+                else:
+                    campaign.status = "running"
+                    db.session.commit()
+                    try:
+                        CampaignExecutionService.start(campaign.id)
+                    except Exception as run_err:
+                        CeNumberAllocator.release(campaign.id)
+                        campaign.status = "ready"
+                        db.session.commit()
+                    
+        db.session.commit()
+        flash("Payment request successfully approved and processed!", "success")
+        
+    elif action == "reject":
+        if not remarks:
+            flash("Rejection remarks are required to reject a payment.", "danger")
+            return redirect(url_for("super_admin.payment_verifications"))
+            
+        verification.status = "rejected"
+        verification.verification_time = datetime.utcnow()
+        verification.verified_by = current_user.email
+        verification.remarks = remarks
+        
+        audit_log = list(verification.audit_log or [])
+        audit_log.append({
+            "timestamp": datetime.utcnow().isoformat(),
+            "action": "rejected",
+            "user_email": current_user.email,
+            "details": f"Payment rejected. Remarks: {remarks}"
+        })
+        verification.audit_log = audit_log
+        
+        if payment:
+            payment.status = "failed"
+            
+        # Process campaign express rejection if applicable
+        if verification.order_id.startswith("CE-"):
+            from app.models.campaign_express import CampaignExpressPayment
+            campaign_id = int(verification.order_id.split("-")[1])
+            ce_payment = CampaignExpressPayment.query.filter_by(
+                campaign_id=campaign_id, status="pending"
+            ).order_by(CampaignExpressPayment.created_at.desc()).first()
+            if ce_payment:
+                ce_payment.status = "failed"
+
+        # Notify Organization
+        if verification.organization_id:
+            from app.models.chat import DashboardNotification
+            db_notif = DashboardNotification(
+                organization_id=verification.organization_id,
+                type="billing",
+                title="UPI Payment Verification Failed",
+                message=f"Manual payment verification failed. Reason: {remarks}",
+                link="/org/profile"
+            )
+            db.session.add(db_notif)
+        
+        db.session.commit()
+        flash("Payment request rejected.", "info")
+        
+    return redirect(url_for("super_admin.payment_verifications"))
+
+
 @super_admin_bp.route("/changes")
 @platform_required
 def pending_changes():
@@ -843,6 +1169,84 @@ def update_preferences():
     
     flash("Preferences updated successfully", "success")
     return redirect(url_for("super_admin.manage_admins"))
+
+
+@super_admin_bp.route("/settings/branding", methods=["GET", "POST"])
+@platform_required
+def branding_settings():
+    from app.models.platform import PlatformBranding
+    from flask import current_app
+    import os
+    import time
+    
+    branding = PlatformBranding.get_settings()
+    
+    if request.method == "POST":
+        brand_name = request.form.get("brand_name", "").strip()
+        logo_display = request.form.get("logo_display", "both")
+        logo_position = request.form.get("logo_position", "left")
+        
+        try:
+            text_size = int(request.form.get("text_size", 24))
+            logo_height = int(request.form.get("logo_height", 38))
+        except ValueError:
+            text_size = 24
+            logo_height = 38
+            
+        if brand_name:
+            branding.brand_name = brand_name
+        branding.logo_display = logo_display
+        branding.logo_position = logo_position
+        branding.text_size = text_size
+        branding.logo_height = logo_height
+        
+        # Save dynamic contact fields
+        support_email = request.form.get("support_email", "").strip()
+        sales_email = request.form.get("sales_email", "").strip()
+        billing_email = request.form.get("billing_email", "").strip()
+        legal_email = request.form.get("legal_email", "").strip()
+        privacy_email = request.form.get("privacy_email", "").strip()
+        dpo_email = request.form.get("dpo_email", "").strip()
+        contact_phone = request.form.get("contact_phone", "").strip()
+
+        if support_email:
+            branding.support_email = support_email
+        if sales_email:
+            branding.sales_email = sales_email
+        if billing_email:
+            branding.billing_email = billing_email
+        if legal_email:
+            branding.legal_email = legal_email
+        if privacy_email:
+            branding.privacy_email = privacy_email
+        if dpo_email:
+            branding.dpo_email = dpo_email
+        if contact_phone:
+            branding.contact_phone = contact_phone
+
+        
+        # Handle file upload
+        if "logo_file" in request.files:
+            file = request.files["logo_file"]
+            if file and file.filename != "":
+                allowed_extensions = {".png", ".jpg", ".jpeg", ".gif", ".svg", ".webp"}
+                ext = os.path.splitext(file.filename)[1].lower()
+                if ext in allowed_extensions:
+                    filename = f"platform_logo_{int(time.time())}{ext}"
+                    upload_dir = os.path.join(current_app.root_path, "static", "uploads", "branding")
+                    os.makedirs(upload_dir, exist_ok=True)
+                    file_path = os.path.join(upload_dir, filename)
+                    file.save(file_path)
+                    branding.logo_path = f"uploads/branding/{filename}"
+                else:
+                    flash("Invalid file extension. Please upload an image file.", "danger")
+                    
+        db.session.commit()
+        flash("Branding configurations saved successfully!", "success")
+        return redirect(url_for("super_admin.branding_settings"))
+        
+    return render_template("platform/settings_branding.html", branding=branding)
+
 
 @super_admin_bp.route("/settings/admins/add", methods=["POST"])
 @platform_required
@@ -994,4 +1398,82 @@ def inquiry_remark(iid):
     db.session.commit()
     flash("Inquiry updated successfully.", "success")
     return redirect(url_for("super_admin.helpdesk") + "#inquiries")
+
+# ── Campaign Express Platform Admin ─────────────────────────────────────────────
+
+@super_admin_bp.route("/ce/users")
+@platform_required
+def ce_users():
+    from app.models.campaign_express import CampaignExpressUser
+    users = CampaignExpressUser.query.order_by(CampaignExpressUser.created_at.desc()).all()
+    return render_template("platform/ce/ce_users.html", users=users)
+
+@super_admin_bp.route("/ce/users/<int:uid>")
+@platform_required
+def ce_user_detail(uid):
+    from app.models.campaign_express import CampaignExpressUser
+    user = db.get_or_404(CampaignExpressUser, uid)
+    return render_template("platform/ce/ce_user_detail.html", user=user)
+
+@super_admin_bp.route("/ce/verification")
+@platform_required
+def ce_verification():
+    from app.models.campaign_express import CampaignExpressUser, CampaignExpressPayment
+    users = CampaignExpressUser.query.order_by(CampaignExpressUser.created_at.desc()).all()
+    return render_template("platform/ce/ce_verification.html", users=users)
+
+@super_admin_bp.route("/ce/number-pool")
+@platform_required
+def ce_number_pool():
+    from app.models.ce_number_pool import CeNumberPool
+    numbers = CeNumberPool.query.order_by(CeNumberPool.created_at.desc()).all()
+    return render_template("platform/ce/ce_number_pool.html", numbers=numbers)
+
+@super_admin_bp.route("/ce/number-pool/add", methods=["POST"])
+@platform_required
+def ce_number_pool_add():
+    from app.models.ce_number_pool import CeNumberPool
+    number = request.form.get("number")
+    label = request.form.get("label")
+    provider = request.form.get("provider", "twilio")
+    api_token = request.form.get("api_token")
+    auth_token = request.form.get("auth_token")
+    if number and label:
+        pool_num = CeNumberPool(
+            number=number,
+            label=label,
+            provider=provider,
+            api_token=api_token,
+            auth_token=auth_token,
+            is_active=True,
+            is_healthy=True
+        )
+        db.session.add(pool_num)
+        db.session.commit()
+        flash("Number added successfully.", "success")
+    return redirect(url_for("super_admin.ce_number_pool"))
+
+@super_admin_bp.route("/ce/number-pool/<int:nid>/toggle", methods=["POST"])
+@platform_required
+def ce_number_pool_toggle(nid):
+    from app.models.ce_number_pool import CeNumberPool
+    num = db.get_or_404(CeNumberPool, nid)
+    num.is_active = not num.is_active
+    db.session.commit()
+    flash(f"Number {'enabled' if num.is_active else 'disabled'} successfully.", "success")
+    return redirect(url_for("super_admin.ce_number_pool"))
+
+@super_admin_bp.route("/ce/campaigns")
+@platform_required
+def ce_campaigns():
+    from app.models import Campaign
+    campaigns = Campaign.query.filter(Campaign.campaign_express_user_id.isnot(None)).order_by(Campaign.created_at.desc()).all()
+    return render_template("platform/ce/ce_campaigns.html", campaigns=campaigns)
+
+@super_admin_bp.route("/ce/payments")
+@platform_required
+def ce_payments():
+    from app.models.campaign_express import CampaignExpressPayment
+    payments = CampaignExpressPayment.query.order_by(CampaignExpressPayment.created_at.desc()).all()
+    return render_template("platform/ce/ce_payments.html", payments=payments)
 

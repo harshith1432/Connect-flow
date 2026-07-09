@@ -123,6 +123,19 @@ ul {
     gap: 1.5rem;
 }
 
+.navbar-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 1.75rem;
+    cursor: pointer;
+    color: var(--black);
+    padding: 0.25rem 0.5rem;
+    z-index: 1010;
+    align-items: center;
+    justify-content: center;
+}
+
 .btn-text {
     color: var(--black);
     font-weight: 600;
@@ -763,6 +776,21 @@ footer {
     .feature-grid {
         grid-template-columns: repeat(2, 1fr);
     }
+
+    .pricing-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.5rem;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2rem;
+    }
+
+    .security-grid {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
     
     .footer-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -770,15 +798,114 @@ footer {
 }
 
 @media (max-width: 768px) {
-    .nav-links, .nav-auth {
-        display: none;
+    .container {
+        padding: 0 1.25rem !important;
+    }
+
+    .nav-content {
+        flex-wrap: wrap;
     }
     
+    .navbar-toggle {
+        display: flex;
+        order: 2;
+    }
+    
+    .logo {
+        order: 1;
+    }
+    
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        order: 3;
+        gap: 1.25rem;
+        padding: 1.5rem 0 1rem;
+        text-align: center;
+        border-top: 1px solid var(--grey-100);
+        margin-top: 1rem;
+    }
+    
+    .nav-links li {
+        width: 100%;
+    }
+    
+    .nav-auth {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        order: 4;
+        gap: 1rem;
+        padding-bottom: 1.5rem;
+        align-items: center;
+    }
+    
+    .navbar.mobile-active .nav-links,
+    .navbar.mobile-active .nav-auth {
+        display: flex;
+    }
+    
+    .hero {
+        padding-top: 6rem;
+    }
+
+    .hero h1 {
+        font-size: clamp(1.8rem, 7vw, 2.5rem) !important;
+        line-height: 1.2 !important;
+        margin-bottom: 1rem !important;
+        letter-spacing: -0.5px !important;
+    }
+
+    .hero p {
+        font-size: 1rem !important;
+        margin-bottom: 2rem !important;
+    }
+
+    .section-header {
+        margin: 0 auto 3rem !important;
+    }
+
+    .section-header h2, .split-content h2 {
+        font-size: clamp(1.5rem, 6vw, 2rem) !important;
+        line-height: 1.25 !important;
+    }
+
     .feature-grid {
         grid-template-columns: 1fr;
     }
     
+    .pricing-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+    }
+
+    .pricing-card {
+        padding: 2rem 1.5rem !important;
+        border-radius: 16px !important;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 1.5rem !important;
+    }
+
+    .security-grid {
+        grid-template-columns: 1fr !important;
+        gap: 1.5rem !important;
+    }
+
+    .security-item {
+        padding: 1.5rem !important;
+    }
+    
     .footer-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr !important;
     }
 }

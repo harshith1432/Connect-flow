@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Reference | ConnectFlow</title>
-    <meta name="description" content="ConnectFlow REST API Reference. Integrate ConnectFlow's communication automation into your own systems.">
+    <title>API Reference | CalltoConvey</title>
+    <meta name="description" content="CalltoConvey REST API Reference. Integrate CalltoConvey's communication automation into your own systems.">
     <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -42,7 +42,7 @@
 <body>
     <div class="api-layout">
         <aside class="api-sidebar">
-            <a href="/" class="logo">Connect<span>Flow</span> <span style="color:#475569; font-size:0.7rem; font-weight:400;">API v1</span></a>
+            <a href="/" class="logo"><img src="{{ url_for('main.static', filename='logo.jpg') }}" alt="CalltoConvey Logo" style="height: 38px; width: auto; object-fit: contain; border-radius: 6px; vertical-align: middle;"> <span style="color:#475569; font-size:0.7rem; font-weight:400;">API v1</span></a>
             <div class="nav-title">Authentication</div>
             <a href="#auth" class="api-link">API Keys</a>
             <div class="nav-title">Notifications</div>
@@ -61,12 +61,12 @@
         </aside>
 
         <main class="api-content">
-            <h1>ConnectFlow API Reference</h1>
-            <p style="color:#64748b; font-size:1rem; margin-bottom:2rem;">The ConnectFlow REST API lets you integrate campaign automation, data management, and delivery analytics into your own systems and workflows.</p>
+            <h1>CalltoConvey API Reference</h1>
+            <p style="color:#64748b; font-size:1rem; margin-bottom:2rem;">The CalltoConvey REST API lets you integrate campaign automation, data management, and delivery analytics into your own systems and workflows.</p>
 
             <h2 id="auth">Authentication</h2>
             <p>All API requests must be made over HTTPS. Authentication is handled via Flask-Login session cookies for browser-based integrations.</p>
-            <div class="auth-box"><p><strong>Note:</strong> The ConnectFlow API is currently session-authenticated. All endpoints are protected by <code>@login_required</code> and role-based access decorators. A public API key system is on the Enterprise roadmap.</p></div>
+            <div class="auth-box"><p><strong>Note:</strong> The CalltoConvey API is currently session-authenticated. All endpoints are protected by <code>@login_required</code> and role-based access decorators. A public API key system is on the Enterprise roadmap.</p></div>
             <div class="code-block">
 Base URL: <span class="str">http://your-domain.com/api</span><br><br>
 All responses return JSON with:<br>

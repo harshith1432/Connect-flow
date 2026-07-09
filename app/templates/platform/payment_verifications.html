@@ -1,0 +1,315 @@
+{% extends "base_platform_premium.html" %}
+
+{% block title %}UPI Payment Verifications | CalltoConvey Admin{% endblock %}
+{% block page_title %}UPI Payment Verifications{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <!-- Stats Row -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-4">
+                <div class="premium-card d-flex align-items-center justify-content-between p-4" style="background: white; border: 1px solid var(--grey-150); border-radius: 16px;">
+                    <div>
+                        <span class="text-muted d-block small uppercase fw-bold mb-1">Pending Verification</span>
+                        <h2 class="fw-extrabold text-warning mb-0">{{ pending_count }}</h2>
+                    </div>
+                    <div class="bg-warning-subtle text-warning rounded-4 p-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                        <i class="bi bi-clock-history fs-3"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="premium-card d-flex align-items-center justify-content-between p-4" style="background: white; border: 1px solid var(--grey-150); border-radius: 16px;">
+                    <div>
+                        <span class="text-muted d-block small uppercase fw-bold mb-1">Approved Payments</span>
+                        <h2 class="fw-extrabold text-success mb-0">{{ approved_count }}</h2>
+                    </div>
+                    <div class="bg-success-subtle text-success rounded-4 p-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                        <i class="bi bi-check-circle fs-3"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="premium-card d-flex align-items-center justify-content-between p-4" style="background: white; border: 1px solid var(--grey-150); border-radius: 16px;">
+                    <div>
+                        <span class="text-muted d-block small uppercase fw-bold mb-1">Rejected Submissions</span>
+                        <h2 class="fw-extrabold text-danger mb-0">{{ rejected_count }}</h2>
+                    </div>
+                    <div class="bg-danger-subtle text-danger rounded-4 p-3 d-flex align-items-center justify-content-center" style="width: 56px; height: 56px;">
+                        <i class="bi bi-x-circle fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="btn-group premium-tab-group" role="group">
+                <a href="{{ url_for('super_admin.payment_verifications', status='pending') }}" class="btn btn-premium-tab {% if current_filter == 'pending' %}active{% endif %}">
+                    Pending <span class="badge bg-warning text-dark ms-1">{{ pending_count }}</span>
+                </a>
+                <a href="{{ url_for('super_admin.payment_verifications', status='approved') }}" class="btn btn-premium-tab {% if current_filter == 'approved' %}active{% endif %}">
+                    Approved <span class="badge bg-success ms-1">{{ approved_count }}</span>
+                </a>
+                <a href="{{ url_for('super_admin.payment_verifications', status='rejected') }}" class="btn btn-premium-tab {% if current_filter == 'rejected' %}active{% endif %}">
+                    Rejected <span class="badge bg-danger ms-1">{{ rejected_count }}</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Verifications Card -->
+        <div class="premium-panel-custom p-4">
+            <div class="table-responsive">
+                <table class="table align-middle floating-table">
+                    <thead>
+                        <tr>
+                            <th>Organization</th>
+                            <th>Amount</th>
+                            <th>UTR / Transaction ID</th>
+                            <th>Submitted Date</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for v in verifications %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-dark fs-6">{{ v.organization.name if v.organization else 'Unknown Org' }}</div>
+                                <div class="small text-muted" style="font-size: 0.75rem;">ID: {{ v.organization_id }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-bold text-success fs-6">₹{{ "{:,.2f}".format(v.amount|float) }}</div>
+                                <div class="small text-muted" style="font-size: 0.7rem;">Ref: {{ v.order_id }}</div>
+                            </td>
+                            <td>
+                                <code class="text-primary fw-bold">{{ v.transaction_id }}</code>
+                                {% if v.customer_upi_id %}
+                                <div class="small text-muted" style="font-size: 0.75rem;">From: {{ v.customer_upi_id }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="text-dark">{{ v.submitted_time.strftime('%d %b %Y') }}</div>
+                                <div class="small text-muted" style="font-size: 0.75rem;">{{ v.submitted_time.strftime('%I:%M %p') }}</div>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-premium primary py-2 px-3.5 fs-7 btn-sm" onclick='showVerificationDetails({{ v.to_dict()|tojson }})'>
+                                    <i class="bi bi-eye-fill me-1"></i> Review Details
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <div class="py-4">
+                                    <i class="bi bi-wallet2 display-4 text-muted opacity-25 mb-3 d-block"></i>
+                                    <h5 class="fw-bold text-dark">No Payment Requests</h5>
+                                    <p class="small text-muted mb-0">There are no manual payment requests matching status: <strong>{{ current_filter|upper }}</strong>.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Review Modal -->
+<div class="modal fade" id="modal-review-request" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: var(--shadow-premium);">
+            <div class="modal-header border-bottom border-light p-4">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-file-earmark-check-fill me-2 text-primary"></i>Manual Payment Review</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light-subtle">
+                <div class="row g-4">
+                    <!-- Left: Metadata -->
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-muted uppercase small mb-3">Transaction Details</h6>
+                        <ul class="list-group list-group-flush rounded-3 border mb-4">
+                            <li class="list-group-item d-flex justify-content-between py-2.5">
+                                <span class="text-muted">Organization:</span>
+                                <strong id="detail-org" class="text-dark">Org Name</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between py-2.5">
+                                <span class="text-muted">Amount:</span>
+                                <strong id="detail-amount" class="text-success">₹0.00</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between py-2.5">
+                                <span class="text-muted">UTR / Transaction ID:</span>
+                                <code id="detail-utr" class="fw-bold text-primary">UTR</code>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between py-2.5">
+                                <span class="text-muted">Customer UPI ID:</span>
+                                <strong id="detail-cust-upi" class="text-dark">UPI ID</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between py-2.5">
+                                <span class="text-muted">Destination UPI:</span>
+                                <strong id="detail-dest-upi" class="text-dark">UPI ID</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between py-2.5">
+                                <span class="text-muted">Submitted Time:</span>
+                                <span id="detail-time" class="text-dark">Date</span>
+                            </li>
+                        </ul>
+
+                        <h6 class="fw-bold text-muted uppercase small mb-3">Device Audit Logs</h6>
+                        <div class="p-3 bg-white border rounded-3 mb-4 small">
+                            <div class="mb-2"><strong>IP Address:</strong> <span id="detail-ip">127.0.0.1</span></div>
+                            <div style="word-break: break-all;"><strong>User-Agent:</strong> <span id="detail-ua">Chrome/120</span></div>
+                        </div>
+
+                        <!-- Remarks Box -->
+                        <div id="remarks-display-container" style="display: none;" class="p-3 rounded-3 bg-white border border-light">
+                            <strong>Remarks:</strong>
+                            <p id="detail-remarks" class="small text-muted mb-0 mt-1">Remarks text...</p>
+                        </div>
+                    </div>
+
+                    <!-- Right: Attachment / Screenshot -->
+                    <div class="col-md-6 text-center">
+                        <h6 class="fw-bold text-muted uppercase text-start small mb-3">Payment Receipt Screenshot</h6>
+                        <div class="screenshot-preview-container bg-white border rounded-4 p-2 d-inline-block shadow-sm w-100" style="cursor: zoom-in;" onclick="zoomScreenshot()">
+                            <img id="detail-screenshot" src="" class="img-fluid rounded-3" style="max-height: 280px; object-fit: contain;" alt="Receipt">
+                        </div>
+                        <div class="mt-2 text-muted small"><i class="bi bi-zoom-in"></i> Click screenshot to view full size</div>
+                    </div>
+                </div>
+
+                <!-- Action form -->
+                <div id="review-action-section" class="mt-4 pt-4 border-top border-light">
+                    <form id="verify-form" method="POST" action="">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-3">
+                            <label for="review-remarks" class="form-label fw-bold">Verification Remarks</label>
+                            <textarea class="form-input" id="review-remarks" name="remarks" rows="2" placeholder="e.g. Approved subscription plan activation or rejection reason..."></textarea>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" name="action" value="approve" class="btn btn-premium primary py-2.5 w-50" onclick="return confirm('Approve this payment verification request? This will activate the subscription.')">
+                                <i class="bi bi-check-circle-fill me-1"></i> Approve Payment
+                            </button>
+                            <button type="submit" name="action" value="reject" class="btn btn-premium danger py-2.5 w-50" onclick="return checkRejectionRemarks()">
+                                <i class="bi bi-x-circle-fill me-1"></i> Reject Payment
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Zoom Modal -->
+<div class="modal fade" id="modal-zoom-screenshot" tabindex="-1" aria-hidden="true" style="background: rgba(0,0,0,0.85);">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-transparent border-0 text-end">
+            <button type="button" class="btn text-white fs-3 border-0 p-3 mb-2" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+            <div class="text-center">
+                <img id="zoomed-screenshot-image" src="" class="img-fluid rounded-4 shadow-lg" style="max-height: 80vh; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.premium-tab-group {
+    background: var(--grey-100);
+    padding: 4px;
+    border-radius: 12px;
+}
+.btn-premium-tab {
+    border: none;
+    background: transparent;
+    color: var(--grey-400);
+    font-weight: 600;
+    padding: 0.6rem 1.2rem;
+    border-radius: 10px !important;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+}
+.btn-premium-tab.active {
+    background: white !important;
+    color: var(--primary) !important;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+.floating-table th {
+    font-weight: 700;
+    color: var(--grey-600);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--grey-100);
+    padding: 1rem 0.75rem;
+}
+.floating-table td {
+    padding: 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--grey-100);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let activeRequest = null;
+
+function showVerificationDetails(req) {
+    activeRequest = req;
+    
+    document.getElementById('detail-org').innerText = req.organization_name || 'N/A';
+    document.getElementById('detail-amount').innerText = `₹${parseFloat(req.amount).toFixed(2)}`;
+    document.getElementById('detail-utr').innerText = req.transaction_id;
+    document.getElementById('detail-cust-upi').innerText = req.customer_upi_id || 'N/A';
+    document.getElementById('detail-dest-upi').innerText = req.generated_upi_id || 'N/A';
+    
+    const date = new Date(req.submitted_time);
+    document.getElementById('detail-time').innerText = date.toLocaleString();
+    
+    document.getElementById('detail-ip').innerText = req.ip_address || 'Unknown';
+    document.getElementById('detail-ua').innerText = req.device_info || 'Unknown';
+    
+    // Set screenshot image path
+    const screenshotUrl = `/static/${req.screenshot_path}`;
+    document.getElementById('detail-screenshot').src = screenshotUrl;
+    document.getElementById('zoomed-screenshot-image').src = screenshotUrl;
+    
+    // Action forms action link
+    document.getElementById('verify-form').action = `/platform/payment-verifications/${req.id}/verify`;
+    
+    // Show/hide review actions or remarks depending on status
+    const actionSection = document.getElementById('review-action-section');
+    const remarksContainer = document.getElementById('remarks-display-container');
+    const remarksVal = document.getElementById('detail-remarks');
+    
+    if (req.status === 'pending') {
+        actionSection.style.display = 'block';
+        remarksContainer.style.display = 'none';
+    } else {
+        actionSection.style.display = 'none';
+        remarksContainer.style.display = 'block';
+        remarksVal.innerText = req.remarks || 'No remarks provided.';
+    }
+    
+    // Open Modal
+    const myModal = new bootstrap.Modal(document.getElementById('modal-review-request'));
+    myModal.show();
+}
+
+function zoomScreenshot() {
+    const zoomModal = new bootstrap.Modal(document.getElementById('modal-zoom-screenshot'));
+    zoomModal.show();
+}
+
+function checkRejectionRemarks() {
+    const remarks = document.getElementById('review-remarks').value.trim();
+    if (!remarks) {
+        alert('Please enter a rejection reason in the remarks field.');
+        return false;
+    }
+    return confirm('Are you sure you want to REJECT this payment verification request?');
+}
+</script>
+{% endblock %}

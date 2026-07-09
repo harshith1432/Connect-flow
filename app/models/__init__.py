@@ -30,6 +30,12 @@ from .helpdesk import HelpdeskQuery
 # Public landing page inquiry / talk-to-us leads
 from .inquiry import Inquiry
 
+# Campaign Express standalone user and payment models
+from .campaign_express import CampaignExpressUser, CampaignExpressPayment
+
+# Campaign Express platform-owned number pool
+from .ce_number_pool import CeNumberPool, CeCampaignNumberAssignment
+
 # Security infrastructure models
 from .security import (
     MfaConfiguration,
@@ -38,3 +44,6 @@ from .security import (
     SecurityAuditLog,
     SuspiciousActivity,
 )
+
+# Payment manual verification requests model
+from .payment_verification import PaymentVerification

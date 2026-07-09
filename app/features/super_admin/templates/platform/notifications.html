@@ -1,6 +1,6 @@
 {% extends "base_platform_premium.html" %}
 
-{% block title %}ConnectFlow | Notification Center{% endblock %}
+{% block title %}CalltoConvey | Notification Center{% endblock %}
 {% block page_title %}Notification Center{% endblock %}
 
 {% block head_extra %}
@@ -907,7 +907,7 @@
             <h5 class="fw-bold small text-uppercase text-muted mb-2" style="letter-spacing:0.75px;">Platform Recommendation</h5>
             <div class="d-flex align-items-center gap-2 p-3" style="background: rgba(23, 201, 100, 0.04); border: 1px solid rgba(23, 201, 100, 0.1); border-radius: 12px;">
                 <span class="pulse-indicator" style="width: 8px; height: 8px; background: var(--success-color);"></span>
-                <span class="fw-semibold text-success small">Verified via ConnectFlow Integrity Shield. No action needed.</span>
+                <span class="fw-semibold text-success small">Verified via CalltoConvey Integrity Shield. No action needed.</span>
             </div>
         </div>
     </div>
@@ -936,7 +936,7 @@
                         <i class="bi bi-shield-fill-check"></i>
                     </div>
                     <h4 class="fw-bold mt-3">All Systems Guarded</h4>
-                    <p class="text-muted small">ConnectFlow firewall is fully operational & tracking auth blocks</p>
+                    <p class="text-muted small">CalltoConvey firewall is fully operational & tracking auth blocks</p>
                 </div>
                 
                 <div class="d-flex flex-column gap-3">
@@ -1134,7 +1134,7 @@
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `ConnectFlow_Alerts_Audit_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute("download", `CalltoConvey_Alerts_Audit_${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

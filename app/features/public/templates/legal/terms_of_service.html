@@ -3,321 +3,431 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service | ConnectFlow</title>
-    <meta name="description" content="ConnectFlow Terms of Service — the rules, rights, and responsibilities governing your use of the platform.">
-    <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
+    <title>Terms of Service | CalltoConvey</title>
+    <meta name="description" content="CalltoConvey Terms of Service — the rules, rights, and responsibilities governing your use of the platform.">
+    <link rel="stylesheet" href="{{ url_for('main.static', filename='legal.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f8fafc; color: #334155; }
-        .navbar { background: #0f172a; padding: 1rem 0; position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .nav-content { max-width: 1200px; margin: 0 auto; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; }
-        .logo { color: white; font-size: 1.25rem; font-weight: 800; text-decoration: none; }
-        .logo span { color: #64748b; }
-        .nav-links-right { display: flex; gap: 1rem; align-items: center; }
-        .btn-outline-nav { border: 1.5px solid rgba(255,255,255,0.2); color: white; padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 600; text-decoration: none; font-size: 0.875rem; transition: all 0.2s; }
-        .btn-outline-nav:hover { background: rgba(255,255,255,0.1); color: white; }
-        .btn-solid-nav { background: white; color: #0f172a; padding: 0.5rem 1.25rem; border-radius: 8px; font-weight: 700; text-decoration: none; font-size: 0.875rem; }
-        .btn-solid-nav:hover { background: #f1f5f9; color: #0f172a; }
-        .page-hero { background: #0f172a; padding: 5rem 0 4rem; text-align: center; position: relative; overflow: hidden; }
-        .page-hero::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 40% 60%, rgba(251,191,36,0.06) 0%, transparent 70%); pointer-events: none; }
-        .page-hero .back-link { display: inline-flex; align-items: center; gap: 0.5rem; color: #64748b; text-decoration: none; font-size: 0.875rem; margin-bottom: 2rem; }
-        .page-hero .back-link:hover { color: #94a3b8; }
-        .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px; padding: 0.4rem 1rem; border-radius: 20px; margin-bottom: 1.5rem; }
-        .page-hero h1 { font-size: 3rem; font-weight: 800; color: white; margin: 0 0 1rem; }
-        .page-hero p { color: #64748b; font-size: 1rem; max-width: 560px; margin: 0 auto 2rem; line-height: 1.7; }
-        .meta-row { display: inline-flex; align-items: center; gap: 1.5rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 0.75rem 1.5rem; }
-        .meta-item { display: flex; align-items: center; gap: 0.5rem; color: #64748b; font-size: 0.8rem; }
-        .meta-item i { color: #fbbf24; }
-        .content-layout { max-width: 1200px; margin: 0 auto; padding: 4rem 2rem; display: grid; grid-template-columns: 260px 1fr; gap: 4rem; align-items: start; }
-        .toc { background: white; border-radius: 16px; border: 1px solid #e2e8f0; padding: 1.5rem; position: sticky; top: 90px; }
-        .toc h4 { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin: 0 0 1rem; }
-        .toc a { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.75rem; border-radius: 8px; color: #64748b; text-decoration: none; font-size: 0.825rem; transition: all 0.15s; margin-bottom: 0.25rem; }
-        .toc a:hover { background: #f8fafc; color: #0f172a; }
-        .toc a.active { background: #0f172a; color: white; }
-        .legal-article { background: white; border-radius: 20px; border: 1px solid #e2e8f0; padding: 3rem; }
-        .section-block { margin-bottom: 3rem; scroll-margin-top: 100px; }
-        .section-block:last-child { margin-bottom: 0; }
-        .section-num { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; background: #0f172a; color: white; font-weight: 800; font-size: 0.85rem; margin-bottom: 1rem; }
-        .section-block h2 { font-size: 1.35rem; font-weight: 800; color: #0f172a; margin: 0 0 1rem; }
-        .section-block h3 { font-size: 1rem; font-weight: 700; color: #1e293b; margin: 1.5rem 0 0.5rem; }
-        .section-block p { color: #475569; line-height: 1.8; margin-bottom: 0.75rem; }
-        .section-block ul { color: #475569; line-height: 1.8; padding-left: 1.5rem; margin-bottom: 0.75rem; }
-        .section-block li { margin-bottom: 0.4rem; }
-        .divider { border: none; border-top: 1px solid #f1f5f9; margin: 2.5rem 0; }
-        .highlight-box { background: #f0f9ff; border-left: 3px solid #38bdf8; border-radius: 0 10px 10px 0; padding: 1rem 1.25rem; margin: 1rem 0; }
-        .highlight-box p { color: #0369a1; margin: 0; font-size: 0.875rem; }
-        .warn-box { background: #fff7ed; border-left: 3px solid #f59e0b; border-radius: 0 10px 10px 0; padding: 1rem 1.25rem; margin: 1rem 0; }
-        .warn-box p { color: #92400e; margin: 0; font-size: 0.875rem; }
-        .contact-box { background: #0f172a; border-radius: 16px; padding: 2rem; text-align: center; margin-top: 2rem; }
-        .contact-box h4 { color: white; font-weight: 800; margin-bottom: 0.5rem; }
-        .contact-box p { color: #64748b; margin-bottom: 1.25rem; font-size: 0.9rem; }
-        .contact-box a { background: white; color: #0f172a; padding: 0.75rem 1.75rem; border-radius: 8px; font-weight: 700; text-decoration: none; display: inline-block; }
-        .contact-box a:hover { background: #f1f5f9; }
-        .site-footer { background: #020617; color: #475569; padding: 2rem 0; text-align: center; font-size: 0.825rem; }
-        .site-footer a { color: #475569; text-decoration: none; }
-        .site-footer a:hover { color: #94a3b8; }
-        .footer-links { display: inline-flex; gap: 1.5rem; margin-top: 0.5rem; }
-        @media (max-width: 768px) { .content-layout { grid-template-columns: 1fr; } .toc { position: static; } .page-hero h1 { font-size: 2rem; } .legal-article { padding: 1.5rem; } }
-    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<nav class="navbar">
-    <div class="nav-content">
-        <a href="/" class="logo">Connect<span>Flow</span></a>
-        <div class="nav-links-right">
-            <a href="{{ url_for('org.login') }}" class="btn-outline-nav">Login</a>
-            <a href="{{ url_for('org.register') }}" class="btn-solid-nav">Get Started</a>
-        </div>
+    <!-- Reading Progress Bar -->
+    <div class="progress-container">
+        <div class="progress-bar"></div>
     </div>
-</nav>
 
-<div class="page-hero">
-    <div class="container" style="max-width:1200px; margin:0 auto; padding:0 2rem;">
-        <a href="/" class="back-link"><i class="bi bi-arrow-left"></i> Back to Home</a>
-        <div class="hero-badge"><i class="bi bi-file-earmark-text-fill"></i> LEGAL DOCUMENT</div>
-        <h1>Terms of Service</h1>
-        <p>By using ConnectFlow, you agree to these terms. Please read them carefully before creating an account or running any campaigns.</p>
-        <div class="meta-row">
-            <div class="meta-item"><i class="bi bi-calendar3"></i> Last Updated: January 24, 2026</div>
-            <div class="meta-item"><i class="bi bi-file-earmark-text"></i> Version 2.0</div>
-            <div class="meta-item"><i class="bi bi-geo-alt"></i> Governing Law: India</div>
-        </div>
-    </div>
-</div>
-
-<div class="content-layout">
-    <aside class="toc">
-        <h4>Contents</h4>
-        <a href="#s1"><i class="bi bi-chevron-right"></i> 1. Acceptance of Terms</a>
-        <a href="#s2"><i class="bi bi-chevron-right"></i> 2. Description of Service</a>
-        <a href="#s3"><i class="bi bi-chevron-right"></i> 3. User Accounts</a>
-        <a href="#s4"><i class="bi bi-chevron-right"></i> 4. Acceptable Use</a>
-        <a href="#s5"><i class="bi bi-chevron-right"></i> 5. Subscription & Payment</a>
-        <a href="#s6"><i class="bi bi-chevron-right"></i> 6. Communication Services</a>
-        <a href="#s7"><i class="bi bi-chevron-right"></i> 7. Data & Privacy</a>
-        <a href="#s8"><i class="bi bi-chevron-right"></i> 8. Intellectual Property</a>
-        <a href="#s9"><i class="bi bi-chevron-right"></i> 9. Service Availability</a>
-        <a href="#s10"><i class="bi bi-chevron-right"></i> 10. Limitation of Liability</a>
-        <a href="#s11"><i class="bi bi-chevron-right"></i> 11. Termination</a>
-        <a href="#s12"><i class="bi bi-chevron-right"></i> 12. Changes to Terms</a>
-        <a href="#s13"><i class="bi bi-chevron-right"></i> 13. Governing Law</a>
-        <a href="#s14"><i class="bi bi-chevron-right"></i> 14. Contact</a>
-    </aside>
-
-    <article class="legal-article">
-
-        <div class="section-block" id="s1">
-            <div class="section-num">1</div>
-            <h2>Acceptance of Terms</h2>
-            <p>By accessing or using the ConnectFlow platform ("the Platform"), you confirm that you have read, understood, and agree to be bound by these Terms of Service ("Terms"). If you are accepting on behalf of an organisation, you represent that you have the authority to bind that organisation.</p>
-            <p>If you do not agree to these Terms, you must not use the Platform.</p>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s2">
-            <div class="section-num">2</div>
-            <h2>Description of Service</h2>
-            <p>ConnectFlow is a multi-tenant SaaS platform providing intelligent outbound communication automation, including:</p>
-            <ul>
-                <li>Automated outbound voice call campaigns via Twilio</li>
-                <li>WhatsApp message broadcasting via Twilio and Hooman Labs</li>
-                <li>AI Text-to-Speech synthesis (Google TTS & Microsoft Edge TTS)</li>
-                <li>No-code custom CRM module and data management</li>
-                <li>Role-based workforce management (Platform Owner, Org Admin, Worker)</li>
-                <li>Real-time delivery analytics and campaign reporting</li>
-                <li>Subscription management and billing</li>
-            </ul>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s3">
-            <div class="section-num">3</div>
-            <h2>User Accounts</h2>
-            <h3>3.1 Registration</h3>
-            <p>To use ConnectFlow, you must register an organisation account and provide accurate, complete information. You must:</p>
-            <ul>
-                <li>Provide accurate organisation and administrator details</li>
-                <li>Maintain the security of your login credentials</li>
-                <li>Be at least 18 years old or represent a legitimate registered business</li>
-                <li>Not share your account with unauthorised individuals</li>
-            </ul>
-            <h3>3.2 Account Approval</h3>
-            <p>All newly registered organisations are subject to manual review and approval by ConnectFlow's platform administrators before access is granted. We reserve the right to decline any registration at our sole discretion.</p>
-            <h3>3.3 Worker Accounts</h3>
-            <p>Organisation Admins may create Worker accounts within their organisation. Workers are subject to these Terms and are the responsibility of the Organisation Admin.</p>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s4">
-            <div class="section-num">4</div>
-            <h2>Acceptable Use Policy</h2>
-            <p>You agree to use ConnectFlow only for lawful purposes. You must NOT use the Platform to:</p>
-            <ul>
-                <li>Send spam, unsolicited messages, or harassing communications</li>
-                <li>Contact individuals who have not provided consent to receive such calls or messages</li>
-                <li>Violate TRAI (Telecom Regulatory Authority of India) regulations or the TCPA</li>
-                <li>Transmit malicious code, viruses, or harmful content</li>
-                <li>Impersonate another person, organisation, or brand</li>
-                <li>Engage in fraudulent, deceptive, or illegal activities</li>
-                <li>Attempt to gain unauthorised access to the Platform or other accounts</li>
-                <li>Reverse-engineer, decompile, or attempt to extract source code</li>
-            </ul>
-            <div class="warn-box"><p><strong>Violation of this policy may result in immediate account suspension without refund.</strong></p></div>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s5">
-            <div class="section-num">5</div>
-            <h2>Subscription & Payment</h2>
-            <h3>5.1 Plans</h3>
-            <p>ConnectFlow offers subscription plans (Trial, Starter, Growth, Enterprise) with different broadcast limits and features. Plan details are available on our <a href="{{ url_for('main.pricing') }}" style="color:#0f172a; font-weight:600;">Pricing page</a>.</p>
-            <h3>5.2 Billing</h3>
-            <ul>
-                <li>Subscriptions are billed on a recurring monthly basis</li>
-                <li>Payments are processed via secure payment gateways (Razorpay)</li>
-                <li>Failed payments may result in service suspension after a 3-day grace period</li>
-                <li>Prices are in Indian Rupees (INR) and subject to applicable GST</li>
-            </ul>
-            <h3>5.3 Refunds</h3>
-            <p>Refund requests are evaluated on a case-by-case basis. Contact billing@connectflow.io within 7 days of payment. We do not provide refunds for consumed broadcasts or services already delivered.</p>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s6">
-            <div class="section-num">6</div>
-            <h2>Communication Services</h2>
-            <h3>6.1 Third-Party Providers</h3>
-            <p>Our Platform integrates with Twilio and Hooman Labs to deliver voice and WhatsApp communications. By using these features, you also agree to Twilio's and Hooman Labs' terms and acceptable use policies. We are not responsible for delivery failures caused by carrier or provider issues beyond our control.</p>
-            <h3>6.2 Compliance Responsibility</h3>
-            <p>You are solely responsible for ensuring that:</p>
-            <ul>
-                <li>All contacts in your audience lists have provided valid consent to receive communications</li>
-                <li>Your campaigns comply with TRAI regulations, WhatsApp Business Policy, and all applicable laws</li>
-                <li>Your message content is accurate, non-deceptive, and lawful</li>
-            </ul>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s7">
-            <div class="section-num">7</div>
-            <h2>Data & Privacy</h2>
-            <p>Your use of ConnectFlow is governed by our <a href="{{ url_for('main.privacy_policy') }}" style="color:#0f172a; font-weight:600;">Privacy Policy</a> and, for business data processing, our <a href="{{ url_for('main.dpa') }}" style="color:#0f172a; font-weight:600;">Data Processing Agreement (DPA)</a>. You retain ownership of all data you upload to the Platform. We process it solely to deliver the services described in these Terms.</p>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s8">
-            <div class="section-num">8</div>
-            <h2>Intellectual Property</h2>
-            <p>All code, designs, trademarks, logos, and platform features of ConnectFlow are owned by ConnectFlow and protected under applicable intellectual property laws. You may not copy, reproduce, or distribute any part of the Platform without written permission.</p>
-            <p>You retain all rights to the content and data you create on the Platform. By uploading data, you grant ConnectFlow a limited, non-exclusive licence to process that data solely for the purpose of delivering the services.</p>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s9">
-            <div class="section-num">9</div>
-            <h2>Service Availability</h2>
-            <p>We target 99.9% uptime but do not guarantee uninterrupted service. We reserve the right to:</p>
-            <ul>
-                <li>Perform scheduled maintenance (notified 48 hours in advance where possible)</li>
-                <li>Apply emergency security patches or updates</li>
-                <li>Modify, suspend, or discontinue features with reasonable notice</li>
-            </ul>
-            <p>We are not liable for any losses arising from service interruptions outside our reasonable control.</p>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s10">
-            <div class="section-num">10</div>
-            <h2>Limitation of Liability</h2>
-            <p>To the maximum extent permitted by applicable law, ConnectFlow's total liability to you for any claim arising from these Terms shall not exceed the total amount you paid us in the 3 months preceding the claim. We are not liable for:</p>
-            <ul>
-                <li>Indirect, incidental, consequential, or punitive damages</li>
-                <li>Loss of profits, revenue, data, or business opportunities</li>
-                <li>Delivery failures caused by third-party carrier or API issues</li>
-                <li>Losses arising from your violation of applicable laws using the Platform</li>
-            </ul>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s11">
-            <div class="section-num">11</div>
-            <h2>Termination</h2>
-            <p>Either party may terminate the account at any time. We may suspend or terminate your account immediately (without refund) if you:</p>
-            <ul>
-                <li>Violate these Terms of Service or our Acceptable Use Policy</li>
-                <li>Engage in fraudulent, illegal, or abusive activity</li>
-                <li>Fail to pay subscription fees after a grace period</li>
-                <li>Use the Platform in a manner that harms other users, the Platform, or third parties</li>
-            </ul>
-            <p>Upon termination, your data is retained for 90 days before permanent deletion, during which you may export it.</p>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s12">
-            <div class="section-num">12</div>
-            <h2>Changes to Terms</h2>
-            <p>We reserve the right to modify these Terms at any time. We will provide at least 14 days' notice of material changes via email or in-app notification. Continued use after the effective date of changes constitutes your acceptance of the updated Terms.</p>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s13">
-            <div class="section-num">13</div>
-            <h2>Governing Law</h2>
-            <p>These Terms shall be governed by the laws of India. Any dispute arising shall be subject to the exclusive jurisdiction of competent courts in India. The parties agree to attempt good-faith resolution before initiating formal proceedings.</p>
-        </div>
-
-        <hr class="divider">
-
-        <div class="section-block" id="s14">
-            <div class="section-num">14</div>
-            <h2>Contact</h2>
-            <p>For questions about these Terms, please contact us at:</p>
-            <ul>
-                <li><strong>Email:</strong> legal@connectflow.io</li>
-                <li><strong>GitHub:</strong> <a href="https://github.com/harshith1432/Connect-flow" style="color:#0f172a;" target="_blank">github.com/harshith1432/Connect-flow</a></li>
-            </ul>
-            <div class="contact-box">
-                <h4>Have a question about these Terms?</h4>
-                <p>Our legal team will respond within 5 business days.</p>
-                <a href="{{ url_for('main.contact') }}">Contact Legal Team</a>
+    <!-- Custom Navbar -->
+    <nav class="navbar-legal">
+        <div class="nav-content-legal">
+            <a href="/" class="logo-legal">
+                {{ render_brand_logo(height=38, text_size=22) | safe }}
+            </a>
+            <div class="nav-actions-legal">
+                <a href="{{ url_for('org.login') }}" class="btn-outline-legal">Login</a>
+                <a href="{{ url_for('org.register') }}" class="btn-solid-legal">Get Started</a>
             </div>
         </div>
+    </nav>
 
-    </article>
-</div>
+    <!-- Hero Area -->
+    <header class="hero-legal">
+        <div class="container-legal">
+            <a href="/" class="back-link-legal"><i class="bi bi-arrow-left"></i> Back to Home</a>
+            <div>
+                <span class="badge-legal"><i class="bi bi-file-earmark-text-fill"></i> Legal Document</span>
+            </div>
+            <h1>Terms of Service</h1>
+            <p>By using CalltoConvey, you agree to these terms. Please read them carefully before creating an account or running any campaigns.</p>
+            <div class="meta-legal-row">
+                <span class="meta-legal-item"><i class="bi bi-calendar3"></i> Last Updated: January 24, 2026</span>
+                <span class="meta-legal-item"><i class="bi bi-file-earmark-text"></i> Version 2.0</span>
+                <span class="meta-legal-item"><i class="bi bi-geo-alt"></i> Governing Law: India</span>
+            </div>
+        </div>
+    </header>
 
-<footer class="site-footer">
-    <p>&copy; 2026 ConnectFlow. All rights reserved.</p>
-    <div class="footer-links">
-        <a href="{{ url_for('main.privacy_policy') }}">Privacy</a>
-        <a href="{{ url_for('main.terms_of_service') }}">Terms</a>
-        <a href="{{ url_for('main.dpa') }}">DPA</a>
-        <a href="{{ url_for('main.contact') }}">Contact</a>
-    </div>
-</footer>
+    <!-- Main Layout -->
+    <main class="layout-legal">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar-legal">
+            <h4 class="sidebar-title">Contents</h4>
+            <div class="search-filter-container">
+                <i class="bi bi-search"></i>
+                <input type="text" class="search-filter-input" placeholder="Filter sections...">
+            </div>
+            <ul class="toc-list">
+                <li class="toc-item"><a href="#s1">1. Acceptance of Terms</a></li>
+                <li class="toc-item"><a href="#s2">2. Description of Service</a></li>
+                <li class="toc-item"><a href="#s3">3. User Accounts</a></li>
+                <li class="toc-item"><a href="#s4">4. Acceptable Use Policy</a></li>
+                <li class="toc-item"><a href="#s5">5. Subscription & Payment</a></li>
+                <li class="toc-item"><a href="#s6">6. Communication Services</a></li>
+                <li class="toc-item"><a href="#s7">7. Data & Privacy</a></li>
+                <li class="toc-item"><a href="#s8">8. Intellectual Property</a></li>
+                <li class="toc-item"><a href="#s9">9. Service Availability</a></li>
+                <li class="toc-item"><a href="#s10">10. Limitation of Liability</a></li>
+                <li class="toc-item"><a href="#s11">11. Termination</a></li>
+                <li class="toc-item"><a href="#s12">12. Changes to Terms</a></li>
+                <li class="toc-item"><a href="#s13">13. Governing Law</a></li>
+                <li class="toc-item"><a href="#s14">14. Contact</a></li>
+            </ul>
+        </aside>
 
-<script>
-    const sections = document.querySelectorAll('.section-block');
-    const tocLinks = document.querySelectorAll('.toc a');
-    window.addEventListener('scroll', () => {
-        let current = '';
-        sections.forEach(s => { if (window.scrollY >= s.offsetTop - 120) current = s.id; });
-        tocLinks.forEach(a => { a.classList.toggle('active', a.getAttribute('href') === '#' + current); });
-    });
-</script>
+        <!-- Article Content -->
+        <article class="article-legal">
+            <!-- Print Toolbar -->
+            <div class="print-toolbar">
+                <button onclick="printDocument()" class="btn-print">
+                    <i class="bi bi-printer"></i> Print Document
+                </button>
+            </div>
+
+            <!-- Section 1 -->
+            <section id="s1">
+                <div class="section-header">
+                    <div class="section-badge-num">1</div>
+                    <h2>Acceptance of Terms</h2>
+                </div>
+                <p>By accessing or using the CalltoConvey platform ("the Platform"), you confirm that you have read, understood, and agree to be bound by these Terms of Service ("Terms"). If you are accepting on behalf of an organisation, you represent that you have the authority to bind that organisation.</p>
+                <p>If you do not agree to these Terms, you must not use the Platform.</p>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 2 -->
+            <section id="s2">
+                <div class="section-header">
+                    <div class="section-badge-num">2</div>
+                    <h2>Description of Service</h2>
+                </div>
+                <p>CalltoConvey is a multi-tenant SaaS platform providing intelligent outbound communication automation, including:</p>
+                <ul>
+                    <li>Automated outbound voice call campaigns via Twilio</li>
+                    <li>WhatsApp message broadcasting via Twilio and Hooman Labs</li>
+                    <li>AI Text-to-Speech synthesis (Google TTS & Microsoft Edge TTS)</li>
+                    <li>No-code custom CRM module and data management</li>
+                    <li>Role-based workforce management (Platform Owner, Org Admin, Worker)</li>
+                    <li>Real-time delivery analytics and campaign reporting</li>
+                    <li>Subscription management and billing</li>
+                </ul>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 3 -->
+            <section id="s3">
+                <div class="section-header">
+                    <div class="section-badge-num">3</div>
+                    <h2>User Accounts</h2>
+                </div>
+                <h3>3.1 Registration</h3>
+                <p>To use CalltoConvey, you must register an organisation account and provide accurate, complete information. You must:</p>
+                <ul>
+                    <li>Provide accurate organisation and administrator details</li>
+                    <li>Maintain the security of your login credentials</li>
+                    <li>Be at least 18 years old or represent a legitimate registered business</li>
+                    <li>Not share your account with unauthorised individuals</li>
+                </ul>
+                <h3>3.2 Account Approval</h3>
+                <p>All newly registered organisations are subject to manual review and approval by CalltoConvey's platform administrators before access is granted. We reserve the right to decline any registration at our sole discretion.</p>
+                <h3>3.3 Worker Accounts</h3>
+                <p>Organisation Admins may create Worker accounts within their organisation. Workers are subject to these Terms and are the responsibility of the Organisation Admin.</p>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 4 -->
+            <section id="s4">
+                <div class="section-header">
+                    <div class="section-badge-num">4</div>
+                    <h2>Acceptable Use Policy</h2>
+                </div>
+                <p>You agree to use CalltoConvey only for lawful purposes. You must NOT use the Platform to:</p>
+                <ul>
+                    <li>Send spam, unsolicited messages, or harassing communications</li>
+                    <li>Contact individuals who have not provided consent to receive such calls or messages</li>
+                    <li>Violate TRAI (Telecom Regulatory Authority of India) regulations or the TCPA</li>
+                    <li>Transmit malicious code, viruses, or harmful content</li>
+                    <li>Impersonate another person, organisation, or brand</li>
+                    <li>Engage in fraudulent, deceptive, or illegal activities</li>
+                    <li>Attempt to gain unauthorised access to the Platform or other accounts</li>
+                    <li>Reverse-engineer, decompile, or attempt to extract source code</li>
+                </ul>
+                
+                <div class="callout-legal warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <p><strong>Warning:</strong> Violation of this policy may result in immediate account suspension without refund.</p>
+                </div>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 5 -->
+            <section id="s5">
+                <div class="section-header">
+                    <div class="section-badge-num">5</div>
+                    <h2>Subscription & Payment</h2>
+                </div>
+                <h3>5.1 Plans</h3>
+                <p>CalltoConvey offers subscription plans (Trial, Starter, Growth, Enterprise) with different broadcast limits and features. Plan details are available on our <a href="{{ url_for('main.pricing') }}" style="color:var(--primary); font-weight:600; text-decoration:none;">Pricing page</a>.</p>
+                <h3>5.2 Billing</h3>
+                <ul>
+                    <li>Subscriptions are billed on a recurring monthly basis</li>
+                    <li>Payments are processed via secure payment gateways (Razorpay)</li>
+                    <li>Failed payments may result in service suspension after a 3-day grace period</li>
+                    <li>Prices are in Indian Rupees (INR) and subject to applicable GST</li>
+                </ul>
+                <h3>5.3 Refunds</h3>
+                <p>Refund requests are evaluated on a case-by-case basis. Contact {{ platform_branding.billing_email }} within 7 days of payment. We do not provide refunds for consumed broadcasts or services already delivered.</p>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 6 -->
+            <section id="s6">
+                <div class="section-header">
+                    <div class="section-badge-num">6</div>
+                    <h2>Communication Services</h2>
+                </div>
+                <h3>6.1 Third-Party Providers</h3>
+                <p>Our Platform integrates with Twilio and Hooman Labs to deliver voice and WhatsApp communications. By using these features, you also agree to Twilio's and Hooman Labs' terms and acceptable use policies. We are not responsible for delivery failures caused by carrier or provider issues beyond our control.</p>
+                <h3>6.2 Compliance Responsibility</h3>
+                <p>You are solely responsible for ensuring that:</p>
+                <ul>
+                    <li>All contacts in your audience lists have provided valid consent to receive communications</li>
+                    <li>Your campaigns comply with TRAI regulations, WhatsApp Business Policy, and all applicable laws</li>
+                    <li>Your message content is accurate, non-deceptive, and lawful</li>
+                </ul>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 7 -->
+            <section id="s7">
+                <div class="section-header">
+                    <div class="section-badge-num">7</div>
+                    <h2>Data & Privacy</h2>
+                </div>
+                <p>Your use of CalltoConvey is governed by our <a href="{{ url_for('main.privacy_policy') }}" style="color:var(--primary); font-weight:600; text-decoration:none;">Privacy Policy</a> and, for business data processing, our <a href="{{ url_for('main.dpa') }}" style="color:var(--primary); font-weight:600; text-decoration:none;">Data Processing Agreement (DPA)</a>. You retain ownership of all data you upload to the Platform. We process it solely to deliver the services described in these Terms.</p>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 8 -->
+            <section id="s8">
+                <div class="section-header">
+                    <div class="section-badge-num">8</div>
+                    <h2>Intellectual Property</h2>
+                </div>
+                <p>All code, designs, trademarks, logos, and platform features of CalltoConvey are owned by CalltoConvey and protected under applicable intellectual property laws. You may not copy, reproduce, or distribute any part of the Platform without written permission.</p>
+                <p>You retain all rights to the content and data you create on the Platform. By uploading data, you grant CalltoConvey a limited, non-exclusive licence to process that data solely for the purpose of delivering the services.</p>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 9 -->
+            <section id="s9">
+                <div class="section-header">
+                    <div class="section-badge-num">9</div>
+                    <h2>Service Availability</h2>
+                </div>
+                <p>We target 99.9% uptime but do not guarantee uninterrupted service. We reserve the right to:</p>
+                <ul>
+                    <li>Perform scheduled maintenance (notified 48 hours in advance where possible)</li>
+                    <li>Apply emergency security patches or updates</li>
+                    <li>Modify, suspend, or discontinue features with reasonable notice</li>
+                </ul>
+                <p>We are not liable for any losses arising from service interruptions outside our reasonable control.</p>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 10 -->
+            <section id="s10">
+                <div class="section-header">
+                    <div class="section-badge-num">10</div>
+                    <h2>Limitation of Liability</h2>
+                </div>
+                <p>To the maximum extent permitted by applicable law, CalltoConvey's total liability to you for any claim arising from these Terms shall not exceed the total amount you paid us in the 3 months preceding the claim. We are not liable for:</p>
+                <ul>
+                    <li>Indirect, incidental, consequential, or punitive damages</li>
+                    <li>Loss of profits, revenue, data, or business opportunities</li>
+                    <li>Delivery failures caused by third-party carrier or API issues</li>
+                    <li>Losses arising from your violation of applicable laws using the Platform</li>
+                </ul>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 11 -->
+            <section id="s11">
+                <div class="section-header">
+                    <div class="section-badge-num">11</div>
+                    <h2>Termination</h2>
+                </div>
+                <p>Either party may terminate the account at any time. We may suspend or terminate your account immediately (without refund) if you:</p>
+                <ul>
+                    <li>Violate these Terms of Service or our Acceptable Use Policy</li>
+                    <li>Engage in fraudulent, illegal, or abusive activity</li>
+                    <li>Fail to pay subscription fees after a grace period</li>
+                    <li>Use the Platform in a manner that harms other users, the Platform, or third parties</li>
+                </ul>
+                <p>Upon termination, your data is retained for 90 days before permanent deletion, during which you may export it.</p>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 12 -->
+            <section id="s12">
+                <div class="section-header">
+                    <div class="section-badge-num">12</div>
+                    <h2>Changes to Terms</h2>
+                </div>
+                <p>We reserve the right to modify these Terms at any time. We will provide at least 14 days' notice of material changes via email or in-app notification. Continued use after the effective date of changes constitutes your acceptance of the updated Terms.</p>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 13 -->
+            <section id="s13">
+                <div class="section-header">
+                    <div class="section-badge-num">13</div>
+                    <h2>Governing Law</h2>
+                </div>
+                <p>These Terms shall be governed by the laws of India. Any dispute arising shall be subject to the exclusive jurisdiction of competent courts in India. The parties agree to attempt good-faith resolution before initiating formal proceedings.</p>
+            </section>
+
+            <hr class="article-divider">
+
+            <!-- Section 14 -->
+            <section id="s14">
+                <div class="section-header">
+                    <div class="section-badge-num">14</div>
+                    <h2>Contact</h2>
+                </div>
+                <p>For questions about these Terms, please contact us at:</p>
+                <ul>
+                    <li><strong>Email:</strong> {{ platform_branding.legal_email }}</li>
+                </ul>
+                
+                <div class="footer-cta-legal">
+                    <h4>Have a question about these Terms?</h4>
+                    <p>Our legal team will respond within 5 business days.</p>
+                    <a href="{{ url_for('main.contact') }}" class="btn-cta">
+                        <i class="bi bi-envelope"></i> Contact Legal Team
+                    </a>
+                </div>
+            </section>
+        </article>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer-legal">
+        <div class="footer-content-legal">
+            <p>&copy; 2026 CalltoConvey. All rights reserved.</p>
+            <div class="footer-links-legal">
+                <a href="{{ url_for('main.privacy_policy') }}">Privacy Policy</a>
+                <a href="{{ url_for('main.terms_of_service') }}">Terms of Service</a>
+                <a href="{{ url_for('main.dpa') }}">DPA Agreement</a>
+                <a href="{{ url_for('main.contact') }}">Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Mobile Navigation Toggle -->
+    <button class="mobile-toc-toggle" aria-label="Toggle contents menu">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <!-- Core UI Logic -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            // Reading Progress Bar
+            const progressBar = document.querySelector(".progress-bar");
+            const updateProgress = () => {
+                const scrollTop = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+                progressBar.style.width = scrollPercent + "%";
+            };
+            window.addEventListener("scroll", updateProgress);
+            window.addEventListener("resize", updateProgress);
+
+            // Scroll Spy (Intersection Observer)
+            const sections = document.querySelectorAll("article.article-legal section");
+            const tocItems = document.querySelectorAll(".toc-list .toc-item");
+            
+            const observerOptions = {
+                root: null,
+                rootMargin: "-120px 0px -50% 0px",
+                threshold: 0
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                let activeId = null;
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        activeId = entry.target.getAttribute("id");
+                    }
+                });
+
+                if (activeId) {
+                    tocItems.forEach(item => {
+                        const link = item.querySelector("a");
+                        if (link.getAttribute("href") === `#${activeId}`) {
+                            item.classList.add("active");
+                        } else {
+                            item.classList.remove("active");
+                        }
+                    });
+                }
+            }, observerOptions);
+
+            sections.forEach(section => observer.observe(section));
+
+            // Sidebar Search Filter
+            const searchInput = document.querySelector(".search-filter-input");
+            if (searchInput) {
+                searchInput.addEventListener("input", (e) => {
+                    const query = e.target.value.toLowerCase().trim();
+                    tocItems.forEach(item => {
+                        const text = item.querySelector("a").textContent.toLowerCase();
+                        if (text.includes(query)) {
+                            item.style.display = "block";
+                        } else {
+                            item.style.display = "none";
+                        }
+                    });
+                });
+            }
+
+            // Mobile TOC Toggle
+            const toggleBtn = document.querySelector(".mobile-toc-toggle");
+            const sidebar = document.querySelector(".sidebar-legal");
+            if (toggleBtn && sidebar) {
+                toggleBtn.addEventListener("click", () => {
+                    sidebar.classList.toggle("mobile-show");
+                    const icon = toggleBtn.querySelector("i");
+                    if (sidebar.classList.contains("mobile-show")) {
+                        icon.className = "bi bi-x-lg";
+                    } else {
+                        icon.className = "bi bi-list";
+                    }
+                });
+                
+                // Auto close on mobile navigation click
+                sidebar.querySelectorAll("a").forEach(link => {
+                    link.addEventListener("click", () => {
+                        sidebar.classList.remove("mobile-show");
+                        toggleBtn.querySelector("i").className = "bi bi-list";
+                    });
+                });
+            }
+        });
+
+        function printDocument() {
+            window.print();
+        }
+    </script>
 </body>
 </html>

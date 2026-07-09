@@ -1,9 +1,60 @@
 {% extends "base_platform_premium.html" %}
 
-{% block title %}ConnectFlow | Platform Admins{% endblock %}
+{% block title %}CalltoConvey | Platform Admins{% endblock %}
 {% block page_title %}Platform Admin Management{% endblock %}
 
 {% block content %}
+<!-- Navigation Tabs -->
+<style>
+    /* Premium Navigation Tabs */
+    .premium-tabs-container {
+        border-bottom: 1px solid var(--grey-200);
+        margin-bottom: 2rem;
+    }
+    .premium-tabs {
+        display: flex;
+        gap: 1.5rem;
+    }
+    .premium-tab {
+        padding: 0.75rem 0.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--grey-500);
+        text-decoration: none;
+        position: relative;
+        transition: color 0.2s;
+    }
+    .premium-tab:hover {
+        color: var(--primary);
+    }
+    .premium-tab.active {
+        color: var(--primary);
+    }
+    .premium-tab.active::after {
+        content: "";
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: var(--primary);
+        border-radius: 2px;
+    }
+    .premium-tab i {
+        margin-right: 0.35rem;
+    }
+</style>
+<div class="premium-tabs-container">
+    <div class="premium-tabs">
+        <a href="{{ url_for('super_admin.manage_admins') }}" class="premium-tab active">
+            <i class="bi bi-shield-lock"></i> Admins & Security
+        </a>
+        <a href="{{ url_for('super_admin.branding_settings') }}" class="premium-tab">
+            <i class="bi bi-palette"></i> Branding Customizer
+        </a>
+    </div>
+</div>
+
 <!-- KPI Overview Row -->
 <div class="kpi-grid">
     <div class="kpi-card">
@@ -174,6 +225,17 @@
                         <div class="qa-content">
                             <div class="qa-title">Invite Admin</div>
                             <div class="qa-desc">Add new platform administrator</div>
+                        </div>
+                        <i class="bi bi-chevron-right qa-arrow"></i>
+                    </button>
+
+                    <button class="quick-action-btn" onclick="window.location.href='{{ url_for('super_admin.branding_settings') }}'">
+                        <div class="qa-icon" style="background: rgba(236, 72, 153, 0.1); color: #ec4899;">
+                            <i class="bi bi-palette"></i>
+                        </div>
+                        <div class="qa-content">
+                            <div class="qa-title">Platform Branding</div>
+                            <div class="qa-desc">Configure brand logo and colors</div>
                         </div>
                         <i class="bi bi-chevron-right qa-arrow"></i>
                     </button>

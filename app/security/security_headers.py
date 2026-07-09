@@ -19,6 +19,12 @@ def init_security_headers(app):
             "Strict-Transport-Security"
         ] = "max-age=31536000; includeSubDomains; preload"
 
+        # 4a. Permissions Policy (restricting hardware APIs)
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+
+        # 4b. X-XSS-Protection (Legacy filter enablement)
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+
         # 5. Content Security Policy (CSP)
         # Allows styles and images from self, fonts from fonts.gstatic.com/fonts.googleapis.com,
         # CDNs for icons, and prevents flash, object and frame embedding.

@@ -77,6 +77,18 @@ class SessionManager:
         db.session.commit()
 
     @staticmethod
+    def _get_login_endpoint(path):
+        if path.startswith("/platform"):
+            return "super_admin.login"
+        elif path.startswith("/org"):
+            return "org.login"
+        elif path.startswith("/worker"):
+            return "worker.login"
+        elif path.startswith("/campaign-express"):
+            return "campaign_express.login"
+        return "main.index"
+
+    @staticmethod
     def enforce_session_timeout():
         """
         Enforce absolute inactivity timeouts (20 minutes).
@@ -85,21 +97,22 @@ class SessionManager:
         # Exclude static assets
         if request.path.startswith("/static/") or request.path.startswith("/static"):
             return
-
+ 
         if not current_user.is_authenticated:
             return
-
+ 
         # Check if token in session
         token = session.get("_session_token")
         if not token:
             # Missing token in authenticated session -> force logout for safety
             SessionManager.logout_and_clean()
             flash("Session security token missing. Please log in again.", "warning")
-            return redirect(url_for("main.index"))
-
+            login_endpoint = SessionManager._get_login_endpoint(request.path)
+            return redirect(url_for(login_endpoint, next=request.url))
+ 
         active_sess = ActiveSession.query.filter_by(session_token=token).first()
         now = datetime.utcnow()
-
+ 
         if not active_sess:
             # Active session was deleted from backend (force logged out by admin or password change)
             SessionManager.logout_and_clean()
@@ -107,15 +120,16 @@ class SessionManager:
                 "Your session has been terminated by an administrator or a security event.",
                 "danger",
             )
-            return redirect(url_for("main.index"))
-
+            login_endpoint = SessionManager._get_login_endpoint(request.path)
+            return redirect(url_for(login_endpoint, next=request.url))
+ 
         # Calculate time difference
         diff = now - active_sess.last_activity
         if diff > timedelta(minutes=SessionManager.TIMEOUT_MINUTES):
             # Session timed out
             db.session.delete(active_sess)
             db.session.commit()
-
+ 
             # Log audit
             audit = SecurityAuditLog(
                 user_id=current_user.id,
@@ -135,14 +149,15 @@ class SessionManager:
             )
             db.session.add(audit)
             db.session.commit()
-
+ 
             SessionManager.logout_and_clean()
             flash(
                 f"You have been logged out due to inactivity for {SessionManager.TIMEOUT_MINUTES} minutes.",
                 "info",
             )
-            return redirect(url_for("main.index"))
-
+            login_endpoint = SessionManager._get_login_endpoint(request.path)
+            return redirect(url_for(login_endpoint, next=request.url))
+ 
         # Update last activity
         active_sess.last_activity = now
         db.session.commit()
@@ -207,14 +222,31 @@ class SessionManager:
         """
         Safely log out Flask-Login and clear session dictionary.
         """
-        token = session.get("_session_token")
-        if token:
-            active_sess = ActiveSession.query.filter_by(session_token=token).first()
-            if active_sess:
-                db.session.delete(active_sess)
-                db.session.commit()
+        from flask import g, logout_user
+        tid = getattr(g, "tid", None)
+
+        # Remove current tab's user association
+        if tid and "_user_ids" in session:
+            session["_user_ids"].pop(tid, None)
+
         logout_user()
-        session.clear()
+        session.pop("_user_id", None)
+
+        # Check if there are other active tabs still logged in
+        other_tabs_active = False
+        if "_user_ids" in session:
+            other_tabs_active = any(val for val in session["_user_ids"].values() if val)
+
+        if not other_tabs_active:
+            token = session.get("_session_token")
+            if token:
+                active_sess = ActiveSession.query.filter_by(session_token=token).first()
+                if active_sess:
+                    db.session.delete(active_sess)
+                    db.session.commit()
+            session.clear()
+        else:
+            session.modified = True
 
     @staticmethod
     def get_active_sessions(user_id, user_type):

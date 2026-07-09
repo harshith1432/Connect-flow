@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Help Center | ConnectFlow</title>
-    <meta name="description" content="Find answers to common ConnectFlow questions. Browse FAQs, setup guides, and troubleshooting articles.">
+    <title>Help Center | CalltoConvey</title>
+    <meta name="description" content="Find answers to common CalltoConvey questions. Browse FAQs, setup guides, and troubleshooting articles.">
     <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -37,7 +37,7 @@
 <body>
     <nav class="navbar" id="mainNav">
         <div class="container nav-content">
-            <a href="/" class="logo">Connect<span>Flow</span></a>
+            <a href="/" class="logo"><img src="{{ url_for('main.static', filename='logo.jpg') }}" alt="CalltoConvey Logo" style="height: 38px; width: auto; object-fit: contain; border-radius: 6px; vertical-align: middle;"></a>
             <div class="nav-auth">
                 <a href="{{ url_for('org.login') }}" class="btn-outline">Login</a>
                 <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
@@ -105,12 +105,12 @@
             <h2 style="text-align:center; font-size:1.75rem; font-weight:800; color:#0f172a; margin-bottom:2.5rem;">Frequently Asked Questions</h2>
             {% for q, a in [
                 ('How do I start my first campaign?', 'Register your organisation, wait for admin approval, then go to Modules → create a module → import your audience data. Next, go to Scripts → create a message template. Finally, go to Campaigns → New Campaign, select your module, channel, and script, then click Launch.'),
-                ('What file format should I use to import data?', 'ConnectFlow accepts both Excel (.xlsx) and CSV (.csv) files. Your column headers must match the field names you defined in your module. Make sure there is a "phone" column with valid 10-digit mobile numbers.'),
-                ('How does the Text-to-Speech work for voice calls?', 'You write your voice script as text in the Script editor. ConnectFlow uses either Google TTS or Microsoft Edge TTS (you can choose) to automatically convert it to audio. Dynamic placeholders like {{name}} are replaced with each recipient\'s actual data before synthesis.'),
+                ('What file format should I use to import data?', 'CalltoConvey accepts both Excel (.xlsx) and CSV (.csv) files. Your column headers must match the field names you defined in your module. Make sure there is a "phone" column with valid 10-digit mobile numbers.'),
+                ('How does the Text-to-Speech work for voice calls?', 'You write your voice script as text in the Script editor. CalltoConvey uses either Google TTS or Microsoft Edge TTS (you can choose) to automatically convert it to audio. Dynamic placeholders like {{name}} are replaced with each recipient\'s actual data before synthesis.'),
                 ('Can I use my own Twilio account?', 'Yes. Go to Organisation → Settings → Integrations and enter your Twilio Account SID, Auth Token, and phone number. If you don\'t have Twilio, you can use platform-default credits if your subscription includes them.'),
-                ('How are different organisation\'s data kept separate?', 'ConnectFlow uses strict multi-tenant architecture. Every database query is filtered by organisation ID. No organisation can see, access, or interact with any other organisation\'s data, workers, campaigns, or modules.'),
+                ('How are different organisation\'s data kept separate?', 'CalltoConvey uses strict multi-tenant architecture. Every database query is filtered by organisation ID. No organisation can see, access, or interact with any other organisation\'s data, workers, campaigns, or modules.'),
                 ('How do I enable MFA for my account?', 'Go to your Profile page and click "Enable Two-Factor Authentication". Scan the QR code with Google Authenticator or Authy, then verify the 6-digit code to activate MFA on your account.'),
-                ('What happens if a campaign message fails to deliver?', 'ConnectFlow receives real-time delivery status updates via Twilio webhooks. Failed messages are logged with their failure reason (busy, no-answer, failed, etc.) and are visible in your Campaign Report. You can filter and re-target failed contacts for a follow-up campaign.'),
+                ('What happens if a campaign message fails to deliver?', 'CalltoConvey receives real-time delivery status updates via Twilio webhooks. Failed messages are logged with their failure reason (busy, no-answer, failed, etc.) and are visible in your Campaign Report. You can filter and re-target failed contacts for a follow-up campaign.'),
             ] %}
             <div class="faq-item">
                 <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
@@ -129,7 +129,7 @@
     </section>
 
     <footer style="background:#020617; color:#64748b; padding:2rem 0; text-align:center; font-size:0.875rem;">
-        <p>&copy; 2026 ConnectFlow. All rights reserved. &nbsp;|&nbsp; <a href="{{ url_for('main.privacy_policy') }}" style="color:#64748b;">Privacy</a></p>
+        <p>&copy; 2026 CalltoConvey. All rights reserved. &nbsp;|&nbsp; <a href="{{ url_for('main.privacy_policy') }}" style="color:#64748b;">Privacy</a></p>
     </footer>
 </body>
 </html>

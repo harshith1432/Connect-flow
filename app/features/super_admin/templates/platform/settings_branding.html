@@ -1,0 +1,389 @@
+{% extends "base_platform_premium.html" %}
+
+{% block title %}CalltoConvey | Branding Customizer{% endblock %}
+{% block page_title %}Branding Settings{% endblock %}
+
+{% block content %}
+<style>
+    /* Premium Navigation Tabs */
+    .premium-tabs-container {
+        border-bottom: 1px solid var(--grey-200);
+        margin-bottom: 2rem;
+    }
+    .premium-tabs {
+        display: flex;
+        gap: 1.5rem;
+    }
+    .premium-tab {
+        padding: 0.75rem 0.5rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--grey-500);
+        text-decoration: none;
+        position: relative;
+        transition: color 0.2s;
+    }
+    .premium-tab:hover {
+        color: var(--primary);
+    }
+    .premium-tab.active {
+        color: var(--primary);
+    }
+    .premium-tab.active::after {
+        content: "";
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: var(--primary);
+        border-radius: 2px;
+    }
+    .premium-tab i {
+        margin-right: 0.35rem;
+    }
+
+    /* Live Preview Card styling */
+    .branding-preview-card {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border-radius: 16px;
+        padding: 2.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 220px;
+        color: white;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
+    .branding-preview-card::before {
+        content: "LIVE INTERACTIVE PREVIEW";
+        position: absolute;
+        top: 1rem;
+        left: 1rem;
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.3);
+        letter-spacing: 1px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+    .preview-container {
+        transition: all 0.2s ease;
+    }
+    
+    .slider-value-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        background: var(--grey-100);
+        color: var(--grey-700);
+        padding: 0.15rem 0.4rem;
+        border-radius: 4px;
+        margin-left: 0.5rem;
+    }
+</style>
+
+<!-- Navigation Tabs -->
+<div class="premium-tabs-container">
+    <div class="premium-tabs">
+        <a href="{{ url_for('super_admin.manage_admins') }}" class="premium-tab">
+            <i class="bi bi-shield-lock"></i> Admins & Security
+        </a>
+        <a href="{{ url_for('super_admin.branding_settings') }}" class="premium-tab active">
+            <i class="bi bi-palette"></i> Branding Customizer
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Branding Controls Form -->
+    <div class="col-lg-7">
+        <div class="premium-panel">
+            <div class="card-header-premium" style="margin-bottom: 1.5rem;">
+                <div class="header-left">
+                    <h2>Platform Branding</h2>
+                    <p>Customize the look and feel of the platform identity</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ url_for('super_admin.branding_settings') }}" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- Brand Name Input -->
+                <div class="form-group mb-4">
+                    <label class="form-label" style="font-weight: 700;">Brand / Platform Name</label>
+                    <input type="text" id="inputBrandName" name="brand_name" class="form-control" 
+                           placeholder="e.g. CalltoConvey" value="{{ branding.brand_name }}" required>
+                    <div class="form-text" style="font-size: 0.75rem; margin-top: 0.25rem; color: var(--grey-500);">
+                        This will appear in headers, titles, reports, and emails.
+                    </div>
+                </div>
+
+                <!-- Logo Image Upload -->
+                <div class="form-group mb-4">
+                    <label class="form-label" style="font-weight: 700;">Upload Brand Logo</label>
+                    <div class="d-flex align-items-center gap-3">
+                        <input type="file" id="inputLogoFile" name="logo_file" class="form-control" accept="image/*" style="display: none;">
+                        <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('inputLogoFile').click()" style="border-radius: 10px; font-size: 0.85rem; padding: 0.6rem 1.2rem;">
+                            <i class="bi bi-cloud-arrow-up me-2"></i> Choose Image...
+                        </button>
+                        <span id="fileNameDisplay" style="font-size: 0.85rem; color: var(--grey-500);">No file chosen</span>
+                    </div>
+                </div>
+
+                <!-- Display Mode Option -->
+                <div class="form-group mb-4">
+                    <label class="form-label" style="font-weight: 700;">Display Selection</label>
+                    <div class="d-flex gap-4 mt-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="logo_display" id="displayBoth" value="both" {% if branding.logo_display == 'both' %}checked{% endif %}>
+                            <label class="form-check-label" for="displayBoth" style="font-size: 0.85rem; font-weight: 500;">Both Logo & Text</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="logo_display" id="displayLogo" value="logo" {% if branding.logo_display == 'logo' %}checked{% endif %}>
+                            <label class="form-check-label" for="displayLogo" style="font-size: 0.85rem; font-weight: 500;">Logo Image Only</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="logo_display" id="displayText" value="text" {% if branding.logo_display == 'text' %}checked{% endif %}>
+                            <label class="form-check-label" for="displayText" style="font-size: 0.85rem; font-weight: 500;">Brand Text Only</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layout Alignment Selector -->
+                <div class="form-group mb-4" id="layoutAlignmentGroup">
+                    <label class="form-label" style="font-weight: 700;">Logo Alignment Position</label>
+                    <select name="logo_position" id="selectLogoPosition" class="form-select" style="border-radius: 10px;">
+                        <option value="left" {% if branding.logo_position == 'left' %}selected{% endif %}>Logo Left of Text</option>
+                        <option value="right" {% if branding.logo_position == 'right' %}selected{% endif %}>Logo Right of Text</option>
+                    </select>
+                </div>
+
+                <!-- Layout Height / Sizing Controls -->
+                <div class="row mb-4">
+                    <div class="col-md-6" id="logoHeightGroup">
+                        <div class="form-group mb-0">
+                            <label class="form-label" style="font-weight: 700;">Logo Image Height <span id="badgeLogoHeight" class="slider-value-badge">{{ branding.logo_height }}px</span></label>
+                            <input type="range" name="logo_height" id="rangeLogoHeight" class="form-range mt-2" min="16" max="250" step="1" value="{{ branding.logo_height }}">
+                        </div>
+                    </div>
+                    <div class="col-md-6" id="textSizeGroup">
+                        <div class="form-group mb-0">
+                            <label class="form-label" style="font-weight: 700;">Brand Text Font Size <span id="badgeTextSize" class="slider-value-badge">{{ branding.text_size }}px</span></label>
+                            <input type="range" name="text_size" id="rangeTextSize" class="form-range mt-2" min="12" max="80" step="1" value="{{ branding.text_size }}">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Platform Contact Details -->
+                <h3 style="font-size: 1rem; font-weight: 700; margin: 2.5rem 0 1rem; color: var(--grey-800); border-bottom: 1px solid var(--grey-100); padding-bottom: 0.5rem;">
+                    <i class="bi bi-envelope-open-fill me-2" style="color: var(--primary);"></i> Platform Contact Details
+                </h3>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" style="font-weight: 600; font-size: 0.85rem;">Support Email</label>
+                            <input type="email" name="support_email" class="form-control" value="{{ branding.support_email }}" required style="border-radius: 8px;">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" style="font-weight: 600; font-size: 0.85rem;">Sales Email</label>
+                            <input type="email" name="sales_email" class="form-control" value="{{ branding.sales_email }}" required style="border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" style="font-weight: 600; font-size: 0.85rem;">Billing Email</label>
+                            <input type="email" name="billing_email" class="form-control" value="{{ branding.billing_email }}" required style="border-radius: 8px;">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" style="font-weight: 600; font-size: 0.85rem;">Legal Email</label>
+                            <input type="email" name="legal_email" class="form-control" value="{{ branding.legal_email }}" required style="border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" style="font-weight: 600; font-size: 0.85rem;">Privacy Email</label>
+                            <input type="email" name="privacy_email" class="form-control" value="{{ branding.privacy_email }}" required style="border-radius: 8px;">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label" style="font-weight: 600; font-size: 0.85rem;">DPO Email</label>
+                            <input type="email" name="dpo_email" class="form-control" value="{{ branding.dpo_email }}" required style="border-radius: 8px;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label" style="font-weight: 600; font-size: 0.85rem;">Contact Phone Number</label>
+                    <input type="text" name="contact_phone" class="form-control" value="{{ branding.contact_phone }}" required style="border-radius: 8px;">
+                </div>
+
+                <!-- Submit Button -->
+                <div class="d-flex justify-content-end gap-2 mt-4 pt-3" style="border-top: 1px solid var(--grey-200);">
+                    <button type="button" class="btn btn-outline-secondary" onclick="window.location.reload()" style="border-radius: 10px; padding: 0.6rem 1.5rem;">Cancel</button>
+                    <button type="submit" class="btn btn-primary" style="border-radius: 10px; padding: 0.6rem 1.5rem;">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Right Column: Interactive Live Preview -->
+    <div class="col-lg-5">
+        <div class="premium-panel">
+            <div class="card-header-premium" style="margin-bottom: 1.5rem;">
+                <div class="header-left">
+                    <h2>Live Identity Preview</h2>
+                    <p>Observe layout adjustments in real-time</p>
+                </div>
+            </div>
+
+            <!-- Preview Card -->
+            <div class="branding-preview-card mb-4">
+                <div id="livePreviewContainer" class="preview-container">
+                    <!-- Dynamic Preview Content -->
+                </div>
+            </div>
+
+            <!-- Explanatory Guide Box -->
+            <div class="alert alert-info d-flex gap-3 align-items-start" style="border-radius: 12px; background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.1); color: var(--grey-700);">
+                <i class="bi bi-info-circle-fill" style="color: var(--primary); font-size: 1.25rem;"></i>
+                <div>
+                    <h5 style="margin: 0 0 0.25rem; font-size: 0.85rem; font-weight: 700;">Interactive Tips</h5>
+                    <p style="margin: 0; font-size: 0.8rem; line-height: 1.4;">
+                        Select *Both* or *Logo Only* to customize image assets. Drag sliders to instantly change sizes. Alignments can be flipped seamlessly. Once saved, these configurations dynamically render across the application.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Elements
+        const inputBrandName = document.getElementById("inputBrandName");
+        const inputLogoFile = document.getElementById("inputLogoFile");
+        const fileNameDisplay = document.getElementById("fileNameDisplay");
+        
+        const displayBoth = document.getElementById("displayBoth");
+        const displayLogo = document.getElementById("displayLogo");
+        const displayText = document.getElementById("displayText");
+        
+        const selectLogoPosition = document.getElementById("selectLogoPosition");
+        const rangeLogoHeight = document.getElementById("rangeLogoHeight");
+        const rangeTextSize = document.getElementById("rangeTextSize");
+        
+        const badgeLogoHeight = document.getElementById("badgeLogoHeight");
+        const badgeTextSize = document.getElementById("badgeTextSize");
+        
+        const livePreviewContainer = document.getElementById("livePreviewContainer");
+        
+        const layoutAlignmentGroup = document.getElementById("layoutAlignmentGroup");
+        const logoHeightGroup = document.getElementById("logoHeightGroup");
+        const textSizeGroup = document.getElementById("textSizeGroup");
+
+        // Initial Logo Path (current database value)
+        let currentLogoUrl = "";
+        {% if branding.logo_path %}
+            {% if '/' in branding.logo_path or '\\' in branding.logo_path or 'branding/' in branding.logo_path %}
+                currentLogoUrl = "{{ url_for('static', filename=branding.logo_path) }}";
+            {% else %}
+                currentLogoUrl = "{{ url_for('main.static', filename=branding.logo_path) }}";
+            {% endif %}
+        {% endif %}
+
+        // FileReader logic to preview uploaded logo
+        let uploadedLogoUrl = "";
+        inputLogoFile.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                fileNameDisplay.textContent = file.name;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    uploadedLogoUrl = event.target.result;
+                    updatePreview();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Update Live Preview Renderer
+        const updatePreview = () => {
+            const name = inputBrandName.value || "CalltoConvey";
+            const logoDisplay = document.querySelector('input[name="logo_display"]:checked').value;
+            const logoPos = selectLogoPosition.value;
+            const logoH = rangeLogoHeight.value;
+            const textSz = rangeTextSize.value;
+
+            // Update badge counters
+            badgeLogoHeight.textContent = logoH + "px";
+            badgeTextSize.textContent = textSz + "px";
+
+            // Hide/Show layout control blocks based on display choice
+            if (logoDisplay === "both") {
+                layoutAlignmentGroup.style.display = "block";
+                logoHeightGroup.style.display = "block";
+                textSizeGroup.style.display = "block";
+            } else if (logoDisplay === "logo") {
+                layoutAlignmentGroup.style.display = "none";
+                logoHeightGroup.style.display = "block";
+                textSizeGroup.style.display = "none";
+            } else { // text only
+                layoutAlignmentGroup.style.display = "none";
+                logoHeightGroup.style.display = "none";
+                textSizeGroup.style.display = "block";
+            }
+
+            // Render Preview Node
+            const activeLogoUrl = uploadedLogoUrl || currentLogoUrl || "";
+            let logoImgHtml = "";
+            if (activeLogoUrl) {
+                logoImgHtml = `<img src="${activeLogoUrl}" alt="Logo" style="height: ${logoH}px; width: auto; object-fit: contain; border-radius: 4px; vertical-align: middle;">`;
+            }
+
+            const textHtml = `<span style="font-size: ${textSz}px; font-weight: 800; font-family: 'Outfit', sans-serif; letter-spacing: -0.5px;">${name}</span>`;
+
+            if (logoDisplay === "logo") {
+                livePreviewContainer.innerHTML = logoImgHtml;
+            } else if (logoDisplay === "text") {
+                livePreviewContainer.innerHTML = textHtml;
+            } else { // both
+                const flexDir = logoPos === "right" ? "row-reverse" : "row";
+                livePreviewContainer.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-direction: ${flexDir};">
+                        ${logoImgHtml}
+                        ${textHtml}
+                    </div>
+                `;
+            }
+        };
+
+        // Wire inputs
+        inputBrandName.addEventListener("input", updatePreview);
+        displayBoth.addEventListener("change", updatePreview);
+        displayLogo.addEventListener("change", updatePreview);
+        displayText.addEventListener("change", updatePreview);
+        selectLogoPosition.addEventListener("change", updatePreview);
+        rangeLogoHeight.addEventListener("input", updatePreview);
+        rangeTextSize.addEventListener("input", updatePreview);
+
+        // Run initial preview rendering
+        updatePreview();
+    });
+</script>
+{% endblock %}

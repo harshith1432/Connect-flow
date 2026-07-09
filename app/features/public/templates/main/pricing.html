@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pricing | ConnectFlow</title>
-    <meta name="description" content="Choose the ConnectFlow plan that fits your outbound communication volume. Simple, transparent pricing with no hidden fees.">
+    <title>Pricing | CalltoConvey</title>
+    <meta name="description" content="Choose the CalltoConvey plan that fits your outbound communication volume. Simple, transparent pricing with no hidden fees.">
     <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -12,27 +12,33 @@
         .page-hero h1 { font-size: 3rem; font-weight: 800; margin-bottom: 1rem; }
         .page-hero p { color: #94a3b8; font-size: 1.1rem; max-width: 600px; margin: 0 auto; }
         .pricing-section { padding: 5rem 0; background: #f8fafc; }
-        .pricing-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2rem; margin-bottom: 4rem; }
-        .pricing-card { background: white; border-radius: 20px; padding: 2.5rem; border: 1.5px solid #e2e8f0; position: relative; }
+        .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.25rem; margin-bottom: 4rem; }
+        @media (max-width: 1200px) {
+            .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 600px) {
+            .pricing-grid { grid-template-columns: 1fr; }
+        }
+        .pricing-card { background: white; border-radius: 20px; padding: 2rem 1.5rem; border: 1.5px solid #e2e8f0; position: relative; display: flex; flex-direction: column; }
         .pricing-card.featured { background: #0f172a; border-color: #0f172a; color: white; }
         .featured-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: #10b981; color: white; font-size: 0.7rem; font-weight: 800; padding: 0.35rem 1rem; border-radius: 20px; letter-spacing: 0.5px; white-space: nowrap; }
         .plan-name { font-size: 1.1rem; font-weight: 800; color: #0f172a; margin-bottom: 0.25rem; }
         .featured .plan-name { color: white; }
-        .plan-tagline { color: #64748b; font-size: 0.875rem; margin-bottom: 1.5rem; }
+        .plan-tagline { color: #64748b; font-size: 0.825rem; margin-bottom: 1.5rem; height: 38px; }
         .featured .plan-tagline { color: #94a3b8; }
-        .plan-price { font-size: 3rem; font-weight: 900; color: #0f172a; line-height: 1; }
+        .plan-price { font-size: 2.5rem; font-weight: 900; color: #0f172a; line-height: 1; }
         .featured .plan-price { color: white; }
-        .plan-price span { font-size: 1rem; font-weight: 500; color: #64748b; }
+        .plan-price span { font-size: 0.875rem; font-weight: 500; color: #64748b; }
         .featured .plan-price span { color: #94a3b8; }
         .plan-divider { border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0; }
         .featured .plan-divider { border-color: rgba(255,255,255,0.1); }
-        .plan-features { list-style: none; padding: 0; margin: 0 0 2rem; }
-        .plan-features li { padding: 0.6rem 0; display: flex; align-items: center; gap: 0.75rem; font-size: 0.9rem; color: #475569; }
+        .plan-features { list-style: none; padding: 0; margin: 0 0 2rem; flex-grow: 1; }
+        .plan-features li { padding: 0.5rem 0; display: flex; align-items: center; gap: 0.5rem; font-size: 0.825rem; color: #475569; }
         .featured .plan-features li { color: #cbd5e1; }
-        .plan-features li i { color: #10b981; font-size: 1rem; flex-shrink: 0; }
+        .plan-features li i { color: #10b981; font-size: 0.95rem; flex-shrink: 0; }
         .plan-features li.muted { color: #94a3b8; }
         .plan-features li.muted i { color: #cbd5e1; }
-        .btn-plan { display: block; text-align: center; padding: 0.875rem; border-radius: 10px; font-weight: 700; text-decoration: none; transition: all 0.2s; }
+        .btn-plan { display: block; text-align: center; padding: 0.875rem; border-radius: 10px; font-weight: 700; text-decoration: none; transition: all 0.2s; margin-top: auto; }
         .btn-plan.dark { background: #0f172a; color: white; }
         .btn-plan.dark:hover { background: #1e293b; }
         .btn-plan.white { background: white; color: #0f172a; }
@@ -51,7 +57,7 @@
 <body>
     <nav class="navbar" id="mainNav">
         <div class="container nav-content">
-            <a href="/" class="logo">Connect<span>Flow</span></a>
+            <a href="/" class="logo"><img src="{{ url_for('main.static', filename='logo.jpg') }}" alt="CalltoConvey Logo" style="height: 38px; width: auto; object-fit: contain; border-radius: 6px; vertical-align: middle;"></a>
             <div class="nav-auth">
                 <a href="{{ url_for('org.login') }}" class="btn-outline">Login</a>
                 <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
@@ -71,54 +77,71 @@
         <div class="container">
             <div class="pricing-grid">
                 <div class="pricing-card">
-                    <div class="plan-name">Starter</div>
-                    <div class="plan-tagline">For small-scale outbound lists</div>
+                    <div class="plan-name">Free Trial</div>
+                    <div class="plan-tagline">Perfect for testing outbound outreach scripts</div>
+                    <div class="plan-price">₹0<span>/14 days</span></div>
+                    <hr class="plan-divider">
+                    <ul class="plan-features">
+                        <li><i class="bi bi-check-circle-fill"></i> Up to 1,000 broadcasts total</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 5 worker accounts</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 2 custom CRM modules</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 3 active campaigns</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Google TTS speech synthesis</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Platform default caller ID</li>
+                        <li class="muted"><i class="bi bi-x-circle"></i> Twilio WhatsApp channel</li>
+                        <li class="muted"><i class="bi bi-x-circle"></i> Custom API integrations</li>
+                    </ul>
+                    <a href="{{ url_for('org.register') }}" class="btn-plan outline">Start Free Trial</a>
+                </div>
+                <div class="pricing-card">
+                    <div class="plan-name">Growth</div>
+                    <div class="plan-tagline">For active outbound lists & small teams</div>
                     <div class="plan-price">₹3,499<span>/mo</span></div>
                     <hr class="plan-divider">
                     <ul class="plan-features">
-                        <li><i class="bi bi-check-circle-fill"></i> Up to 5,000 automated broadcasts/mo</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Voice calls + WhatsApp messaging</li>
-                        <li><i class="bi bi-check-circle-fill"></i> 3 custom modules</li>
-                        <li><i class="bi bi-check-circle-fill"></i> 5 worker accounts</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Basic delivery analytics</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Email support</li>
-                        <li class="muted"><i class="bi bi-x-circle"></i> Advanced analytics</li>
-                        <li class="muted"><i class="bi bi-x-circle"></i> Priority support</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Up to 15,000 broadcasts/mo</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 15 worker accounts</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 5 custom CRM modules</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 15 active campaigns</li>
+                        <li><i class="bi bi-check-circle-fill"></i> WhatsApp + Voice messaging</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Edge-TTS Speech synthesis</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Standard support</li>
+                        <li class="muted"><i class="bi bi-x-circle"></i> Custom Twilio/Hooman Keys</li>
                     </ul>
-                    <a href="{{ url_for('org.register') }}" class="btn-plan dark">Start Free Trial</a>
+                    <a href="{{ url_for('org.register') }}" class="btn-plan dark">Scale Broadcasting</a>
                 </div>
                 <div class="pricing-card featured">
                     <div class="featured-badge">MOST POPULAR</div>
-                    <div class="plan-name">Growth</div>
-                    <div class="plan-tagline">For active automated outreach</div>
+                    <div class="plan-name">Professional</div>
+                    <div class="plan-tagline">For high-volume team campaigns</div>
                     <div class="plan-price">₹12,999<span>/mo</span></div>
                     <hr class="plan-divider">
                     <ul class="plan-features">
-                        <li><i class="bi bi-check-circle-fill"></i> Up to 50,000 automated broadcasts/mo</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Voice calls + WhatsApp messaging</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Unlimited custom modules</li>
-                        <li><i class="bi bi-check-circle-fill"></i> 25 worker accounts</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Advanced analytics & reports</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Campaign performance logs</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Priority email support</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Custom TTS voice scripts</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Up to 75,000 broadcasts/mo</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 50 worker accounts</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Unlimited custom CRM modules</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 50 active campaigns</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Voice + WhatsApp + SMS</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Twilio & Hooman custom API keys</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Advanced analytics & logs</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Priority Support</li>
                     </ul>
-                    <a href="{{ url_for('org.register') }}" class="btn-plan white">Scale Broadcasting</a>
+                    <a href="{{ url_for('org.register') }}" class="btn-plan white">Scale Outreach</a>
                 </div>
                 <div class="pricing-card">
                     <div class="plan-name">Enterprise</div>
-                    <div class="plan-tagline">For enterprise-scale delivery</div>
-                    <div class="plan-price">Custom</div>
+                    <div class="plan-tagline">Dedicated delivery channels and priority support</div>
+                    <div class="plan-price">₹49,999<span>/mo</span></div>
                     <hr class="plan-divider">
                     <ul class="plan-features">
                         <li><i class="bi bi-check-circle-fill"></i> Unlimited broadcasts</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Voice + WhatsApp + SMS</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Unlimited modules & workers</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Dedicated deliverability channels</li>
-                        <li><i class="bi bi-check-circle-fill"></i> Custom API integrations</li>
-                        <li><i class="bi bi-check-circle-fill"></i> 99.9% SLA uptime guarantee</li>
-                        <li><i class="bi bi-check-circle-fill"></i> 24/7 dedicated account manager</li>
-                        <li><i class="bi bi-check-circle-fill"></i> On-premise deployment option</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Unlimited workers & modules</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Unlimited active campaigns</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Dedicated deliverability channel</li>
+                        <li><i class="bi bi-check-circle-fill"></i> White-label branding options</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 99.9% Uptime SLA guarantee</li>
+                        <li><i class="bi bi-check-circle-fill"></i> 24/7 Dedicated account manager</li>
+                        <li><i class="bi bi-check-circle-fill"></i> Custom API + Webhook integrations</li>
                     </ul>
                     <a href="{{ url_for('main.contact') }}" class="btn-plan outline">Talk to Sales</a>
                 </div>
@@ -151,7 +174,7 @@
                 <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
                     Do I need my own Twilio account? <i class="bi bi-plus-lg"></i>
                 </div>
-                <div class="faq-a">No. ConnectFlow provides platform-level communication credits by default. You can optionally plug in your own Twilio or Hooman Labs API keys for greater control and lower per-message costs.</div>
+                <div class="faq-a">No. CalltoConvey provides platform-level communication credits by default. You can optionally plug in your own Twilio or Hooman Labs API keys for greater control and lower per-message costs.</div>
             </div>
             <div class="faq-item">
                 <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
@@ -163,13 +186,13 @@
                 <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">
                     How is data isolated between organisations? <i class="bi bi-plus-lg"></i>
                 </div>
-                <div class="faq-a">ConnectFlow uses strict multi-tenant data partitioning. Every organisation's data, workers, campaigns, and modules are completely invisible to all other tenants.</div>
+                <div class="faq-a">CalltoConvey uses strict multi-tenant data partitioning. Every organisation's data, workers, campaigns, and modules are completely invisible to all other tenants.</div>
             </div>
         </div>
     </section>
 
     <footer style="background:#020617; color:#64748b; padding:2rem 0; text-align:center; font-size:0.875rem;">
-        <p>&copy; 2026 ConnectFlow. All rights reserved. &nbsp;|&nbsp; <a href="{{ url_for('main.privacy_policy') }}" style="color:#64748b;">Privacy</a> &nbsp;|&nbsp; <a href="{{ url_for('main.terms_of_service') }}" style="color:#64748b;">Terms</a></p>
+        <p>&copy; 2026 CalltoConvey. All rights reserved. &nbsp;|&nbsp; <a href="{{ url_for('main.privacy_policy') }}" style="color:#64748b;">Privacy</a> &nbsp;|&nbsp; <a href="{{ url_for('main.terms_of_service') }}" style="color:#64748b;">Terms</a></p>
     </footer>
 </body>
 </html>

@@ -1,0 +1,78 @@
+{% extends "base_platform_premium.html" %}
+{% block title %}CalltoConvey | CE Campaigns{% endblock %}
+{% block page_title %}Campaign Express Executions{% endblock %}
+
+{% block content %}
+<div class="premium-card mb-4">
+    <div class="card-header-premium">
+        <div class="header-left">
+            <h2>Execution Timeline</h2>
+            <p>Monitor campaign status and number allocation</p>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle table-hover" style="border-collapse: separate; border-spacing: 0 0.5rem; padding: 0 1.5rem;">
+            <thead>
+                <tr style="color: var(--grey-400); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <th class="border-0 pb-3">Campaign</th>
+                    <th class="border-0 pb-3">User</th>
+                    <th class="border-0 pb-3">Status</th>
+                    <th class="border-0 pb-3">Progress</th>
+                    <th class="border-0 pb-3">Assigned Number</th>
+                    <th class="border-0 pb-3 text-end">Created At</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in campaigns %}
+                <tr style="background: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-radius: 8px;">
+                    <td class="border-0 rounded-start" style="padding: 1rem;">
+                        <div class="fw-bold" style="color: var(--text-dark);">{{ c.name }}</div>
+                        <div class="small" style="color: var(--grey-400);">ID: {{ c.id }}</div>
+                    </td>
+                    <td class="border-0" style="padding: 1rem;">
+                        <div class="small fw-bold">{{ c.campaign_express_user.full_name }}</div>
+                    </td>
+                    <td class="border-0" style="padding: 1rem;">
+                        <span class="badge {% if c.status == 'running' %}bg-primary{% elif c.status == 'completed' %}bg-success{% elif c.status == 'failed' %}bg-danger{% else %}bg-secondary{% endif %}">{{ c.status|title }}</span>
+                    </td>
+                    <td class="border-0" style="padding: 1rem;">
+                        <div class="small">{{ c.successful_calls }}/{{ c.total_calls }} calls</div>
+                    </td>
+                    <td class="border-0" style="padding: 1rem;">
+                        {% set assignment = None %}
+                        {% if c.ce_number_assignments %}
+                            {% for a in c.ce_number_assignments %}
+                                {% if a.status == 'active' %}
+                                    {% set assignment = a %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if not assignment and c.ce_number_assignments|length > 0 %}
+                                {% set assignment = c.ce_number_assignments[-1] %}
+                            {% endif %}
+                        {% endif %}
+
+                        {% if assignment %}
+                            <span class="badge bg-info text-dark">{{ assignment.pool_number.number }}</span>
+                        {% else %}
+                            <span class="text-muted small">None</span>
+                        {% endif %}
+                    </td>
+                    <td class="border-0 rounded-end text-end" style="padding: 1rem;">
+                        <span class="small text-muted">{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-4 border-0">
+                        <div class="empty-state">
+                            <i class="bi bi-megaphone"></i>
+                            <p>No campaigns executed yet.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

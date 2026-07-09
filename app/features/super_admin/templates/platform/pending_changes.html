@@ -1,6 +1,6 @@
 {% extends "base_platform_premium.html" %}
 
-{% block title %}ConnectFlow | Pending Reviews & Approvals{% endblock %}
+{% block title %}CalltoConvey | Pending Reviews & Approvals{% endblock %}
 {% block page_title %}Pending Reviews & Approvals{% endblock %}
 
 {% block head_extra %}
@@ -1079,7 +1079,7 @@
                     <h6 class="fw-bold mb-3">Live Session Guard Logs</h6>
                     <div class="d-flex flex-column gap-2" style="max-height: 200px; overflow-y:auto; font-family: monospace; font-size: 0.75rem; background: #0f172a; color:#38bdf8; padding: 1rem; border-radius:12px;">
                         <div>[2026-05-19 19:15:02] Platform Admin session integrity check verified. Token valid.</div>
-                        <div>[2026-05-19 19:14:43] Brute force logger cleaned locks for identity = "superadmin@connectflow.io"</div>
+                        <div>[2026-05-19 19:14:43] Brute force logger cleaned locks for identity = "superadmin@calltoconvey.io"</div>
                         <div>[2026-05-19 19:10:12] MFA verification challenge generated & emailed to admin account.</div>
                         <div>[2026-05-19 18:59:58] CSRF exemption logic updated for main-tenant ingress webhook callbacks.</div>
                         <div>[2026-05-19 18:32:15] Session security cache headers injected (No-Store / Private).</div>
@@ -1411,7 +1411,7 @@
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `ConnectFlow_Vetting_Audit_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute("download", `CalltoConvey_Vetting_Audit_${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

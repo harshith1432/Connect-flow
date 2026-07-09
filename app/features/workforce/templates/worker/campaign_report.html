@@ -1,5 +1,5 @@
 {% extends "base_worker_premium.html" %}
-{% block title %}Campaign Report — {{ campaign.name }} | ConnectFlow{% endblock %}
+{% block title %}Campaign Report — {{ campaign.name }} | CalltoConvey{% endblock %}
 {% block page_title %}Campaign Report{% endblock %}
 
 {% block head_extra %}
@@ -12,11 +12,8 @@
 .cr-kpi:hover{transform:translateY(-4px);box-shadow:0 10px 30px rgba(0,0,0,.09)}
 .cr-kpi-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.7rem}
 .cr-kpi-label{font-size:.72rem;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px}
-.cr-kpi-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
-.ico-purple{background:var(--accent-light);color:var(--accent)}.ico-green{background:rgba(23,201,100,.1);color:var(--success)}
-.ico-amber{background:rgba(245,165,36,.1);color:var(--warning)}.ico-blue{background:rgba(59,130,246,.1);color:var(--info)}.ico-red{background:rgba(243,18,96,.1);color:var(--danger)}
-.ico-orange{background:rgba(249,115,22,.1);color:var(--orange)}
-.cr-kpi-val{font-family:'Outfit',sans-serif;font-size:1.9rem;font-weight:800;color:#111;margin-bottom:.15rem}
+.ico-purple, .ico-green, .ico-amber, .ico-blue, .ico-red, .ico-orange { background: var(--grey-50, #f9fafb); color: var(--black, #000000); border: 1px solid var(--grey-200, #e5e7eb); }
+.cr-kpi-val{font-family:'Outfit',sans-serif;font-size:1.9rem;font-weight:800;color:var(--black, #111);margin-bottom:.15rem}
 
 /* Section panel */
 .cr-panel{background:#fff;border:1px solid #f0f0f5;border-radius:var(--card-r);box-shadow:var(--card-sh);margin-bottom:1.5rem; overflow:hidden;}
@@ -108,23 +105,23 @@
     </div>
     <div class="cr-kpi">
         <div class="cr-kpi-top"><span class="cr-kpi-label">Answered</span><div class="cr-kpi-ico ico-green"><i class="bi bi-telephone-inbound-fill"></i></div></div>
-        <div class="cr-kpi-val text-success" id="kpi-answered">{{ stats.answered }}</div>
+        <div class="cr-kpi-val" id="kpi-answered">{{ stats.answered }}</div>
     </div>
     <div class="cr-kpi">
         <div class="cr-kpi-top"><span class="cr-kpi-label">Retrying</span><div class="cr-kpi-ico ico-amber"><i class="bi bi-arrow-repeat"></i></div></div>
-        <div class="cr-kpi-val text-warning" id="kpi-retrying">{{ stats.retrying }}</div>
+        <div class="cr-kpi-val" id="kpi-retrying">{{ stats.retrying }}</div>
     </div>
     <div class="cr-kpi">
         <div class="cr-kpi-top"><span class="cr-kpi-label">WhatsApp Sent</span><div class="cr-kpi-ico ico-green"><i class="bi bi-whatsapp"></i></div></div>
-        <div class="cr-kpi-val" style="color:var(--success)" id="kpi-whatsapp">{{ stats.whatsapp }}</div>
+        <div class="cr-kpi-val" id="kpi-whatsapp">{{ stats.whatsapp }}</div>
     </div>
     <div class="cr-kpi">
         <div class="cr-kpi-top"><span class="cr-kpi-label">Failed</span><div class="cr-kpi-ico ico-red"><i class="bi bi-exclamation-octagon-fill"></i></div></div>
-        <div class="cr-kpi-val text-danger" id="kpi-failed">{{ stats.failed }}</div>
+        <div class="cr-kpi-val" id="kpi-failed">{{ stats.failed }}</div>
     </div>
     <div class="cr-kpi">
         <div class="cr-kpi-top"><span class="cr-kpi-label">In Pipeline</span><div class="cr-kpi-ico ico-orange"><i class="bi bi-hourglass-split"></i></div></div>
-        <div class="cr-kpi-val" style="color:var(--orange)" id="kpi-pipeline">{{ stats.waiting + stats.queued }}</div>
+        <div class="cr-kpi-val" id="kpi-pipeline">{{ stats.waiting + stats.queued }}</div>
     </div>
 </div>
 

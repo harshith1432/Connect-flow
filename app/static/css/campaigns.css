@@ -14,14 +14,9 @@
 .kpi-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: .65rem; }
 .kpi-lbl { font-size: .75rem; font-weight: 700; color: #6b7280; text-transform: uppercase; letter-spacing: .5px; }
 .kpi-ico { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
-.ico-p { background: var(--accent-light); color: var(--accent); }
-.ico-g { background: rgba(23, 201, 100, .1); color: var(--success); }
-.ico-a { background: rgba(245, 165, 36, .1); color: var(--warning); }
-.ico-b { background: rgba(59, 130, 246, .1); color: #3b82f6; }
-.ico-r { background: rgba(243, 18, 96, .1); color: var(--danger); }
-.ico-d { background: #f3f4f6; color: #374151; }
-.kpi-val { font-family: 'Outfit', sans-serif; font-size: 1.9rem; font-weight: 800; color: #111; margin-bottom: .15rem; }
-.kpi-sub { font-size: .73rem; font-weight: 600; color: #10b981; display: flex; align-items: center; gap: .3rem; }
+.ico-p, .ico-g, .ico-a, .ico-b, .ico-r, .ico-d { background: var(--grey-50, #f9fafb); color: var(--black, #000000); border: 1px solid var(--grey-200, #e5e7eb); }
+.kpi-val { font-family: 'Outfit', sans-serif; font-size: 1.9rem; font-weight: 800; color: var(--black, #111); margin-bottom: .15rem; }
+.kpi-sub { font-size: .73rem; font-weight: 600; color: var(--grey-500, #6b7280); display: flex; align-items: center; gap: .3rem; }
 
 .sc { background: #fff; border: 1px solid #f0f0f5; border-radius: var(--card-r); box-shadow: var(--shadow); margin-bottom: 1.5rem; }
 .sh { display: flex; justify-content: space-between; align-items: center; padding: 1.35rem 1.6rem 1rem; border-bottom: 1px solid #f5f5fa; }

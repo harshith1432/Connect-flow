@@ -14,7 +14,7 @@
     --grey-800: #1f2937;
     --grey-900: #111827;
     
-    --sidebar-width: 280px;
+    --sidebar-width: 250px;
     --topbar-height: 80px;
     
     --font-heading: 'Outfit', sans-serif;
@@ -152,6 +152,11 @@ h1, h2, h3, h4, h5, h6 {
     letter-spacing: -0.02em;
 }
 
+h1 { font-size: clamp(1.4rem, 2.5vw + 0.8rem, 2.25rem); }
+h2 { font-size: clamp(1.2rem, 2vw + 0.7rem, 1.8rem); }
+h3 { font-size: clamp(1.05rem, 1.5vw + 0.6rem, 1.4rem); }
+h4 { font-size: clamp(0.95rem, 1vw + 0.5rem, 1.2rem); }
+
 p {
     font-family: var(--font-body);
     line-height: 1.6;
@@ -195,18 +200,19 @@ p {
 .nav-item {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 0.875rem 1rem;
-    border-radius: 12px;
+    gap: 0.75rem;
+    padding: 0.625rem 1rem;
+    border-radius: 10px;
     color: var(--grey-400);
     font-weight: 500;
+    font-size: 0.875rem;
     text-decoration: none;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
     transition: var(--transition-base);
 }
 
 .nav-item i {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
 }
 
 .nav-item:hover {
@@ -935,9 +941,13 @@ img, video {
         justify-content: center !important;
     }
     
-    .form-input {
+    .form-input, .form-control, .form-select {
         min-height: 44px !important;
         font-size: 1rem !important; /* Prevents auto-zoom on iOS */
+    }
+
+    body {
+        padding-bottom: env(safe-area-inset-bottom) !important;
     }
 
     /* Text resizing */
@@ -964,6 +974,17 @@ img, video {
     
     .activity-table {
         min-width: 600px !important; /* Ensure table structure is preserved */
+    }
+
+    /* Safety fallback for any unwrapped table to prevent layout break */
+    .table {
+        display: block !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    .table-responsive .table {
+        display: table !important;
     }
     
     /* Modals mobile viewport fit */
@@ -1410,4 +1431,43 @@ img, video {
     0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
     70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
     100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* Global Selection Style: Monochrome Theme Integration */
+::selection {
+    background-color: var(--black) !important;
+    color: var(--white) !important;
+}
+::-moz-selection {
+    background-color: var(--black) !important;
+    color: var(--white) !important;
+}
+
+/* Clean Monochrome KPI Cards Overrides */
+.kpi-icon,
+.kpi-ico,
+.cr-kpi-ico,
+.cr-kpi-icon,
+.g-kpi-icon,
+.ico-purple,
+.ico-green,
+.ico-amber,
+.ico-blue,
+.ico-red,
+.ico-orange,
+.icon-purple,
+.icon-green,
+.icon-amber,
+.icon-blue {
+    background-color: var(--grey-50) !important;
+    color: var(--black) !important;
+    border: 1px solid var(--grey-200) !important;
+}
+
+.kpi-icon i,
+.kpi-ico i,
+.cr-kpi-ico i,
+.cr-kpi-icon i,
+.g-kpi-icon i {
+    color: var(--black) !important;
 }

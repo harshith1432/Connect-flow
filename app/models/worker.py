@@ -28,6 +28,9 @@ class OrganizationUser(UserMixin, db.Model):
     status_active = db.Column(db.Boolean, default=True)
     onboarding_completed = db.Column(db.Boolean, default=False, server_default="false")
 
+    def get_id(self):
+        return f"organization_user:{self.id}"
+
     # Ensure (email, organization_id) is unique, not just email
     __table_args__ = (
         db.UniqueConstraint("email", "organization_id", name="_user_email_org_uc"),

@@ -1,5 +1,5 @@
 {% extends "base_worker_premium.html" %}
-{% block title %}Campaigns — {{ group.name }} | ConnectFlow{% endblock %}
+{% block title %}Campaigns — {{ group.name }} | CalltoConvey{% endblock %}
 {% block page_title %}Campaign Dashboard{% endblock %}
 {% block head_extra %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/campaigns.css') }}">
@@ -164,7 +164,7 @@
                 </td>
                 <td style="color:#9ca3af;font-size:.8rem;">{{ c.created_at.strftime('%b %d, %Y') }}</td>
                 <td>
-                  <div class="act-row">
+                  <div class="act-row" style="display:flex;gap:0.4rem;justify-content:flex-end;">
                     {% if c.status == 'draft' %}
                     <form method="post" action="{{ url_for('worker.start_campaign', cid=c.id) }}"
                       style="display:inline;"
@@ -172,9 +172,25 @@
                       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                       <button type="submit" class="btn-act start"><i class="bi bi-play-fill"></i> Start</button>
                     </form>
+                    <a href="{{ url_for('worker.edit_campaign', cid=c.id) }}" class="btn-act edit" style="background:#f3f4f6;color:#4b5563;border:1px solid #e5e7eb;" title="Edit Campaign">
+                      <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    {% elif c.status == 'running' %}
+                    <a href="{{ url_for('worker.campaign_report', cid=c.id) }}" class="btn-act report">
+                      <i class="bi bi-bar-chart-line"></i> Report
+                    </a>
                     {% else %}
                     <a href="{{ url_for('worker.campaign_report', cid=c.id) }}" class="btn-act report">
                       <i class="bi bi-bar-chart-line"></i> Report
+                    </a>
+                    <form method="post" action="{{ url_for('worker.restart_campaign', cid=c.id) }}"
+                      style="display:inline;"
+                      onsubmit="return confirm('Run this campaign again? This will reset all targets and queue communications.');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <button type="submit" class="btn-act start" style="background:#0d6efd;color:#fff;"><i class="bi bi-arrow-clockwise"></i> Run Again</button>
+                    </form>
+                    <a href="{{ url_for('worker.edit_campaign', cid=c.id) }}" class="btn-act edit" style="background:#f3f4f6;color:#4b5563;border:1px solid #e5e7eb;" title="Edit Campaign">
+                      <i class="bi bi-pencil"></i> Edit
                     </a>
                     {% endif %}
                   </div>

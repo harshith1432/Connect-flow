@@ -1,6 +1,6 @@
 {% extends "base_platform_premium.html" %}
 
-{% block title %}ConnectFlow | Payment Infrastructure{% endblock %}
+{% block title %}CalltoConvey | Payment Infrastructure{% endblock %}
 {% block page_title %}Payment Infrastructure{% endblock %}
 
 {% block head_extra %}
@@ -606,6 +606,7 @@
                         <select name="type" id="type" class="form-select premium-input" onchange="toggleFormFields(this.value)">
                             <option value="gateway">Payment Gateway (API Core)</option>
                             <option value="manual">Manual Settlement (UPI / Bank)</option>
+                            <option value="dynamic_upi">Dynamic UPI ID (Manual Verification)</option>
                         </select>
                     </div>
 
@@ -658,6 +659,44 @@
                         </div>
                     </div>
 
+                    <!-- Dynamic UPI Settings Section -->
+                    <div id="dynamic-upi-fields" class="form-section-animated" style="display: none;">
+                        <div class="row">
+                            <div class="col-sm-6 form-group-premium">
+                                <label class="input-label-premium">Merchant UPI ID</label>
+                                <input type="text" id="upi_id" class="form-control premium-input" placeholder="e.g. merchant@upi">
+                            </div>
+                            <div class="col-sm-6 form-group-premium">
+                                <label class="input-label-premium">Merchant Name</label>
+                                <input type="text" id="merchant_name" class="form-control premium-input" placeholder="e.g. CalltoConvey Inc">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-6 form-group-premium">
+                                <label class="input-label-premium">QR Code Size (px)</label>
+                                <input type="number" id="qr_size" class="form-control premium-input" placeholder="250" value="250">
+                            </div>
+                            <div class="col-sm-6 form-group-premium">
+                                <label class="input-label-premium">Verification Message</label>
+                                <input type="text" id="verification_time_msg" class="form-control premium-input" placeholder="e.g. Usually 2–15 minutes.">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-sm-4 form-group-premium">
+                                <label class="input-label-premium">File Types</label>
+                                <input type="text" id="accepted_file_types" class="form-control premium-input" placeholder="jpg,jpeg,png,webp,pdf" value="jpg,jpeg,png,webp,pdf">
+                            </div>
+                            <div class="col-sm-4 form-group-premium">
+                                <label class="input-label-premium">Max Size (MB)</label>
+                                <input type="number" id="max_upload_size" class="form-control premium-input" placeholder="10" value="10">
+                            </div>
+                            <div class="col-sm-4 form-group-premium">
+                                <label class="input-label-premium">Expiry (Hours)</label>
+                                <input type="number" id="auto_expiry_hours" class="form-control premium-input" placeholder="24" value="24">
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Dynamic Manual Settlement Fields -->
                     <div id="manual-specific-fields" class="form-section-animated" style="display: none;">
                         <div class="form-group-premium">
@@ -668,22 +707,31 @@
                     </div>
 
                     <div class="row mb-4">
-                        <div class="col-6">
+                        <div class="col-4">
+                            <div class="form-check form-switch d-flex align-items-center gap-2.5 p-0">
+                                <div class="switch-premium">
+                                    <input type="checkbox" name="is_active" id="is_active" checked>
+                                    <span class="slider-premium"></span>
+                                </div>
+                                <span class="small fw-bold text-dark">Enabled</span>
+                            </div>
+                        </div>
+                        <div class="col-4">
                             <div class="form-check form-switch d-flex align-items-center gap-2.5 p-0">
                                 <div class="switch-premium">
                                     <input type="checkbox" id="auto_renewal" checked>
                                     <span class="slider-premium"></span>
                                 </div>
-                                <span class="small fw-bold text-dark">Auto-Renewal</span>
+                                <span class="small fw-bold text-dark">Renewal</span>
                             </div>
                         </div>
-                        <div class="col-6">
+                        <div class="col-4">
                             <div class="form-check form-switch d-flex align-items-center gap-2.5 p-0">
                                 <div class="switch-premium">
                                     <input type="checkbox" id="refunds" checked>
                                     <span class="slider-premium"></span>
                                 </div>
-                                <span class="small fw-bold text-dark">Enable Refunds</span>
+                                <span class="small fw-bold text-dark">Refunds</span>
                             </div>
                         </div>
                     </div>
@@ -713,7 +761,7 @@
                     <div class="checkout-preview-screen">
                         <div class="preview-header">
                             <div class="preview-org-logo">CF</div>
-                            <h6 class="mb-1 text-light fw-bold">ConnectFlow checkout</h6>
+                            <h6 class="mb-1 text-light fw-bold">CalltoConvey checkout</h6>
                             <p class="preview-billing-label mb-2">PRO ANNUAL ACCOUNT</p>
                             <h3 class="preview-amount">₹49,999<span style="font-size: 0.9rem; font-weight: normal; color: var(--grey-400);">/yr</span></h3>
                         </div>
@@ -942,9 +990,15 @@
                                     </span>
                                 </td>
                                 <td>
+                                    {% if m.is_active %}
                                     <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1">
                                         <i class="bi bi-patch-check-fill me-1"></i> ACTIVE
                                     </span>
+                                    {% else %}
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-x-circle-fill me-1"></i> INACTIVE
+                                    </span>
+                                    {% endif %}
                                 </td>
                                 <td class="text-end">
                                     <div class="d-flex gap-1.5 justify-content-end">
@@ -1075,6 +1129,17 @@
                         refunds: document.getElementById('refunds').checked
                     };
                     document.getElementById('instructions').value = JSON.stringify(config);
+                } else if (typeVal === 'dynamic_upi') {
+                    const upiConfig = {
+                        upi_id: document.getElementById('upi_id').value,
+                        merchant_name: document.getElementById('merchant_name').value,
+                        qr_size: document.getElementById('qr_size').value || '250',
+                        verification_time_msg: document.getElementById('verification_time_msg').value || 'Usually 2–15 minutes during business hours.',
+                        accepted_file_types: document.getElementById('accepted_file_types').value || 'jpg,jpeg,png,webp,pdf',
+                        max_upload_size: document.getElementById('max_upload_size').value || '10',
+                        auto_expiry_hours: document.getElementById('auto_expiry_hours').value || '24'
+                    };
+                    document.getElementById('instructions').value = JSON.stringify(upiConfig);
                 } else {
                     document.getElementById('instructions').value = document.getElementById('manual_instructions').value;
                 }
@@ -1086,17 +1151,27 @@
     function toggleFormFields(type) {
         const gatewaySection = document.getElementById('gateway-specific-fields');
         const manualSection = document.getElementById('manual-specific-fields');
+        const upiSection = document.getElementById('dynamic-upi-fields');
         const previewBankCard = document.getElementById('preview-bank-card');
         
         if (type === 'gateway') {
             gatewaySection.style.display = 'block';
             manualSection.style.display = 'none';
+            upiSection.style.display = 'none';
             if (previewBankCard) previewBankCard.style.display = 'none';
             document.getElementById('form-mode-badge').innerText = 'API Core';
             document.getElementById('form-mode-badge').className = 'badge bg-primary-subtle text-primary rounded-pill px-2.5 py-1';
+        } else if (type === 'dynamic_upi') {
+            gatewaySection.style.display = 'none';
+            manualSection.style.display = 'none';
+            upiSection.style.display = 'block';
+            if (previewBankCard) previewBankCard.style.display = 'flex';
+            document.getElementById('form-mode-badge').innerText = 'UPI Manual';
+            document.getElementById('form-mode-badge').className = 'badge bg-info-subtle text-info rounded-pill px-2.5 py-1';
         } else {
             gatewaySection.style.display = 'none';
             manualSection.style.display = 'block';
+            upiSection.style.display = 'none';
             if (previewBankCard) previewBankCard.style.display = 'flex';
             document.getElementById('form-mode-badge').innerText = 'Manual Settlement';
             document.getElementById('form-mode-badge').className = 'badge bg-secondary-subtle text-secondary rounded-pill px-2.5 py-1';
@@ -1135,6 +1210,7 @@
         document.getElementById('method_id').value = m.id;
         document.getElementById('name').value = m.name;
         document.getElementById('type').value = m.type;
+        document.getElementById('is_active').checked = m.is_active !== false;
         
         document.getElementById('form-panel-title').innerHTML = '<i class="bi bi-pencil-square me-2 text-warning"></i>Modify Gateway';
         document.getElementById('form-mode-badge').innerText = 'Modify API';
@@ -1160,6 +1236,19 @@
                 document.getElementById('webhook_secret').value = '';
                 document.getElementById('environment').value = 'Sandbox';
             }
+        } else if (m.type === 'dynamic_upi') {
+            try {
+                const config = JSON.parse(m.instructions);
+                document.getElementById('upi_id').value = config.upi_id || '';
+                document.getElementById('merchant_name').value = config.merchant_name || '';
+                document.getElementById('qr_size').value = config.qr_size || '250';
+                document.getElementById('verification_time_msg').value = config.verification_time_msg || '';
+                document.getElementById('accepted_file_types').value = config.accepted_file_types || 'jpg,jpeg,png,webp,pdf';
+                document.getElementById('max_upload_size').value = config.max_upload_size || '10';
+                document.getElementById('auto_expiry_hours').value = config.auto_expiry_hours || '24';
+            } catch (e) {
+                // fallback
+            }
         } else {
             document.getElementById('manual_instructions').value = m.instructions || '';
         }
@@ -1184,6 +1273,16 @@
         document.getElementById('webhook_secret').value = '';
         document.getElementById('environment').value = 'Sandbox';
         document.getElementById('manual_instructions').value = '';
+        
+        document.getElementById('upi_id').value = '';
+        document.getElementById('merchant_name').value = '';
+        document.getElementById('qr_size').value = '250';
+        document.getElementById('verification_time_msg').value = '';
+        document.getElementById('accepted_file_types').value = 'jpg,jpeg,png,webp,pdf';
+        document.getElementById('max_upload_size').value = '10';
+        document.getElementById('auto_expiry_hours').value = '24';
+
+        document.getElementById('is_active').checked = true;
         document.getElementById('auto_renewal').checked = true;
         document.getElementById('refunds').checked = true;
         
@@ -1301,7 +1400,7 @@
 
     // Show endpoints mockup
     function showWebhooksModal() {
-        showSystemToast('Secure Webhook URL: https://connectflow.ai/api/v1/webhooks/payments');
+        showSystemToast('Secure Webhook URL: https://calltoconvey.ai/api/v1/webhooks/payments');
     }
 
     // Notify setting status changes

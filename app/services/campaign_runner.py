@@ -933,6 +933,12 @@ class CampaignExecutionService:
                 ).count()
                 campaign.status = "failed" if failed_count == total else "completed"
                 db.session.commit()
+                
+                # Release Campaign Express number if assigned
+                if getattr(campaign, 'campaign_express_user_id', None):
+                    from app.services.ce_number_allocator import CeNumberAllocator
+                    CeNumberAllocator.release(campaign_id)
+                
                 logger.info(
                     f"[CAMPAIGN COMPLETED] Campaign {campaign_id} -> "
                     f"{campaign.status}"
@@ -951,6 +957,15 @@ class CampaignExecutionService:
                 campaign = db.session.get(Campaign, campaign_id)
                 if not campaign or campaign.status != "running":
                     return
+
+                if getattr(campaign, 'campaign_express_user_id', None):
+                    from app.services.ce_number_allocator import CeNumberAllocator
+                    allocated_number = CeNumberAllocator.allocate(campaign_id)
+                    if not allocated_number:
+                        logger.error(f"[CE ALLOCATOR] No numbers available for CE campaign {campaign_id}")
+                        campaign.status = "failed"
+                        db.session.commit()
+                        return
 
                 script = db.session.get(Script, campaign.script_id)
                 if not script:

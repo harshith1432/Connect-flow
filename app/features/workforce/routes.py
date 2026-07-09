@@ -216,6 +216,27 @@ def create_module():
             flash("Module name is required", "danger")
             return render_template("worker/module_create.html")
 
+        # Check subscription and enforce module limits
+        from app.models import Subscription
+        sub = Subscription.query.filter_by(
+            organization_id=current_user.organization_id
+        ).first()
+        
+        from app.core.constants import PLAN_LIMITS
+        plan_name = (sub.plan or "Free Trial").lower() if sub else "free trial"
+        plan_limits = PLAN_LIMITS.get(plan_name, PLAN_LIMITS["free trial"])
+        
+        current_modules_count = Module.query.filter_by(
+            organization_id=current_user.organization_id
+        ).count()
+        
+        if current_modules_count >= plan_limits["modules"]:
+            flash(
+                f"Your organization has reached the plan limit of {plan_limits['modules']} custom CRM modules. Please upgrade your subscription plan to create more.",
+                "danger"
+            )
+            return redirect(url_for("worker.modules"))
+
         new_module = Module(
             organization_id=current_user.organization_id,
             name=name,
@@ -234,131 +255,14 @@ def create_module():
         )
 
         flash(f"Module '{name}' created successfully!", "success")
-        return redirect(url_for("worker.manage_module", mid=new_module.id))
+        return redirect(url_for("worker.manage_groups", mid=new_module.id, **request.args))
 
     return render_template("worker/module_create.html")
 
 
 @worker_bp.route("/login", methods=["GET", "POST"])
 def login():
-    if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-        selected_org_id = request.form.get("organization_id")
-
-        # --- Brute Force Protection ---
-        from app.security.auth_protection import BruteForceProtection
-
-        locked, lock_msg = BruteForceProtection.is_locked_out(email)
-        if locked:
-            flash(lock_msg, "danger")
-            return render_template("auth/worker_login.html")
-
-        matching_users = OrganizationUser.query.filter_by(email=email).all()
-        valid_users = [u for u in matching_users if u.check_password(password)]
-
-        if not valid_users:
-            BruteForceProtection.log_failed_attempt(identifier=email)
-            flash("Invalid credentials", "danger")
-            return render_template("auth/worker_login.html")
-
-        # --- Helper: complete worker login with session hardening ---
-        def _finish_worker_login(user):
-            """Applies MFA check OR direct login with session regeneration."""
-            from app.security.mfa import MFAService
-            from app.security.session_manager import SessionManager
-
-            user_type = "org_user"
-            config = MFAService.get_mfa_config(user.id, user_type)
-
-            if config.is_enabled:
-                session["pre_mfa_user_id"] = user.id
-                session["pre_mfa_user_type"] = user_type
-                session["pre_mfa_remember"] = "remember" in request.form
-
-                success, msg = MFAService.generate_and_send_otp(
-                    user.id, user_type, method=config.mfa_type
-                )
-                if success:
-                    flash("Verification code sent.", "info")
-                    return redirect(url_for("security.verify_otp"))
-                else:
-                    flash(f"Error sending verification code: {msg}", "danger")
-                    return render_template("auth/worker_login.html")
-            else:
-                login_user(user, remember="remember" in request.form)
-                SessionManager.regenerate_session()
-                SessionManager.track_session(user.id, user_type)
-                return redirect(url_for("worker.dashboard"))
-
-        if selected_org_id:
-            user = OrganizationUser.query.filter_by(
-                email=email, organization_id=selected_org_id
-            ).first()
-            if user and user.check_password(password):
-                sub = Subscription.query.filter_by(
-                    organization_id=user.organization_id
-                ).first()
-                if (
-                    not sub
-                    or sub.status == "inactive"
-                    or (
-                        sub.expires_at
-                        and datetime.utcnow() > sub.expires_at + timedelta(days=3)
-                    )
-                ):
-                    flash(
-                        "Organization services are suspended or a subscription is required.",
-                        "danger",
-                    )
-                    return render_template("auth/worker_login.html")
-                user.login_count = (user.login_count or 0) + 1
-                user.last_login = datetime.utcnow()
-                db.session.commit()
-                ChangeRequest.log(
-                    user.organization_id,
-                    user.id,
-                    "Worker Login",
-                    new_val=f"Worker session started from {request.remote_addr}",
-                )
-                return _finish_worker_login(user)
-
-        if len(valid_users) == 1:
-            user = valid_users[0]
-            sub = Subscription.query.filter_by(
-                organization_id=user.organization_id
-            ).first()
-            if (
-                not sub
-                or sub.status == "inactive"
-                or (
-                    sub.expires_at
-                    and datetime.utcnow() > sub.expires_at + timedelta(days=3)
-                )
-            ):
-                flash(
-                    "Organization services are suspended or a subscription is required.",
-                    "danger",
-                )
-                return render_template("auth/worker_login.html")
-            user.login_count = (user.login_count or 0) + 1
-            user.last_login = datetime.utcnow()
-            db.session.commit()
-            ChangeRequest.log(
-                user.organization_id,
-                user.id,
-                "Worker Login",
-                new_val=f"Worker direct login from {request.remote_addr}",
-            )
-            return _finish_worker_login(user)
-
-        return render_template(
-            "auth/select_org.html",
-            matching_users=valid_users,
-            email=email,
-            password=password,
-        )
-    return render_template("auth/worker_login.html")
+    return redirect(url_for("main.login", **request.args))
 
 
 @worker_bp.route("/logout")
@@ -1281,13 +1185,13 @@ def add_group(mid):
     name = request.form.get("name", "").strip()
     if not name:
         flash("Group name is required.", "danger")
-        return redirect(url_for("worker.manage_groups", mid=mid))
+        return redirect(url_for("worker.manage_groups", mid=mid, **request.args))
     group = ModuleGroup(module_id=mid, name=name)
     db.session.add(group)
     db.session.commit()
     ChangeRequest.log(current_user.organization_id, current_user.id, f"Created Group: {name}")
     flash(f'Group "{name}" created successfully.', "success")
-    return redirect(url_for("worker.manage_groups", mid=mid))
+    return redirect(url_for("worker.manage_module", mid=mid, group=group.id, **request.args))
 
 
 @worker_bp.route("/groups/<int:gid>/edit", methods=["POST"])
@@ -1608,6 +1512,27 @@ def campaigns(gid):
             flash("Campaign name is required.", "danger")
             return redirect(url_for("worker.campaigns", gid=gid))
             
+        # Check active campaigns limits
+        from app.models import Subscription
+        sub = Subscription.query.filter_by(
+            organization_id=current_user.organization_id
+        ).first()
+        
+        from app.core.constants import PLAN_LIMITS
+        plan_name = (sub.plan or "Free Trial").lower() if sub else "free trial"
+        plan_limits = PLAN_LIMITS.get(plan_name, PLAN_LIMITS["free trial"])
+        
+        current_campaigns_count = Campaign.query.filter_by(
+            organization_id=current_user.organization_id
+        ).count()
+        
+        if current_campaigns_count >= plan_limits["campaigns"]:
+            flash(
+                f"Your organization has reached the plan limit of {plan_limits['campaigns']} campaigns. Please upgrade your subscription plan to create more.",
+                "danger"
+            )
+            return redirect(url_for("worker.campaigns", gid=gid))
+            
         if script_id:
             script = Script.query.get(script_id)
             if script and script.type != comm_type:
@@ -1683,6 +1608,97 @@ def start_campaign(cid):
         "success",
     )
     return redirect(url_for("worker.campaign_report", cid=cid))
+
+
+@worker_bp.route("/campaigns/<int:cid>/restart", methods=["POST"])
+@worker_required
+@active_subscription_required
+def restart_campaign(cid):
+    campaign = Campaign.query.filter_by(
+        id=cid, organization_id=current_user.organization_id
+    ).first_or_404()
+
+    if campaign.status not in ["completed", "failed", "paused"]:
+        flash("Only completed, failed, or paused campaigns can be run again.", "warning")
+        return redirect(url_for("worker.campaigns", gid=campaign.group_id))
+
+    # Reset all targets for this campaign
+    targets = CampaignTarget.query.filter_by(campaign_id=cid).all()
+    for target in targets:
+        target.status = "queued"
+        target.call_attempts = 0
+        target.retry_count = 0
+        target.completed_at = None
+        target.end_reason = None
+        target.last_attempt_at = None
+        target.next_retry_at = None
+
+    campaign.status = "running"
+    db.session.commit()
+
+    from app.services.campaign_runner import CampaignExecutionService
+    CampaignExecutionService.start(cid)
+
+    flash(
+        f'Campaign "{campaign.name}" has been restarted and is now running again.',
+        "success",
+    )
+    return redirect(url_for("worker.campaign_report", cid=cid))
+
+
+@worker_bp.route("/campaigns/<int:cid>/edit", methods=["GET", "POST"])
+@worker_required
+@active_subscription_required
+def edit_campaign(cid):
+    campaign = Campaign.query.filter_by(
+        id=cid, organization_id=current_user.organization_id
+    ).first_or_404()
+    
+    group = ModuleGroup.query.get_or_404(campaign.group_id)
+    module = Module.query.filter_by(
+        id=group.module_id, organization_id=current_user.organization_id
+    ).first_or_404()
+
+    if request.method == "POST":
+        name = request.form.get("name", "").strip()
+        comm_type = request.form.get("type", "whatsapp_text")
+        script_id = request.form.get("script_id") or None
+        sender_number_id = request.form.get("sender_number_id") or None
+
+        if not name:
+            flash("Campaign name is required.", "danger")
+            return redirect(url_for("worker.edit_campaign", cid=cid))
+
+        if script_id:
+            script = Script.query.get(script_id)
+            if script and script.type != comm_type:
+                flash("Selected script is not compatible with the chosen campaign type.", "danger")
+                return redirect(url_for("worker.edit_campaign", cid=cid))
+
+        campaign.name = name
+        campaign.type = comm_type
+        campaign.script_id = int(script_id) if script_id else None
+        campaign.sender_number_id = int(sender_number_id) if sender_number_id else None
+        
+        db.session.commit()
+        ChangeRequest.log(current_user.organization_id, current_user.id, f"Edited Campaign: {name}")
+        db.session.commit()
+        flash(f'Campaign "{name}" updated successfully.', "success")
+        return redirect(url_for("worker.campaigns", gid=campaign.group_id))
+
+    scripts_list = Script.query.filter_by(group_id=campaign.group_id).all()
+    numbers = CommunicationNumber.query.filter_by(
+        organization_id=current_user.organization_id
+    ).all()
+
+    return render_template(
+        "worker/campaign_edit.html",
+        campaign=campaign,
+        module=module,
+        group=group,
+        scripts=scripts_list,
+        numbers=numbers,
+    )
 
 
 @worker_bp.route("/campaigns/<int:cid>/report")

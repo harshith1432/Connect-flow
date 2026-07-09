@@ -1,0 +1,158 @@
+{% extends "base_platform_premium.html" %}
+
+{% block title %}CalltoConvey | CE Dashboard{% endblock %}
+{% block page_title %}Campaign Express Overview{% endblock %}
+
+{% block head_extra %}
+<style>
+.ce-module-card {
+    background: var(--white);
+    border: 1px solid var(--grey-100);
+    border-radius: 16px;
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    height: 100%;
+}
+.ce-module-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-premium);
+    border-color: var(--primary);
+    color: inherit;
+}
+.ce-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: rgba(99, 102, 241, 0.1);
+    color: var(--primary);
+    flex-shrink: 0;
+}
+.ce-module-info h3 {
+    font-size: 1.1rem;
+    margin: 0 0 0.25rem 0;
+    color: var(--grey-900);
+    font-weight: 600;
+}
+.ce-module-info p {
+    font-size: 0.85rem;
+    margin: 0;
+    color: var(--grey-500);
+    line-height: 1.4;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="kpi-grid">
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Users</span>
+            <div class="kpi-icon">
+                <i class="bi bi-people"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ total_ce_users }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-graph-up"></i>
+            <span>Registered</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Running Campaigns</span>
+            <div class="kpi-icon">
+                <i class="bi bi-megaphone"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ running_ce_campaigns }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-play-circle"></i>
+            <span>Active</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Total Revenue</span>
+            <div class="kpi-icon">
+                <i class="bi bi-currency-rupee"></i>
+            </div>
+        </div>
+        <div class="kpi-value">₹{{ "%.2f"|format(total_ce_revenue) }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-arrow-up-right"></i>
+            <span>Collected</span>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-header">
+            <span class="kpi-label">Number Pool Usage</span>
+            <div class="kpi-icon">
+                <i class="bi bi-hash"></i>
+            </div>
+        </div>
+        <div class="kpi-value">{{ ce_numbers_active }} / {{ ce_numbers_total }}</div>
+        <div class="kpi-trend trend-up">
+            <i class="bi bi-telephone"></i>
+            <span>Numbers Active</span>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('super_admin.ce_users') }}" class="ce-module-card">
+            <div class="ce-icon-wrapper"><i class="bi bi-people"></i></div>
+            <div class="ce-module-info">
+                <h3>Users</h3>
+                <p>Manage Campaign Express users and profiles</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('super_admin.ce_verification') }}" class="ce-module-card">
+            <div class="ce-icon-wrapper"><i class="bi bi-check-circle"></i></div>
+            <div class="ce-module-info">
+                <h3>Verification</h3>
+                <p>Review and approve user identities</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('super_admin.ce_number_pool') }}" class="ce-module-card">
+            <div class="ce-icon-wrapper"><i class="bi bi-hash"></i></div>
+            <div class="ce-module-info">
+                <h3>Number Pool</h3>
+                <p>Manage platform-owned execution numbers</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('super_admin.ce_campaigns') }}" class="ce-module-card">
+            <div class="ce-icon-wrapper"><i class="bi bi-megaphone"></i></div>
+            <div class="ce-module-info">
+                <h3>Campaigns</h3>
+                <p>Monitor real-time campaign execution</p>
+            </div>
+        </a>
+    </div>
+    <div class="col-lg-4 col-md-6">
+        <a href="{{ url_for('super_admin.ce_payments') }}" class="ce-module-card">
+            <div class="ce-icon-wrapper"><i class="bi bi-currency-rupee"></i></div>
+            <div class="ce-module-info">
+                <h3>Payments</h3>
+                <p>Track Campaign Express revenue</p>
+            </div>
+        </a>
+    </div>
+</div>
+{% endblock %}

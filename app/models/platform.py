@@ -19,6 +19,9 @@ class PlatformAdmin(UserMixin, db.Model):
     preferences = db.Column(db.JSON)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    def get_id(self):
+        return f"platform_admin:{self.id}"
+
     @staticmethod
     def create_default():
         from app.config import Config
@@ -121,3 +124,32 @@ class PaymentGateway(db.Model):
             "logo": self.logo,
             "priority": self.priority
         }
+
+
+class PlatformBranding(db.Model):
+    __tablename__ = "platform_branding"
+    id = db.Column(db.Integer, primary_key=True)
+    brand_name = db.Column(db.String(100), default="CalltoConvey")
+    logo_path = db.Column(db.String(255), default="logo.jpg")
+    logo_display = db.Column(db.String(50), default="both")  # logo, text, both
+    logo_position = db.Column(db.String(50), default="left")  # left, right
+    text_size = db.Column(db.Integer, default=24)
+    logo_height = db.Column(db.Integer, default=38)
+    support_email = db.Column(db.String(255), default="support@calltoconvey.io")
+    sales_email = db.Column(db.String(255), default="sales@calltoconvey.io")
+    billing_email = db.Column(db.String(255), default="billing@calltoconvey.io")
+    legal_email = db.Column(db.String(255), default="legal@calltoconvey.io")
+    privacy_email = db.Column(db.String(255), default="privacy@calltoconvey.io")
+    dpo_email = db.Column(db.String(255), default="dpo@calltoconvey.io")
+    contact_phone = db.Column(db.String(100), default="+91 80889 15514")
+
+
+    @staticmethod
+    def get_settings():
+        settings = PlatformBranding.query.first()
+        if not settings:
+            settings = PlatformBranding()
+            db.session.add(settings)
+            db.session.commit()
+        return settings
+

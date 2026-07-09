@@ -1,6 +1,6 @@
 {% extends "base_auth_premium.html" %}
 
-{% block title %}Organization Sign In | ConnectFlow{% endblock %}
+{% block title %}Organization Sign In | CalltoConvey{% endblock %}
 
 {% block hero_content %}
 <h2>Enterprise Management.</h2>
@@ -13,7 +13,7 @@
 {% endblock %}
 
 {% block content %}
-<form method="post" action="{{ url_for('org.login') }}">
+<form method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
 
     <div class="form-group">

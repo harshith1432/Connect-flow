@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ConnectFlow | Intelligent Communication Automation Platform</title>
-    <meta name="description" content="ConnectFlow is an intelligent communication automation platform. Upload your audience data, select voice or WhatsApp channels, define your message, and let the system automatically broadcast at scale.">
+    <title>CalltoConvey | Intelligent Communication Automation Platform</title>
+    <meta name="description" content="CalltoConvey is an intelligent communication automation platform. Upload your audience data, select voice or WhatsApp channels, define your message, and let the system automatically broadcast at scale.">
     
     <!-- CSS -->
     <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
@@ -18,7 +18,7 @@
     <nav class="navbar" id="mainNav">
         <div class="container nav-content">
             <a href="/" class="logo">
-                Connect<span>Flow</span>
+                {{ render_brand_logo(height=38, text_size=22) | safe }}
             </a>
             
             <ul class="nav-links">
@@ -30,19 +30,14 @@
             </ul>
             
             <div class="nav-auth">
-                {% if current_user.is_authenticated %}
-                    {% if current_user.role == 'platform_owner' %}
-                        <a href="{{ url_for('super_admin.dashboard') }}" class="btn-black">Go to Dashboard</a>
-                    {% elif current_user.role == 'worker' %}
-                        <a href="{{ url_for('worker.dashboard') }}" class="btn-black">Worker Workspace</a>
-                    {% else %}
-                        <a href="{{ url_for('org.dashboard') }}" class="btn-black">Manager Dashboard</a>
-                    {% endif %}
-                {% else %}
-                    <button class="btn-outline" id="loginTrigger">Login</button>
-                    <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
-                {% endif %}
+                <a href="{{ url_for('main.login') }}" class="btn-outline">Login</a>
+                <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
             </div>
+            
+            <!-- Mobile Menu Toggle -->
+            <button class="navbar-toggle" id="mobileMenuToggle" aria-label="Toggle navigation">
+                <i class="bi bi-list"></i>
+            </button>
         </div>
     </nav>
 
@@ -52,7 +47,7 @@
             <div class="hero-content reveal">
                 <span class="hero-label">INTELLIGENT COMMUNICATION AUTOMATION</span>
                 <h1>Automate outbound communication at scale.</h1>
-                <p>The intelligent outbound automation platform. Upload your audience data, select your channel, define your message, and let ConnectFlow make voice calls and send WhatsApp messages automatically. No manual calling, no repetitive communication, no complex two-way support systems.</p>
+                <p>The intelligent outbound automation platform. Upload your audience data, select your channel, define your message, and let CalltoConvey make voice calls and send WhatsApp messages automatically. No manual calling, no repetitive communication, no complex two-way support systems.</p>
                 
                 <div class="hero-ctas">
                     <a href="{{ url_for('org.register') }}" class="btn-black">Start Automating</a>
@@ -65,7 +60,7 @@
                     <div class="dashboard-mockup">
                         <!-- Sidebar -->
                         <div class="mockup-sidebar">
-                            <div class="mockup-logo">Connect<span>Flow</span></div>
+                            <div class="mockup-logo">{{ render_brand_logo(height=38, text_size=22) | safe }}</div>
                             <div class="mockup-nav">
                                 <div class="mockup-nav-item active"><i class="bi bi-grid"></i> Dashboard</div>
                                 <div class="mockup-nav-item"><i class="bi bi-people"></i> Workers</div>
@@ -228,7 +223,7 @@
     <section class="workflow" id="workflow">
         <div class="container">
             <div class="section-header reveal">
-                <h2>How ConnectFlow Works</h2>
+                <h2>How CalltoConvey Works</h2>
                 <p>Launch outbound communication campaigns in four straightforward steps.</p>
             </div>
             
@@ -349,11 +344,72 @@
         </div>
     </section>
 
+    <!-- Campaign Express Section -->
+    <section class="campaign-express-section" id="campaign-express" style="padding: 5rem 0; background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%); border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
+        <div class="container">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 3rem;">
+                <div style="flex: 1; min-width: min(300px, 100%);" class="reveal">
+                    <span style="font-size: 0.75rem; font-weight: 800; color: #6366f1; letter-spacing: 1.5px; text-transform: uppercase; display: block; margin-bottom: 0.5rem;">Campaign Express</span>
+                    <h2 style="font-weight: 800; font-size: 2.25rem; color: #0f172a; margin-bottom: 1rem; line-height: 1.25;">Launch Campaigns Instantly</h2>
+                    <p style="color: #475569; font-size: 1.05rem; line-height: 1.6; margin-bottom: 2rem;">Run automated outreach campaigns in minutes without setting up an organization or managing complex configurations. Register, upload data, and execute immediately.</p>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 2.5rem; font-weight: 500; color: #334155;">
+                        <div><i class="bi bi-check-circle-fill text-primary me-2"></i> No organization or workforce setup required</div>
+                        <div><i class="bi bi-check-circle-fill text-primary me-2"></i> Create multiple standalone campaigns</div>
+                        <div><i class="bi bi-check-circle-fill text-primary me-2"></i> Upload contacts and dynamic script content</div>
+                        <div><i class="bi bi-check-circle-fill text-primary me-2"></i> Pay only for active executed campaigns (₹1.50/run)</div>
+                    </div>
+
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <a href="{{ url_for('campaign_express.register') }}" class="btn-black" style="padding: 0.75rem 2rem; border-radius: 8px; font-weight: 600; text-decoration: none;">Start Campaign</a>
+                        <a href="{{ url_for('campaign_express.login') }}" class="btn-outline" style="padding: 0.75rem 2rem; border-radius: 8px; font-weight: 600; text-decoration: none;">Login</a>
+                    </div>
+                </div>
+                
+                <div style="flex: 1; min-width: min(300px, 100%); display: flex; flex-direction: column; gap: 1rem; background: var(--white); border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.05); padding: 2rem;" class="reveal">
+                    <h5 style="font-weight: 700; color: #0f172a; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem;"><i class="bi bi-rocket-takeoff text-primary"></i> 4-Step Instant Onboarding</h5>
+                    
+                    <div class="d-flex gap-3 align-items-start">
+                        <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); color: #6366f1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">1</div>
+                        <div>
+                            <h6 style="font-weight: 700; margin: 0; color: #334155;">Register Account</h6>
+                            <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.2rem; line-height: 1.4;">Sign up individually in seconds via Google or manually.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-3 align-items-start">
+                        <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); color: #6366f1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">2</div>
+                        <div>
+                            <h6 style="font-weight: 700; margin: 0; color: #334155;">Configure Script & Upload CSV</h6>
+                            <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.2rem; line-height: 1.4;">Write a custom script and upload contacts with placeholder fields.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 align-items-start">
+                        <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(99, 102, 241, 0.1); color: #6366f1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">3</div>
+                        <div>
+                            <h6 style="font-weight: 700; margin: 0; color: #334155;">Verify Identity</h6>
+                            <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.2rem; line-height: 1.4;">Submit government ID documents once to unlock campaign execution.</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 align-items-start">
+                        <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(16, 185, 129, 0.1); color: #10b981; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">4</div>
+                        <div>
+                            <h6 style="font-weight: 700; margin: 0; color: #10b981;">Pay & Execute</h6>
+                            <p style="font-size: 0.8rem; color: #64748b; margin-top: 0.2rem; line-height: 1.4;">Process calculated charge securely and execute broadcasts immediately.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <footer>
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-brand">
-                    <a href="/" class="logo">Connect<span>Flow</span></a>
+                    <a href="/" class="logo">{{ render_brand_logo(height=38, text_size=22) | safe }}</a>
                     <p>The intelligent communication automation platform for outbound voice calls and WhatsApp messaging at scale.</p>
                 </div>
                 
@@ -398,44 +454,16 @@
             </div>
             
             <div class="footer-bottom">
-                <p>&copy; 2026 ConnectFlow. All rights reserved.</p>
+                <p>&copy; 2026 CalltoConvey. All rights reserved.</p>
                 <div class="social-links">
                     <a href="#"><i class="bi bi-twitter-x"></i></a>
                     <a href="#"><i class="bi bi-linkedin"></i></a>
-                    <a href="https://github.com/harshith1432/Connect-flow" target="_blank"><i class="bi bi-github"></i></a>
                 </div>
             </div>
         </div>
     </footer>
 
-    <!-- Login Selection Modal -->
-    <div class="modal-overlay" id="loginModal">
-        <div class="modal-card reveal">
-            <button class="modal-close" id="modalClose">&times;</button>
-            <h3>Welcome Back</h3>
-            <p>Select your portal to continue</p>
-            
-            <div class="login-options">
-                <a href="{{ url_for('org.login') }}" class="login-option">
-                    <div class="option-icon"><i class="bi bi-building"></i></div>
-                    <div class="option-text">
-                        <h5>Organization Portal</h5>
-                        <p>For managers and admins</p>
-                    </div>
-                    <i class="bi bi-chevron-right ms-auto"></i>
-                </a>
-                
-                <a href="{{ url_for('worker.login') }}" class="login-option">
-                    <div class="option-icon"><i class="bi bi-person-badge"></i></div>
-                    <div class="option-text">
-                        <h5>Worker Workspace</h5>
-                        <p>For operations and tasks</p>
-                    </div>
-                    <i class="bi bi-chevron-right ms-auto"></i>
-                </a>
-            </div>
-        </div>
-    </div>
+
 
     <script>
         // Navbar scroll effect
@@ -448,31 +476,34 @@
             }
         });
 
-        // Modal Logic
-        const loginTrigger = document.getElementById('loginTrigger');
-        const loginModal = document.getElementById('loginModal');
-        const modalClose = document.getElementById('modalClose');
-
-        if (loginTrigger) {
-            loginTrigger.addEventListener('click', () => {
-                loginModal.classList.add('active');
-                document.body.style.overflow = 'hidden';
+        // Mobile Navigation Menu Toggle
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+        const mainNav = document.getElementById('mainNav');
+        if (mobileMenuToggle && mainNav) {
+            mobileMenuToggle.addEventListener('click', function() {
+                mainNav.classList.toggle('mobile-active');
+                const icon = mobileMenuToggle.querySelector('i');
+                if (mainNav.classList.contains('mobile-active')) {
+                    icon.classList.replace('bi-list', 'bi-x');
+                } else {
+                    icon.classList.replace('bi-x', 'bi-list');
+                }
+            });
+            
+            // Close mobile menu when clicking nav links
+            const navLinks = mainNav.querySelectorAll('.nav-links a, .nav-auth a, .nav-auth button');
+            navLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mainNav.classList.remove('mobile-active');
+                    const icon = mobileMenuToggle.querySelector('i');
+                    if (icon) {
+                        icon.classList.replace('bi-x', 'bi-list');
+                    }
+                });
             });
         }
 
-        if (modalClose) {
-            modalClose.addEventListener('click', () => {
-                loginModal.classList.remove('active');
-                document.body.style.overflow = 'auto';
-            });
-        }
 
-        loginModal.addEventListener('click', (e) => {
-            if (e.target === loginModal) {
-                loginModal.classList.remove('active');
-                document.body.style.overflow = 'auto';
-            }
-        });
 
         // Simple Intersection Observer for reveal animations
         const observerOptions = {
@@ -730,6 +761,19 @@
             color: #94a3b8;
             font-weight: 500;
             margin-left: 0.25rem;
+        }
+
+        @media (max-width: 576px) {
+            .mockup-sidebar {
+                display: none !important;
+            }
+            .dashboard-mockup {
+                height: auto !important;
+                min-height: 300px;
+            }
+            .mockup-cards {
+                grid-template-columns: 1fr !important;
+            }
         }
     </style>
 </body>

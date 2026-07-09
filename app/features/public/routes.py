@@ -39,6 +39,181 @@ def index():
     return render_template("index.html", db_ok=db_ok, db_error=db_error)
 
 
+@main_bp.route("/login", methods=["GET", "POST"])
+def login():
+    from flask_login import current_user, login_user
+    from app.models import PlatformAdmin, CampaignExpressUser, OrganizationUser, Subscription
+    from app.security.auth_protection import BruteForceProtection
+    from app.security.mfa import MFAService
+    from app.security.session_manager import SessionManager
+    from datetime import datetime, timedelta
+    from urllib.parse import urlparse
+
+    if current_user.is_authenticated:
+        if hasattr(current_user, "role") and current_user.role == "platform_owner":
+            return redirect(url_for("super_admin.dashboard"))
+        elif hasattr(current_user, "role") and current_user.role == "campaign_express":
+            return redirect(url_for("campaign_express.dashboard"))
+        elif hasattr(current_user, "role") and current_user.role == "org_admin":
+            return redirect(url_for("org.dashboard"))
+        else:
+            return redirect(url_for("worker.dashboard"))
+
+    if request.method == "POST":
+        email = request.form.get("email", "").strip()
+        password = request.form.get("password", "")
+        account_type = request.form.get("account_type")
+        account_id = request.form.get("account_id")
+
+        locked, lock_msg = BruteForceProtection.is_locked_out(email)
+        if locked:
+            flash(lock_msg, "danger")
+            return render_template("auth/login.html")
+
+        valid_accounts = []
+
+        # 1. Platform Admin check
+        p_admin = PlatformAdmin.query.filter_by(email=email).first()
+        if p_admin and p_admin.check_password(password):
+            valid_accounts.append(('platform_admin', p_admin))
+
+        # 2. Campaign Express check
+        ce_user = CampaignExpressUser.query.filter_by(email=email).first() or CampaignExpressUser.query.filter_by(username=email).first()
+        if ce_user and ce_user.check_password(password):
+            valid_accounts.append(('campaign_express_user', ce_user))
+
+        # 3. Organization user check
+        org_users = OrganizationUser.query.filter_by(email=email).all()
+        for u in org_users:
+            if u.check_password(password):
+                valid_accounts.append(('organization_user', u))
+
+        if not valid_accounts:
+            BruteForceProtection.log_failed_attempt(identifier=email)
+            flash("Invalid credentials", "danger")
+            return render_template("auth/login.html")
+
+        selected_account = None
+        if account_type and account_id:
+            for t, acc in valid_accounts:
+                if t == account_type and str(acc.id) == str(account_id):
+                    selected_account = (t, acc)
+                    break
+
+        if not selected_account:
+            if len(valid_accounts) == 1:
+                selected_account = valid_accounts[0]
+            else:
+                return render_template(
+                    "auth/select_portal.html",
+                    matching_accounts=valid_accounts,
+                    email=email,
+                    password=password,
+                )
+
+        user_type, user = selected_account
+
+        # Finalize login
+        if user_type == "platform_admin":
+            mfa_type = "platform_admin"
+            config = MFAService.get_mfa_config(user.id, mfa_type)
+            if config.is_enabled:
+                from flask import session
+                session["pre_mfa_user_id"] = user.id
+                session["pre_mfa_user_type"] = mfa_type
+                session["pre_mfa_remember"] = "remember" in request.form
+                success, msg = MFAService.generate_and_send_otp(user.id, mfa_type, method=config.mfa_type)
+                if success:
+                    flash("Verification code sent.", "info")
+                    return redirect(url_for("security.verify_otp"))
+                else:
+                    flash(f"Error sending verification code: {msg}", "danger")
+                    return render_template("auth/login.html")
+            else:
+                login_user(user, remember="remember" in request.form)
+                SessionManager.regenerate_session()
+                SessionManager.track_session(user.id, mfa_type)
+                
+                next_page = request.args.get("next")
+                if next_page:
+                    parsed = urlparse(next_page)
+                    if parsed.netloc == "" or parsed.netloc == request.host:
+                        return redirect(next_page)
+                return redirect(url_for("super_admin.dashboard"))
+
+        elif user_type == "campaign_express_user":
+            user.login_count = (user.login_count or 0) + 1
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+            
+            login_user(user, remember="remember" in request.form)
+            SessionManager.regenerate_session()
+            SessionManager.track_session(user.id, "campaign_express")
+            
+            next_page = request.args.get("next")
+            if next_page:
+                parsed = urlparse(next_page)
+                if parsed.netloc == "" or parsed.netloc == request.host:
+                    return redirect(next_page)
+            return redirect(url_for("campaign_express.dashboard"))
+
+        elif user_type == "organization_user":
+            org_status = user.organization.status
+            if org_status == "pending":
+                return render_template("auth/access_denied.html", status="pending", org_name=user.organization.name)
+            elif org_status == "rejected":
+                return render_template("auth/access_denied.html", status="rejected", org_name=user.organization.name, reason=user.organization.description)
+            elif org_status == "suspended":
+                flash("Your organization has been suspended. Please contact platform admin.", "danger")
+                return render_template("auth/login.html")
+
+            # Subscription check for workers
+            if user.role != "org_admin":
+                sub = Subscription.query.filter_by(organization_id=user.organization_id).first()
+                if not sub or sub.status == "inactive" or (sub.expires_at and datetime.utcnow() > sub.expires_at + timedelta(days=3)):
+                    flash("Organization services are suspended or a subscription is required.", "danger")
+                    return render_template("auth/login.html")
+
+            user.login_count = (user.login_count or 0) + 1
+            user.last_login = datetime.utcnow()
+            db.session.commit()
+
+            from app.models import ChangeRequest
+            ChangeRequest.log(user.organization_id, user.id, "User Login", new_val=f"Session started from {request.remote_addr}")
+
+            mfa_type = "org_user"
+            config = MFAService.get_mfa_config(user.id, mfa_type)
+            if config.is_enabled:
+                from flask import session
+                session["pre_mfa_user_id"] = user.id
+                session["pre_mfa_user_type"] = mfa_type
+                session["pre_mfa_remember"] = "remember" in request.form
+                success, msg = MFAService.generate_and_send_otp(user.id, mfa_type, method=config.mfa_type)
+                if success:
+                    flash("Verification code sent.", "info")
+                    return redirect(url_for("security.verify_otp"))
+                else:
+                    flash(f"Error sending verification code: {msg}", "danger")
+                    return render_template("auth/login.html")
+            else:
+                login_user(user, remember="remember" in request.form)
+                SessionManager.regenerate_session()
+                SessionManager.track_session(user.id, mfa_type)
+                
+                next_page = request.args.get("next")
+                if next_page:
+                    parsed = urlparse(next_page)
+                    if parsed.netloc == "" or parsed.netloc == request.host:
+                        return redirect(next_page)
+                
+                if user.role == "org_admin":
+                    return redirect(url_for("org.dashboard"))
+                else:
+                    return redirect(url_for("worker.dashboard"))
+
+    return render_template("auth/login.html")
+
+
 @main_bp.route("/org/register", methods=["GET", "POST"])
 def org_register():
     if request.method == "POST":

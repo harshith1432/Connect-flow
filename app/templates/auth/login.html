@@ -1,0 +1,54 @@
+{% extends "base_auth_premium.html" %}
+
+{% block title %}Sign In | CalltoConvey{% endblock %}
+
+{% block hero_content %}
+<h2>Unified Access Portal.</h2>
+<p class="tagline">Scale your workflow with professional tools for communication, data orchestration, and growth.</p>
+{% endblock %}
+
+{% block auth_header %}
+<h1>Welcome Back</h1>
+<p>Sign in to your portal securely.</p>
+{% endblock %}
+
+{% block content %}
+<form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+    <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <div class="input-container">
+            <i class="bi bi-envelope"></i>
+            <input name="email" type="email" class="premium-input" placeholder="you@company.com" required autocomplete="email" />
+        </div>
+    </div>
+
+    <div class="form-group">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label class="form-label" style="margin-bottom: 0;">Password</label>
+            <a href="{{ url_for('org.forgot_password') }}" style="font-size: 0.815rem; color: var(--grey-500); text-decoration: none; font-weight: 600;">Forgot Password?</a>
+        </div>
+        <div class="input-container">
+            <i class="bi bi-lock"></i>
+            <input type="password" name="password" class="premium-input" placeholder="••••••••" required autocomplete="current-password" />
+        </div>
+    </div>
+
+    <button type="submit" class="btn-premium-dark">
+        Sign In <i class="bi bi-arrow-right"></i>
+    </button>
+
+    <div class="auth-footer-links">
+        <p style="font-size: 0.935rem; color: var(--grey-500); width: 100%; text-align: center; margin-bottom: 2rem;">
+            New organization? <a href="{{ url_for('org.register') }}" style="color: var(--black); font-weight: 700;">Create an account</a>
+        </p>
+    </div>
+    
+    <div class="auth-footer-links" style="margin-top: 0;">
+        <a href="{{ url_for('main.index') }}">
+            <i class="bi bi-house"></i> Home
+        </a>
+    </div>
+</form>
+{% endblock %}

@@ -119,18 +119,20 @@ def _status_icon(code):
 
 
 def mask_secrets(data):
-    """Mask sensitive values in dictionaries for safe logging."""
+    """Mask sensitive values in dictionaries or lists for safe logging."""
+    if isinstance(data, list):
+        return [mask_secrets(item) for item in data]
     if not isinstance(data, dict):
         return data
     masked = {}
-    secret_keys = ['password', 'token', 'secret', 'key', 'auth', 'api_key', 'apikey']
+    secret_keys = ['password', 'token', 'secret', 'key', 'auth', 'api_key', 'apikey', 'credential', 'hash', 'signature']
     for k, v in data.items():
         if any(s in k.lower() for s in secret_keys):
             if isinstance(v, str) and len(v) > 4:
                 masked[k] = v[:4] + "***"
             else:
                 masked[k] = "***"
-        elif isinstance(v, dict):
+        elif isinstance(v, (dict, list)):
             masked[k] = mask_secrets(v)
         else:
             masked[k] = v

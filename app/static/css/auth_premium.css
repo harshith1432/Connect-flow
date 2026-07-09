@@ -41,7 +41,8 @@ body {
 .auth-wrapper {
     width: 100%;
     max-width: 1200px;
-    height: 750px;
+    height: min(750px, calc(100vh - 40px));
+    min-height: 500px;
     background: var(--white);
     display: flex;
     border-radius: 40px;

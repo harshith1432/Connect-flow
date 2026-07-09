@@ -258,6 +258,134 @@ def verify_payment():
         return jsonify({"error": str(e)}), 500
 
 
+@api_bp.route("/ce/create-order", methods=["POST"])
+@login_required
+def ce_create_order():
+    import uuid
+    from app.models import Campaign
+    from app.models.campaign_express import CampaignExpressPayment
+    from app.services.payment_gateway_service import PaymentGatewayService
+    from app.services.payment_dispatcher import PaymentDispatcher
+
+    data = request.get_json() or {}
+    campaign_id = data.get("campaign_id")
+    gateway_id = data.get("gateway_id")
+
+    if not campaign_id or not gateway_id:
+        return jsonify({"error": "Missing campaign_id or gateway_id"}), 400
+
+    campaign = Campaign.query.filter_by(id=campaign_id, campaign_express_user_id=current_user.id).first()
+    if not campaign:
+        return jsonify({"error": "Campaign not found"}), 404
+
+    gateway = PaymentGatewayService.get_gateway_by_id(gateway_id)
+    if not gateway or not gateway.active:
+        return jsonify({"error": "Selected payment gateway is unavailable"}), 400
+
+    # Retrieve pending CampaignExpressPayment for this campaign
+    payment = CampaignExpressPayment.query.filter_by(
+        campaign_id=campaign.id, user_id=current_user.id, status="pending"
+    ).order_by(CampaignExpressPayment.created_at.desc()).first()
+
+    if not payment:
+        return jsonify({"error": "No pending payment found for this campaign"}), 400
+
+    amount_paise = int(payment.amount * 100)
+    if amount_paise < 100:
+        amount_paise = 100  # min amount for Razorpay
+
+    try:
+        receipt_id = f"ce_rcpt_{uuid.uuid4().hex[:10]}"
+        order_data = PaymentDispatcher.create_order(gateway, amount_paise, "INR", receipt_id)
+        order_data["sandbox"] = gateway.deployment_mode == "test"
+        return jsonify(order_data)
+    except Exception as e:
+        print(f"[CE ORDER ERROR] {e}")
+        return jsonify({"error": str(e)}), 500
+
+
+@api_bp.route("/ce/verify-payment", methods=["POST"])
+@login_required
+def ce_verify_payment():
+    from datetime import datetime
+    from app.models import Campaign
+    from app.models.campaign_express import CampaignExpressPayment
+    from app.services.payment_gateway_service import PaymentGatewayService
+    from app.services.payment_dispatcher import PaymentDispatcher
+    from app.services.ce_number_allocator import CeNumberAllocator
+    from app.services.campaign_runner import CampaignExecutionService
+
+    data = request.get_json() or {}
+    campaign_id = data.get("campaign_id")
+    gateway_id = data.get("gateway_id")
+
+    if not all([campaign_id, gateway_id]):
+        return jsonify({"error": "Missing parameters"}), 400
+
+    campaign = Campaign.query.filter_by(id=campaign_id, campaign_express_user_id=current_user.id).first()
+    if not campaign:
+        return jsonify({"error": "Campaign not found"}), 404
+
+    gateway = PaymentGatewayService.get_gateway_by_id(gateway_id)
+    if not gateway:
+        return jsonify({"error": "Gateway not found"}), 404
+
+    payment = CampaignExpressPayment.query.filter_by(
+        campaign_id=campaign.id, user_id=current_user.id, status="pending"
+    ).order_by(CampaignExpressPayment.created_at.desc()).first()
+
+    if not payment:
+        return jsonify({"error": "No pending payment record found"}), 404
+
+    try:
+        is_valid, message = PaymentDispatcher.verify_payment(gateway, data)
+        if not is_valid:
+            return jsonify({"error": message}), 400
+
+        # Signature verification success! Update payment
+        transaction_id = data.get("razorpay_payment_id") or data.get("stripe_payment_id") or "ce_txn_unknown"
+        payment.status = "completed"
+        payment.gateway_id = gateway.id
+        payment.gateway_name = gateway.name
+        payment.gateway_provider = gateway.provider
+        payment.gateway_mode = gateway.deployment_mode
+        payment.transaction_id = transaction_id
+        payment.gateway_response = data
+        payment.completed_at = datetime.utcnow()
+
+        # Update campaign status
+        campaign.status = "ready"
+        db.session.commit()
+
+        # Allocate a pool number and trigger campaign execution
+        assigned_number = CeNumberAllocator.allocate(campaign.id)
+        if not assigned_number:
+            campaign.status = "queued"
+            db.session.commit()
+            print(f"[CE EXECUTION] No active numbers for campaign {campaign.id}. Status set to queued.")
+        else:
+            campaign.status = "running"
+            db.session.commit()
+            try:
+                from flask import current_app
+                app_obj = current_app._get_current_object()
+                CampaignExecutionService.start(campaign.id)
+                print(f"[CE EXECUTION] Successfully started campaign {campaign.id} with number {assigned_number.number}")
+            except Exception as run_err:
+                print(f"[CE EXECUTION ERROR] Failed to start runner: {run_err}")
+                # Release number back to pool on failure
+                CeNumberAllocator.release(campaign.id)
+                campaign.status = "ready"
+                db.session.commit()
+                return jsonify({"error": f"Failed to start campaign: {str(run_err)}"}), 500
+
+        return jsonify({"success": True})
+
+    except Exception as e:
+        print(f"[CE VERIFY ERROR] {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @api_bp.route("/search", methods=["GET"])
 @login_required
 def search():
@@ -702,10 +830,14 @@ def react_chat_message():
 @api_bp.route("/onboarding/complete", methods=["POST"])
 @login_required
 def complete_onboarding():
+    print(f"[DEBUG ONBOARDING] User: {current_user}, ID: {getattr(current_user, 'id', None)}, Role: {getattr(current_user, 'role', None)}")
     if hasattr(current_user, "onboarding_completed"):
+        print(f"[DEBUG ONBOARDING] hasattr: True, current status: {current_user.onboarding_completed}")
         current_user.onboarding_completed = True
         db.session.commit()
+        print(f"[DEBUG ONBOARDING] Committed. New status: {current_user.onboarding_completed}")
         return jsonify({"success": True})
+    print(f"[DEBUG ONBOARDING] hasattr: False")
     return jsonify({"error": "User does not support onboarding"}), 400
 
 
@@ -724,7 +856,7 @@ def ai_assistant_ask():
         answer_html = """
         <div class="ai-card" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1rem; color: #fff;">
             <h6 style="color: #10b981; font-weight: 700; margin-bottom: 0.5rem;"><i class="bi bi-megaphone-fill"></i> Campaign Management Guide</h6>
-            <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">ConnectFlow allows you to run high-converting Voice and WhatsApp fallback campaigns. Here is how you can set up a campaign:</p>
+            <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">CalltoConvey allows you to run high-converting Voice and WhatsApp fallback campaigns. Here is how you can set up a campaign:</p>
             <ol style="font-size: 0.8rem; padding-left: 1.2rem; margin-bottom: 0.75rem;">
                 <li>Navigate to the <strong>Campaigns</strong> dashboard using the sidebar.</li>
                 <li>Click on the <strong>"Create Campaign"</strong> or <strong>"New Campaign"</strong> button in the top right.</li>
@@ -815,8 +947,8 @@ def ai_assistant_ask():
     else:
         answer_html = """
         <div class="ai-card" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1rem; color: #fff;">
-            <h6 style="color: #a8a29e; font-weight: 700; margin-bottom: 0.5rem;"><i class="bi bi-robot"></i> ConnectFlow AI Support</h6>
-            <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">I am here to help you get the most out of ConnectFlow. Try asking about:</p>
+            <h6 style="color: #a8a29e; font-weight: 700; margin-bottom: 0.5rem;"><i class="bi bi-robot"></i> CalltoConvey AI Support</h6>
+            <p style="font-size: 0.85rem; margin-bottom: 0.5rem;">I am here to help you get the most out of CalltoConvey. Try asking about:</p>
             <ul style="font-size: 0.8rem; padding-left: 1.2rem; margin-bottom: 0.75rem;">
                 <li><code>How do I create a campaign?</code></li>
                 <li><code>How do I add a new worker?</code></li>
@@ -894,6 +1026,218 @@ def list_helpdesk_queries():
     
     return jsonify({
         "queries": [q.to_dict() for q in queries]
+    })
+
+
+@api_bp.route("/api/upi/submit-payment", methods=["POST"])
+@login_required
+def submit_upi_payment():
+    from app.models.platform import PaymentGateway, PaymentMethod, Plan
+    from app.models.payment_verification import PaymentVerification
+    from werkzeug.utils import secure_filename
+    from flask import current_app
+    from datetime import datetime
+    import os
+    import uuid
+    import json
+    import decimal
+
+    # 1. Retrieve and validate fields
+    plan_id = request.form.get("plan_id")
+    campaign_id = request.form.get("campaign_id")
+    gateway_id = request.form.get("gateway_id")
+    transaction_id = request.form.get("transaction_id", "").strip()
+    customer_upi_id = request.form.get("customer_upi_id", "").strip()
+    additional_notes = request.form.get("additional_notes", "").strip()
+    ref_num = request.form.get("ref_num", "").strip()
+    amount_str = request.form.get("amount")
+
+    if not gateway_id or not transaction_id:
+        return jsonify({"error": "Missing required transaction fields"}), 400
+
+    plan = None
+    campaign = None
+    if plan_id:
+        plan = Plan.query.get(plan_id)
+        if not plan:
+            return jsonify({"error": "Plan not found"}), 400
+        order_id = f"SUB-{plan_id}"
+        org_id = current_user.organization_id
+    elif campaign_id:
+        from app.models import Campaign
+        from app.models.campaign_express import CampaignExpressPayment
+        campaign = Campaign.query.get(campaign_id)
+        if not campaign:
+            return jsonify({"error": "Campaign not found"}), 400
+        order_id = f"CE-{campaign_id}"
+        org_id = campaign.organization_id or (current_user.organization_id if hasattr(current_user, "organization_id") else None)
+    else:
+        return jsonify({"error": "Missing required plan_id or campaign_id"}), 400
+
+    gateway = PaymentGateway.query.get(gateway_id)
+    if not gateway or gateway.provider != "dynamic_upi":
+        return jsonify({"error": "Invalid payment gateway selected"}), 400
+
+    # 2. Block Duplicate Transaction IDs
+    existing = PaymentVerification.query.filter_by(transaction_id=transaction_id).first()
+    if existing:
+        return jsonify({"error": "This Transaction ID / UTR has already been submitted for verification."}), 400
+
+    # 3. Handle File Upload (Screenshot)
+    if "screenshot" not in request.files:
+        return jsonify({"error": "Screenshot upload is required"}), 400
+
+    file = request.files["screenshot"]
+    if file.filename == "":
+        return jsonify({"error": "No file selected"}), 400
+
+    # Read config from PaymentMethod
+    upi_method = PaymentMethod.query.filter_by(type="dynamic_upi").first()
+    upi_config = {}
+    if upi_method:
+        try:
+            upi_config = json.loads(upi_method.instructions)
+        except Exception:
+            pass
+
+    allowed_exts = upi_config.get("accepted_file_types", "jpg,jpeg,png,webp,pdf").split(",")
+    max_mb = float(upi_config.get("max_upload_size", "10"))
+    max_bytes = max_mb * 1024 * 1024
+
+    # Validate file type
+    file_ext = file.filename.split(".")[-1].lower() if "." in file.filename else ""
+    if file_ext not in allowed_exts:
+        return jsonify({"error": f"Invalid file format. Allowed types: {', '.join(allowed_exts).upper()}"}), 400
+
+    # Validate file size
+    file.seek(0, os.SEEK_END)
+    file_size = file.tell()
+    file.seek(0)  # Reset pointer to beginning
+    if file_size > max_bytes:
+        return jsonify({"error": f"File size exceeds the configured {max_mb}MB limit."}), 400
+
+    # Save file securely
+    upload_dir = os.path.join(current_app.root_path, "static", "uploads", "payment_screenshots")
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    unique_filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
+    file_path = os.path.join(upload_dir, unique_filename)
+    file.save(file_path)
+
+    # Relative path to store in database
+    db_relative_path = f"uploads/payment_screenshots/{unique_filename}"
+
+    # 4. Gather Device & IP Information
+    ip_address = request.remote_addr
+    device_info = request.headers.get("User-Agent", "Unknown Device")
+
+    # 5. Create PaymentVerification Record
+    try:
+        if amount_str:
+            amount = decimal.Decimal(amount_str)
+        elif plan:
+            amount = decimal.Decimal(plan.price) * decimal.Decimal("1.18")
+        elif campaign:
+            payment_record = CampaignExpressPayment.query.filter_by(
+                campaign_id=campaign_id, status="pending"
+            ).order_by(CampaignExpressPayment.created_at.desc()).first()
+            if not payment_record:
+                return jsonify({"error": "No pending campaign payment found"}), 400
+            amount = payment_record.amount
+    except Exception:
+        amount = decimal.Decimal("0.00")
+
+    # Audit Log initialization
+    audit_log = [{
+        "timestamp": datetime.utcnow().isoformat(),
+        "action": "submitted",
+        "user_email": current_user.email,
+        "ip_address": ip_address,
+        "details": f"Manual payment submitted for verification. Ref: {ref_num}"
+    }]
+
+    verification = PaymentVerification(
+        order_id=order_id,
+        organization_id=org_id,
+        amount=amount,
+        generated_upi_id=upi_config.get("upi_id", "merchant@upi"),
+        transaction_id=transaction_id,
+        screenshot_path=db_relative_path,
+        customer_upi_id=customer_upi_id,
+        status="pending",
+        remarks=additional_notes,
+        ip_address=ip_address,
+        device_info=device_info,
+        audit_log=audit_log
+    )
+    db.session.add(verification)
+    db.session.flush() # Populate verification.id
+
+    # 6. Create corresponding Payment record
+    if plan:
+        from app.models.organization import Payment
+        payment = Payment(
+            organization_id=org_id,
+            amount=amount,
+            status="pending_verification",
+            gateway_id=gateway.id,
+            gateway_name=gateway.name,
+            gateway_provider=gateway.provider,
+            gateway_mode=gateway.deployment_mode,
+            transaction_id=transaction_id,
+            meta={
+                "verification_id": verification.id,
+                "ref_num": ref_num,
+                "notes": additional_notes
+            }
+        )
+        db.session.add(payment)
+    elif campaign:
+        payment_record = CampaignExpressPayment.query.filter_by(
+            campaign_id=campaign_id, status="pending"
+        ).order_by(CampaignExpressPayment.created_at.desc()).first()
+        if payment_record:
+            payment_record.status = "pending_verification"
+            payment_record.transaction_id = transaction_id
+            payment_record.payment_ref = ref_num
+            payment_record.gateway_id = gateway.id
+            payment_record.gateway_name = gateway.name
+            payment_record.gateway_provider = gateway.provider
+            payment_record.gateway_mode = gateway.deployment_mode
+            payment_record.meta = {
+                "verification_id": verification.id,
+                "notes": additional_notes
+            }
+
+    db.session.commit()
+
+    # 7. Notify Platform Admins
+    from app.models.platform import PlatformAdmin, PlatformNotification, DashboardNotification
+    plat_admins = PlatformAdmin.query.all()
+    for p_admin in plat_admins:
+        db_notif = DashboardNotification(
+            platform_admin_id=p_admin.id,
+            type="payment",
+            title="New UPI Payment Submitted",
+            message=f"New payment verification request with UTR {transaction_id} was submitted.",
+            link="/platform/payment-verifications"
+        )
+        db.session.add(db_notif)
+
+    p_notif = PlatformNotification(
+        organization_id=org_id,
+        type="payment_verification",
+        title="UPI Payment Verification Required",
+        message=f"UTR: {transaction_id}, Amount: ₹{amount}. Manual review required.",
+        link="/platform/payment-verifications"
+    )
+    db.session.add(p_notif)
+    db.session.commit()
+
+    return jsonify({
+        "success": True,
+        "message": "Payment details submitted successfully for manual verification.",
+        "verification_id": verification.id
     })
 
 

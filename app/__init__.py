@@ -129,22 +129,80 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = "main.index"
 
+    @login_manager.unauthorized_handler
+    def unauthorized():
+        from flask import redirect, url_for, request, flash
+        
+        path = request.path
+        if path.startswith("/platform"):
+            login_endpoint = "super_admin.login"
+        elif path.startswith("/org"):
+            login_endpoint = "org.login"
+        elif path.startswith("/worker"):
+            login_endpoint = "worker.login"
+        elif path.startswith("/campaign-express"):
+            login_endpoint = "campaign_express.login"
+        else:
+            login_endpoint = "main.index"
+            
+        flash("Please log in to access this page.", "warning")
+        
+        next_url = request.url
+        return redirect(url_for(login_endpoint, next=next_url))
+
     # Initialize rate limiting and security headers
     from app.security.rate_limit import init_rate_limiting
     from app.security.security_headers import init_security_headers
+    from app.core.session_scoping import setup_session_scoping
 
     init_rate_limiting(app)
     init_security_headers(app)
+    setup_session_scoping(app)
 
-    # loader: try platform admin then organization users
+    from flask_wtf.csrf import CSRFError
+    from flask import redirect, request, flash
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(e):
+        flash("Your session expired or form token was invalid. Please try submitting again.", "warning")
+        return redirect(request.url)
+
+    # loader: try platform admin, then organization users, then CE users
     @login_manager.user_loader
     def load_user(user_id):
-        from app.models import PlatformAdmin, OrganizationUser
+        from app.models import PlatformAdmin, OrganizationUser, CampaignExpressUser
 
-        u = db.session.get(PlatformAdmin, int(user_id))
+        if not user_id:
+            return None
+
+        # Handle prefixed IDs to avoid collisions between tables
+        if isinstance(user_id, str) and ":" in user_id:
+            parts = user_id.split(":", 1)
+            prefix = parts[0]
+            try:
+                real_id = int(parts[1])
+            except ValueError:
+                return None
+
+            if prefix == "platform_admin":
+                return db.session.get(PlatformAdmin, real_id)
+            elif prefix == "organization_user":
+                return db.session.get(OrganizationUser, real_id)
+            elif prefix == "campaign_express_user":
+                return db.session.get(CampaignExpressUser, real_id)
+
+        # Fallback for old/unprefixed numeric session IDs
+        try:
+            numeric_id = int(user_id)
+        except (ValueError, TypeError):
+            return None
+
+        u = db.session.get(PlatformAdmin, numeric_id)
         if u:
             return u
-        return db.session.get(OrganizationUser, int(user_id))
+        u = db.session.get(OrganizationUser, numeric_id)
+        if u:
+            return u
+        return db.session.get(CampaignExpressUser, numeric_id)
 
     # Register blueprints
     from app.features.public import main_bp
@@ -154,10 +212,12 @@ def create_app():
     from app.features.api import api_bp
     from app.features.webhooks import webhooks_bp
     from app.security.routes import security_bp
+    from app.features.campaign_express import campaign_express_bp
 
     app.register_blueprint(main_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
     app.register_blueprint(security_bp, url_prefix="/security")
+    app.register_blueprint(campaign_express_bp)
 
     # Temporary: exempt the organization registration endpoint from CSRF while
     # debugging token issues in local dev. Remove this exemption once CSRF
@@ -523,8 +583,79 @@ def create_app():
             db.session.add(admin)
             db.session.commit()
 
+
+    @app.context_processor
+    def inject_branding():
+        from app.models.platform import PlatformBranding
+        try:
+            branding = PlatformBranding.get_settings()
+        except Exception:
+            class FakeBranding:
+                brand_name = "CalltoConvey"
+                logo_path = "logo.jpg"
+                logo_display = "both"
+                logo_position = "left"
+                text_size = 24
+                logo_height = 38
+                support_email = "support@calltoconvey.io"
+                sales_email = "sales@calltoconvey.io"
+                billing_email = "billing@calltoconvey.io"
+                legal_email = "legal@calltoconvey.io"
+                privacy_email = "privacy@calltoconvey.io"
+                dpo_email = "dpo@calltoconvey.io"
+                contact_phone = "+91 80889 15514"
+            branding = FakeBranding()
+        return dict(platform_branding=branding)
+
+    @app.template_global()
+    def render_brand_logo(height=None, text_size=None, font_color=None):
+        from app.models.platform import PlatformBranding
+        from flask import url_for
+        try:
+            b = PlatformBranding.get_settings()
+        except Exception:
+            class FakeBranding:
+                brand_name = "CalltoConvey"
+                logo_path = "logo.jpg"
+                logo_display = "both"
+                logo_position = "left"
+                text_size = 24
+                logo_height = 38
+                support_email = "support@calltoconvey.io"
+                sales_email = "sales@calltoconvey.io"
+                billing_email = "billing@calltoconvey.io"
+                legal_email = "legal@calltoconvey.io"
+                privacy_email = "privacy@calltoconvey.io"
+                dpo_email = "dpo@calltoconvey.io"
+                contact_phone = "+91 80889 15514"
+            b = FakeBranding()
+
+        logo_h = height if height is not None else b.logo_height
+        text_sz = text_size if text_size is not None else b.text_size
+        color_style = f"color: {font_color};" if font_color else ""
+
+        logo_img_tag = ""
+        if b.logo_path:
+            if '/' in b.logo_path or '\\' in b.logo_path or 'branding/' in b.logo_path:
+                img_url = url_for('static', filename=b.logo_path)
+            else:
+                img_url = url_for('main.static', filename=b.logo_path)
+            logo_img_tag = f'<img src="{img_url}" alt="{b.brand_name}" style="height: {logo_h}px; width: auto; object-fit: contain; border-radius: 4px; vertical-align: middle;">'
+
+        text_tag = f'<span style="font-size: {text_sz}px; font-weight: 800; font-family: var(--font-heading); {color_style}">{b.brand_name}</span>'
+
+        if b.logo_display == "logo":
+            return logo_img_tag
+        elif b.logo_display == "text":
+            return text_tag
+        else: # both
+            gap = "0.5rem"
+            flex_dir = "row-reverse" if b.logo_position == "right" else "row"
+            return f'<div style="display: inline-flex; align-items: center; gap: {gap}; flex-direction: {flex_dir}; vertical-align: middle;">{logo_img_tag}{text_tag}</div>'
+
     from app.core.logging_system import log_activity
     log_activity("STARTUP", "APP READY -- All webhooks & routes active")
     log_activity("STARTUP", f"Server: http://0.0.0.0:{os.environ.get('PORT', 5000)}")
 
     return app
+

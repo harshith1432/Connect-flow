@@ -1,0 +1,49 @@
+{% extends "base_auth_premium.html" %}
+
+{% block title %}Verification Submitted | Campaign Express{% endblock %}
+
+{% block auth_content %}
+<div style="text-align:center; padding: 2.5rem 2rem;">
+
+  <div style="margin-bottom: 1.75rem;">
+    <div style="width:90px;height:90px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:inline-flex;align-items:center;justify-content:center;box-shadow:0 12px 40px rgba(99,102,241,0.4);animation:bounceIn 0.6s ease;">
+      <i class="bi bi-check-circle" style="font-size:3rem;color:#fff;"></i>
+    </div>
+  </div>
+
+  <h2 style="font-weight:800;color:#0f172a;margin-bottom:0.5rem;font-size:1.75rem;">Verification Submitted</h2>
+
+  <p style="color:#475569;font-size:1rem;max-width:420px;margin:0 auto 0.75rem;line-height:1.7;">
+    Your documents have been submitted for review. You will be notified once your account is verified — usually within <strong>24–48 hours</strong>.
+  </p>
+  <p style="color:#64748b;font-size:0.9rem;max-width:400px;margin:0 auto 2rem;">
+    You can continue using the dashboard and creating campaigns in the meantime.
+  </p>
+
+  <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;">
+    <a href="{{ url_for('campaign_express.dashboard') }}" class="btn-premium primary" style="display:inline-flex;align-items:center;padding:0.8rem 2rem;border-radius:12px;font-weight:600;text-decoration:none;font-size:0.95rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;">
+      <i class="bi bi-speedometer2 me-2"></i>Go to Dashboard
+    </a>
+    <a href="{{ url_for('campaign_express.campaigns') }}" style="display:inline-flex;align-items:center;padding:0.8rem 2rem;border-radius:12px;font-weight:600;text-decoration:none;font-size:0.95rem;background:transparent;color:#6366f1;border:2px solid #6366f1;">
+      <i class="bi bi-megaphone me-2"></i>View Campaigns
+    </a>
+  </div>
+
+  <div style="margin-top:2rem;padding:1rem;background:#f8fafc;border-radius:12px;text-align:left;max-width:400px;margin-left:auto;margin-right:auto;">
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <i class="bi bi-envelope-open" style="color:#6366f1;font-size:1.25rem;"></i>
+      <span style="font-size:0.85rem;color:#64748b;">We'll send a notification to your registered email once verification is complete.</span>
+    </div>
+  </div>
+
+</div>
+
+<style>
+@keyframes bounceIn {
+  0% { transform: scale(0.3); opacity:0; }
+  50% { transform: scale(1.05); }
+  70% { transform: scale(0.9); }
+  100% { transform: scale(1); opacity:1; }
+}
+</style>
+{% endblock %}

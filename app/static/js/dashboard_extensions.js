@@ -1,4 +1,96 @@
-/* ConnectFlow Premium Dashboard Extensions Javascript */
+/* CalltoConvey Premium Dashboard Extensions Javascript */
+
+// --- 0. Tab Session ID (tid) Propagation ---
+(function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const tid = urlParams.get('tid');
+    if (tid) {
+        // Intercept all document clicks on links
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            if (link && link.href) {
+                // Ensure it's an internal link and not a javascript link or anchor
+                if (link.href.startsWith(window.location.origin) && !link.href.includes('#') && !link.href.startsWith('javascript:')) {
+                    try {
+                        const url = new URL(link.href);
+                        if (!url.searchParams.has('tid')) {
+                            url.searchParams.set('tid', tid);
+                        }
+                        
+                        // Check if the click is meant to open in a new tab/window
+                        const isNewTab = link.target === '_blank' || e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1;
+                        if (!isNewTab) {
+                            e.preventDefault();
+                            window.location.href = url.toString();
+                        } else {
+                            link.href = url.toString();
+                        }
+                    } catch (err) {
+                        console.error('Error rewriting link href:', err);
+                    }
+                }
+            }
+        });
+
+        // Intercept inline onclick window.location.href redirections
+        document.addEventListener('click', function(e) {
+            let current = e.target;
+            while (current && current !== document) {
+                const onclickStr = current.getAttribute ? current.getAttribute('onclick') : null;
+                if (onclickStr && onclickStr.includes('window.location.href')) {
+                    const match = onclickStr.match(/window\.location\.href\s*=\s*(['"`])([^'"`\s\+]+)\1/);
+                    if (match) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        let urlStr = match[2];
+                        try {
+                            const url = new URL(urlStr, window.location.origin);
+                            if (!url.searchParams.has('tid')) {
+                                url.searchParams.set('tid', tid);
+                            }
+                            window.location.href = url.toString();
+                        } catch (err) {
+                            if (!urlStr.includes('tid=')) {
+                                const separator = urlStr.includes('?') ? '&' : '?';
+                                window.location.href = urlStr + separator + 'tid=' + tid;
+                            } else {
+                                window.location.href = urlStr;
+                            }
+                        }
+                        return;
+                    }
+                }
+                current = current.parentNode;
+            }
+        }, true); // Capture phase
+
+        // Intercept form submissions
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            // Append tid to form action if it's internal
+            if (form.action && form.action.startsWith(window.location.origin)) {
+                try {
+                    const url = new URL(form.action);
+                    if (!url.searchParams.has('tid')) {
+                        url.searchParams.set('tid', tid);
+                        form.action = url.toString();
+                    }
+                } catch (err) {
+                    console.error('Error rewriting form action:', err);
+                }
+            }
+            
+            // Also append tid as a hidden input element to ensure it's sent in POST body
+            if (!form.querySelector('input[name="tid"]')) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'tid';
+                hiddenInput.value = tid;
+                form.appendChild(hiddenInput);
+            }
+        });
+    }
+})();
 
 document.addEventListener('DOMContentLoaded', function() {
     // --- 1. Global Setup & State ---
@@ -665,18 +757,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Create AI floating widget HTML structures and append
     const aiWidget = document.createElement('div');
     aiWidget.innerHTML = `
-        <div class="ai-assistant-trigger" title="Ask ConnectFlow Assistant">
+        <div class="ai-assistant-trigger" title="Ask CalltoConvey Assistant">
             <i class="bi bi-robot"></i>
         </div>
         <div class="ai-chat-viewport">
             <div class="ai-chat-header">
-                <h6><i class="bi bi-robot" style="color: var(--accent-purple);"></i> ConnectFlow AI Helper</h6>
+                <h6><i class="bi bi-robot" style="color: var(--accent-purple);"></i> CalltoConvey AI Helper</h6>
                 <button class="ai-chat-close-btn"><i class="bi bi-x-lg"></i></button>
             </div>
             <div class="ai-messages-container">
                 <div class="ai-message bot">
                     <div class="ai-card">
-                        <h5>👋 ConnectFlow Assistant</h5>
+                        <h5>👋 CalltoConvey Assistant</h5>
                         <p>Welcome! I'm your interactive platform guide. Ask me any question regarding your workspace functionalities, and I'll display custom guide paths instantly!</p>
                         <p style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0;">Try: <code>How to create a campaign?</code> or <code>How to manage workers?</code></p>
                     </div>
@@ -779,7 +871,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentUserRole === 'org_admin') {
             steps = [
                 {
-                    title: "👋 ConnectFlow Admin Center",
+                    title: "👋 CalltoConvey Admin Center",
                     desc: "Welcome to your Organization Admin Dashboard! Here, you have complete control over workforce agents, automated campaigns, customized CRM modules, and real-time support. Let's take a quick 1-minute guided tour.",
                     target: null
                 },
@@ -805,7 +897,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 {
                     title: "🤖 Connected AI Copilot",
-                    desc: "Confused about setup or analytics data? Launch the ConnectFlow AI Helper anytime from the corner to get step-by-step visuals and shortcut actions instantly!",
+                    desc: "Confused about setup or analytics data? Launch the CalltoConvey AI Helper anytime from the corner to get step-by-step visuals and shortcut actions instantly!",
                     target: ".ai-assistant-trigger"
                 }
             ];
@@ -813,7 +905,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // default or worker
             steps = [
                 {
-                    title: "👋 ConnectFlow Workforce Portal",
+                    title: "👋 CalltoConvey Workforce Portal",
                     desc: "Welcome to your Worker Workspace! This hub is designed for workforce members to handle assigned CRM entries, review tickets, and coordinate daily tasks. Let's run a quick operational tour.",
                     target: null
                 },
@@ -833,8 +925,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     target: ".topbar-actions button .bi-chat-left-dots"
                 },
                 {
-                    title: "🤖 ConnectFlow AI Helper",
-                    desc: "Whenever you need interactive guides or quick shortcut paths, tap the robot button to trigger the ConnectFlow AI Copilot immediately.",
+                    title: "🤖 CalltoConvey AI Helper",
+                    desc: "Whenever you need interactive guides or quick shortcut paths, tap the robot button to trigger the CalltoConvey AI Copilot immediately.",
                     target: ".ai-assistant-trigger"
                 }
             ];
@@ -946,6 +1038,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     targetEl.classList.add('tour-highlighted-element');
                     targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
+            }
+
+            if (!targetEl) {
+                overlay.classList.add('center-card');
+            } else {
+                overlay.classList.remove('center-card');
             }
 
             // Perform initial positioning
@@ -1277,5 +1375,233 @@ document.addEventListener('DOMContentLoaded', function() {
                 supportPollInterval = null;
             }
         }
+
+        // --- Breadcrumbs Generator ---
+        (function() {
+            const topbar = document.querySelector('.premium-topbar');
+            if (!topbar) return;
+
+            const path = window.location.pathname;
+            const segments = path.split('/').filter(p => p);
+            if (segments.length === 0) return;
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const tid = urlParams.get('tid');
+            const tidSuffix = tid ? `?tid=${tid}` : '';
+
+            const breadcrumbNav = document.createElement('nav');
+            breadcrumbNav.className = 'premium-breadcrumbs';
+            breadcrumbNav.setAttribute('aria-label', 'breadcrumb');
+
+            const list = document.createElement('ol');
+            list.className = 'breadcrumb-list';
+
+            // Base Root mapping based on portal prefix
+            const portal = segments[0];
+            let portalName = "Workspace";
+            let portalUrl = "/worker/dashboard";
+
+            if (portal === 'org') {
+                portalName = "Org Admin";
+                portalUrl = "/org/dashboard";
+            } else if (portal === 'platform') {
+                portalName = "Platform Admin";
+                portalUrl = "/platform/dashboard";
+            } else if (portal === 'campaign-express') {
+                portalName = "Campaign Express";
+                portalUrl = "/campaign-express/dashboard";
+            }
+
+            // Check if there is a local legacy breadcrumb element on the page
+            const legacyBreadcrumb = document.querySelector('.breadcrumb-bar, .cr-breadcrumb, .studio-breadcrumb, .breadcrumb-custom, nav[aria-label="breadcrumb"]');
+            
+            if (legacyBreadcrumb) {
+                // Parse the items from the legacy breadcrumb
+                const links = legacyBreadcrumb.querySelectorAll('a');
+                const activeSpan = legacyBreadcrumb.querySelector('span, .active');
+                
+                // Add Home/Root
+                const rootLi = document.createElement('li');
+                rootLi.className = 'breadcrumb-item';
+                rootLi.innerHTML = `<a href="${portalUrl}${tidSuffix}"><i class="bi bi-house-door"></i> ${portalName}</a>`;
+                list.appendChild(rootLi);
+                
+                // Process links
+                links.forEach(link => {
+                    // Skip if it is pointing to the workspace root to avoid duplicates
+                    const linkPath = new URL(link.href, window.location.origin).pathname;
+                    if (linkPath === portalUrl || linkPath === '/worker/dashboard' || linkPath === '/org/dashboard' || linkPath === '/platform/dashboard') {
+                        return;
+                    }
+                    
+                    const li = document.createElement('li');
+                    li.className = 'breadcrumb-item';
+                    
+                    // Propagate tid to the legacy link
+                    let href = link.getAttribute('href');
+                    if (href && !href.includes('tid=') && tid) {
+                        const separator = href.includes('?') ? '&' : '?';
+                        href = href + separator + 'tid=' + tid;
+                    }
+                    
+                    li.innerHTML = `<a href="${href}">${link.innerHTML}</a>`;
+                    list.appendChild(li);
+                });
+                
+                // Process active item
+                if (activeSpan) {
+                    const li = document.createElement('li');
+                    li.className = 'breadcrumb-item active';
+                    li.innerHTML = `<span>${activeSpan.innerHTML}</span>`;
+                    list.appendChild(li);
+                }
+            } else {
+                // Always add Home / Portal Root
+                const rootLi = document.createElement('li');
+                rootLi.className = 'breadcrumb-item';
+                rootLi.innerHTML = `<a href="${portalUrl}${tidSuffix}"><i class="bi bi-house-door"></i> ${portalName}</a>`;
+                list.appendChild(rootLi);
+
+                // Sub-paths mapping
+                let currentPath = `/${portal}`;
+                let renderedItems = [];
+                for (let i = 1; i < segments.length; i++) {
+                    const seg = segments[i];
+                    currentPath += `/${seg}`;
+
+                    if (seg === 'manage') {
+                        continue;
+                    }
+
+                    const li = document.createElement('li');
+                    li.className = 'breadcrumb-item';
+
+                    // Format name
+                    let name = seg.charAt(0).toUpperCase() + seg.slice(1);
+                    let linkUrl = currentPath + tidSuffix;
+
+                    // Specific segments override
+                    if (seg === 'modules') {
+                        name = "Modules";
+                        linkUrl = `/${portal}/modules${tidSuffix}`;
+                    } else if (seg === 'reports') {
+                        name = "Reports";
+                    } else if (seg === 'workers') {
+                        name = "Workers";
+                    } else if (seg === 'campaigns') {
+                        name = "Campaigns";
+                    } else if (seg === 'billing') {
+                        name = "Billing";
+                    } else if (seg === 'orgs') {
+                        name = "Organizations";
+                    } else if (seg === 'groups') {
+                        name = "Groups";
+                    } else if (seg === 'preferences') {
+                        name = "Preferences";
+                    } else if (seg === 'profile') {
+                        name = "Profile";
+                    } else if (!isNaN(seg)) {
+                        // It is a numeric ID (like module ID 12 or org ID 3)
+                        // Try to get item name from title/heading
+                        const headingEl = document.querySelector('.premium-topbar h1') || document.querySelector('h1') || document.querySelector('h2');
+                        let detectedName = "";
+                        if (headingEl) {
+                            detectedName = headingEl.textContent.replace('Modules /', '').replace('Modules/', '').replace('Platform /', '').replace('Org /', '').trim();
+                        }
+                        name = detectedName || `ID: ${seg}`;
+                        
+                        // Link to the groups dashboard or detail page
+                        if (segments[i-1] === 'modules') {
+                            linkUrl = `/${portal}/modules/${seg}/groups${tidSuffix}`;
+                        } else if (segments[i-1] === 'orgs') {
+                            linkUrl = `/${portal}/orgs/${seg}${tidSuffix}`;
+                        }
+                    }
+
+                    li.innerHTML = `<a href="${linkUrl}">${name}</a>`;
+                    list.appendChild(li);
+                    renderedItems.push({ element: li, linkUrl: linkUrl, name: name });
+                }
+
+                // Set the last rendered item as active (if no group is appended)
+                const groupId = urlParams.get('group');
+                if (renderedItems.length > 0) {
+                    const lastItem = renderedItems[renderedItems.length - 1];
+                    if (!groupId) {
+                        lastItem.element.classList.add('active');
+                        lastItem.element.innerHTML = `<span>${lastItem.name}</span>`;
+                    } else {
+                        lastItem.element.innerHTML = `<a href="${lastItem.linkUrl}">${lastItem.name}</a>`;
+                    }
+                }
+
+                // Extra leaf segment if we are filtering by group in url (e.g. ?group=12)
+                if (groupId) {
+                    // Try to find group indicator badge text
+                    const groupIndicator = document.getElementById('active-group-indicator') || document.querySelector('[data-group-name]');
+                    let groupName = groupIndicator ? groupIndicator.getAttribute('data-group-name') : null;
+                    if (!groupName) {
+                        const badgeText = document.body.innerHTML.match(/Group:\s*([^<]+)/);
+                        if (badgeText) groupName = badgeText[1].trim();
+                    }
+                    
+                    if (groupName) {
+                        // Append active group leaf node
+                        const groupLi = document.createElement('li');
+                        groupLi.className = 'breadcrumb-item active';
+                        groupLi.innerHTML = `<span>Group: ${groupName}</span>`;
+                        list.appendChild(groupLi);
+                    }
+                }
+            }
+
+            breadcrumbNav.appendChild(list);
+            
+            // Insert it right downside the header section
+            topbar.parentNode.insertBefore(breadcrumbNav, topbar.nextSibling);
+        })();
     }
 });
+
+// Global Toast System
+window.showToast = function(message, type = 'info') {
+    let container = document.querySelector('.premium-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.className = 'premium-toast-container';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `premium-toast premium-toast-${type}`;
+    
+    let iconClass = 'bi-info-circle-fill';
+    if (type === 'success') iconClass = 'bi-check-circle-fill';
+    if (type === 'danger') iconClass = 'bi-exclamation-triangle-fill';
+
+    toast.innerHTML = `
+        <div class="premium-toast-content">
+            <span class="premium-toast-icon"><i class="bi ${iconClass}"></i></span>
+            <span>${message}</span>
+        </div>
+        <button class="premium-toast-close" onclick="let p = this.parentElement; p.classList.remove('show'); p.classList.add('hide'); setTimeout(() => p.remove(), 500);"><i class="bi bi-x"></i></button>
+    `;
+
+    container.appendChild(toast);
+    
+    // Trigger animation
+    setTimeout(() => {
+        toast.classList.add('show');
+    }, 50);
+
+    // Auto-remove after 4.5 seconds
+    setTimeout(() => {
+        if (toast && toast.parentElement) {
+            toast.classList.remove('show');
+            toast.classList.add('hide');
+            setTimeout(() => {
+                if (toast && toast.parentElement) toast.remove();
+            }, 500);
+        }
+    }, 4500);
+};

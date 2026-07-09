@@ -57,6 +57,19 @@ def worker_required(f):
     return decorated
 
 
+def campaign_express_required(f):
+    """Guard for Campaign Express users (role='campaign_express')."""
+    @wraps(f)
+    @login_required
+    def decorated(*args, **kwargs):
+        if getattr(current_user, "role", "") != "campaign_express":
+            flash("Access denied: Campaign Express users only", "danger")
+            return redirect(url_for("campaign_express.login"))
+        return f(*args, **kwargs)
+
+    return decorated
+
+
 def active_subscription_required(f):
     @wraps(f)
     @login_required
@@ -95,13 +108,25 @@ def active_subscription_required(f):
             return f(*args, **kwargs)
 
         now = datetime.utcnow()
-        # SHUTDOWN: Inactive status OR Expiry + 3 days grace
-        is_expired_shutdown = sub.expires_at and now > (
-            sub.expires_at + timedelta(days=3)
-        )
+
+        # Automatic transition/downgrade to Free Trial on subscription expiry
+        if sub.expires_at and now > sub.expires_at and sub.plan != "Free Trial":
+            from app.extensions import db
+            old_plan = sub.plan
+            sub.plan = "Free Trial"
+            sub.expires_at = None
+            sub.starts_at = now
+            sub.status = "active"
+            db.session.commit()
+            flash(
+                f"Your subscription to the '{old_plan}' plan has expired. You have been automatically transitioned to the 'Free Trial' tier.",
+                "warning"
+            )
+
+        # SHUTDOWN: Inactive status
         is_inactive = sub.status == "inactive"
 
-        if is_inactive or is_expired_shutdown:
+        if is_inactive:
             # Allow access only to plans page or logout or verification pending
             allowed_endpoints = [
                 "org.browse_plans",
@@ -123,20 +148,6 @@ def active_subscription_required(f):
                     "warning",
                 )
                 return redirect(url_for("org.dashboard"))
-
-        # ALERT: If expired but within grace (3, 2, or 1 day remaining/past)
-        if (
-            sub.expires_at
-            and now > sub.expires_at
-            and not is_inactive
-            and not is_expired_shutdown
-        ):
-            days_past = (now - sub.expires_at).days
-            days_left = 3 - days_past
-            flash(
-                f"Your subscription has expired! You are in a grace period. {days_left} day(s) remaining before service interruption.",
-                "warning",
-            )
 
         return f(*args, **kwargs)
 

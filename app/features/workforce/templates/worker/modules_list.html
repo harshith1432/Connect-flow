@@ -1,6 +1,6 @@
 {% extends "base_worker_premium.html" %}
 
-{% block title %}ConnectFlow | Modules{% endblock %}
+{% block title %}CalltoConvey | Modules{% endblock %}
 {% block page_title %}Your Modules{% endblock %}
 
 {% block content %}
@@ -16,7 +16,8 @@
 <div class="row g-4">
     {% for m in modules %}
     <div class="col-xl-4 col-md-6">
-        <div class="module-card-premium" onclick="window.location.href='{{ url_for('worker.manage_groups', mid=m.id) }}'">
+        <div class="module-card-premium" style="position: relative;">
+            <a href="{{ url_for('worker.manage_groups', mid=m.id) }}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;" aria-label="Open Module"></a>
             <div class="module-status {{ m.status|default('active') }}"></div>
             <div class="module-header">
                 <div class="module-meta">
@@ -100,7 +101,8 @@
     }
 
     function viewReport(id) {
-        window.location.href = `/worker/reports?module_id=${id}`;
+        const tid = new URLSearchParams(window.location.search).get('tid');
+        window.location.href = `/worker/reports?module_id=${id}` + (tid ? `&tid=${tid}` : '');
     }
 
     async function deleteModule(id, name) {

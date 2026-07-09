@@ -1,6 +1,6 @@
 {% extends "base_worker_premium.html" %}
 
-{% block title %}ConnectFlow | My Workspace{% endblock %}
+{% block title %}CalltoConvey | My Workspace{% endblock %}
 {% block page_title %}My Workspace{% endblock %}
 
 {% block content %}
@@ -76,7 +76,8 @@
             
             <div class="modules-grid-premium">
                 {% for module in modules %}
-                <div class="module-card-premium" onclick="window.location.href='{{ url_for('worker.manage_groups', mid=module.id) }}'">
+                <div class="module-card-premium" style="position: relative;">
+                    <a href="{{ url_for('worker.manage_groups', mid=module.id) }}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;" aria-label="Open Module"></a>
                     <div class="module-status {{ module.status }}"></div>
                     <div class="module-header">
                         <div class="module-meta">
@@ -100,9 +101,9 @@
                         <button class="btn-action-premium" onclick="event.stopPropagation(); configureModule({{ module.id }}, '{{ module.name }}')">
                             <i class="bi bi-gear"></i> Configure
                         </button>
-                        <button class="btn-action-premium dark" onclick="event.stopPropagation(); window.location.href='{{ url_for('worker.manage_groups', mid=module.id) }}'">
-                            <i class="bi bi-box-arrow-in-right"></i> Go Inside
-                        </button>
+                        <a href="{{ url_for('worker.manage_groups', mid=module.id) }}" class="btn-action-premium dark" style="text-decoration: none; z-index: 2; display: inline-flex; align-items: center; justify-content: center; text-align: center;">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Go Inside
+                        </a>
                     </div>
                     <div class="module-footer">
                         <span class="last-activity">Last activity: {{ module.last_activity }}</span>
@@ -114,7 +115,8 @@
                     <p>No modules assigned to you yet.</p>
                 </div>
                 {% endfor %}
-                <div class="module-card-premium empty-add-card" onclick="window.location.href='{{ url_for('worker.create_module') }}'">
+                <div class="module-card-premium empty-add-card" style="position: relative;">
+                    <a href="{{ url_for('worker.create_module') }}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;" aria-label="Create New Module"></a>
                     <div class="add-content text-center py-4 d-flex flex-column align-items-center justify-content-center h-100">
                         <div class="add-icon mb-3">
                             <i class="bi bi-plus-circle-dotted" style="font-size: 2.5rem; color: var(--grey-300);"></i>
@@ -186,7 +188,8 @@
     }
 
     function viewReport(id) {
-        window.location.href = `/worker/reports?module_id=${id}`;
+        const tid = new URLSearchParams(window.location.search).get('tid');
+        window.location.href = `/worker/reports?module_id=${id}` + (tid ? `&tid=${tid}` : '');
     }
 
     document.getElementById('configureForm').onsubmit = async (e) => {

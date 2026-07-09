@@ -1,0 +1,152 @@
+{% extends "base_ce_premium.html" %}
+
+{% block title %}My Campaigns | Campaign Express{% endblock %}
+{% block page_title %}My Campaigns{% endblock %}
+
+{% block content %}
+
+{# ── Header ────────────────────────────────────────────────── #}
+<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.75rem;">
+  <div>
+    <h2 style="font-weight:800;color:#0f172a;margin:0;">My Campaigns</h2>
+    <p style="color:#64748b;font-size:0.875rem;margin:0.25rem 0 0;">Manage and monitor all your campaigns</p>
+  </div>
+  <a href="{{ url_for('campaign_express.campaign_create') }}" class="btn-premium primary" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 1.5rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border-radius:12px;font-weight:600;text-decoration:none;box-shadow:0 4px 15px rgba(99,102,241,0.35);">
+    <i class="bi bi-plus-circle-fill"></i> New Campaign
+  </a>
+</div>
+
+{# ── Status Filter Tabs ────────────────────────────────────── #}
+<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.75rem;">
+  {% set statuses = [('', 'All'), ('draft', 'Draft'), ('ready', 'Ready'), ('running', 'Running'), ('completed', 'Completed'), ('archived', 'Archived')] %}
+  {% for val, label in statuses %}
+  <a href="{{ url_for('campaign_express.campaigns', status=val) }}"
+    style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 1.1rem;border-radius:20px;font-size:0.85rem;font-weight:600;text-decoration:none;transition:all 0.2s;
+    {{ 'background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;box-shadow:0 4px 12px rgba(99,102,241,0.35);' if status_filter == val else 'background:#f1f5f9;color:#475569;' }}">
+    {% if val == '' %}
+      <i class="bi bi-grid-3x3-gap"></i>
+    {% elif val == 'draft' %}
+      <i class="bi bi-pencil-square"></i>
+    {% elif val == 'ready' %}
+      <i class="bi bi-check2-circle"></i>
+    {% elif val == 'running' %}
+      <i class="bi bi-play-circle"></i>
+    {% elif val == 'completed' %}
+      <i class="bi bi-trophy"></i>
+    {% elif val == 'archived' %}
+      <i class="bi bi-archive"></i>
+    {% endif %}
+    {{ label }}
+    {% if val == '' and campaigns %}
+      <span style="background:rgba(99,102,241,0.2);color:{{ '#fff' if status_filter == val else '#6366f1' }};padding:0.1rem 0.5rem;border-radius:10px;font-size:0.75rem;">{{ campaigns|length }}</span>
+    {% endif %}
+  </a>
+  {% endfor %}
+</div>
+
+{# ── Campaign Cards ────────────────────────────────────────── #}
+{% if campaigns %}
+<div class="modules-grid-premium" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem;">
+  {% for c in campaigns %}
+  <div class="premium-card" style="border-radius:16px;padding:0;overflow:hidden;border:1px solid #f1f5f9;transition:all 0.2s;cursor:pointer;"
+    onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 30px rgba(0,0,0,0.1)'"
+    onmouseout="this.style.transform='';this.style.boxShadow=''">
+
+    {# Card top stripe by type #}
+    {% if c.campaign_type == 'call' %}
+    <div style="height:4px;background:linear-gradient(90deg,#6366f1,#8b5cf6);"></div>
+    {% elif 'whatsapp' in (c.campaign_type or '') %}
+    <div style="height:4px;background:linear-gradient(90deg,#22c55e,#16a34a);"></div>
+    {% else %}
+    <div style="height:4px;background:linear-gradient(90deg,#f59e0b,#d97706);"></div>
+    {% endif %}
+
+    <div style="padding:1.25rem;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.75rem;">
+        <div>
+          <h6 style="font-weight:700;color:#0f172a;margin:0 0 0.4rem;">{{ c.name }}</h6>
+          <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;">
+            {# Status badge #}
+            {% if c.status == 'draft' %}
+              <span style="background:#f1f5f9;color:#475569;padding:0.2rem 0.65rem;border-radius:20px;font-size:0.75rem;font-weight:600;">Draft</span>
+            {% elif c.status == 'ready' %}
+              <span style="background:#e0f2fe;color:#0369a1;padding:0.2rem 0.65rem;border-radius:20px;font-size:0.75rem;font-weight:600;">Ready</span>
+            {% elif c.status == 'waiting_payment' %}
+              <span style="background:#fef9c3;color:#854d0e;padding:0.2rem 0.65rem;border-radius:20px;font-size:0.75rem;font-weight:600;">Awaiting Payment</span>
+            {% elif c.status == 'running' %}
+              <span style="background:#dcfce7;color:#15803d;padding:0.2rem 0.65rem;border-radius:20px;font-size:0.75rem;font-weight:600;animation:pulse 2s infinite;">● Running</span>
+            {% elif c.status == 'completed' %}
+              <span style="background:#ede9fe;color:#6d28d9;padding:0.2rem 0.65rem;border-radius:20px;font-size:0.75rem;font-weight:600;">Completed</span>
+            {% elif c.status == 'archived' %}
+              <span style="background:#f1f5f9;color:#94a3b8;padding:0.2rem 0.65rem;border-radius:20px;font-size:0.75rem;font-weight:600;">Archived</span>
+            {% endif %}
+            {# Type badge #}
+            {% if c.campaign_type == 'call' %}
+              <span style="background:#ede9fe;color:#7c3aed;padding:0.2rem 0.65rem;border-radius:20px;font-size:0.75rem;font-weight:600;"><i class="bi bi-telephone-fill me-1"></i>Voice</span>
+            {% elif c.campaign_type == 'whatsapp_text' %}
+              <span style="background:#dcfce7;color:#15803d;padding:0.2rem 0.65rem;border-radius:20px;font-size:0.75rem;font-weight:600;"><i class="bi bi-whatsapp me-1"></i>WA Text</span>
+            {% elif c.campaign_type == 'whatsapp_voice' %}
+              <span style="background:#dcfce7;color:#166534;padding:0.2rem 0.65rem;border-radius:20px;font-size:0.75rem;font-weight:600;"><i class="bi bi-whatsapp me-1"></i>WA Voice</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;font-size:0.8rem;color:#64748b;">
+        <span><i class="bi bi-calendar3 me-1"></i>{{ c.created_at.strftime('%d %b %Y') if c.created_at else '—' }}</span>
+        {% if c.target_count %}
+        <span><i class="bi bi-people me-1"></i>{{ c.target_count }} contacts</span>
+        {% endif %}
+      </div>
+
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+        <a href="{{ url_for('campaign_express.campaign_detail', cid=c.id) }}" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 1rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;">
+          <i class="bi bi-eye"></i> View
+        </a>
+        <a href="{{ url_for('campaign_express.campaign_edit', cid=c.id) }}" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;background:#f1f5f9;color:#374151;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;">
+          <i class="bi bi-pencil"></i> Edit
+        </a>
+        <a href="{{ url_for('campaign_express.campaign_duplicate', cid=c.id) }}" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;background:#f1f5f9;color:#374151;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none;">
+          <i class="bi bi-files"></i> Duplicate
+        </a>
+        {% if c.status != 'archived' %}
+        <form method="POST" action="{{ url_for('campaign_express.campaign_archive', cid=c.id) }}" style="display:inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" onclick="return confirm('Archive this campaign?')" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;background:#fef2f2;color:#dc2626;border:none;border-radius:8px;font-size:0.8rem;font-weight:600;cursor:pointer;">
+            <i class="bi bi-archive"></i> Archive
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% else %}
+{# Empty state #}
+<div style="text-align:center;padding:5rem 2rem;">
+  <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#e0e7ff,#c7d2fe);display:inline-flex;align-items:center;justify-content:center;margin-bottom:1.5rem;">
+    <i class="bi bi-megaphone" style="font-size:2rem;color:#6366f1;"></i>
+  </div>
+  <h4 style="font-weight:700;color:#0f172a;margin-bottom:0.5rem;">No campaigns found</h4>
+  <p style="color:#64748b;max-width:380px;margin:0 auto 1.5rem;">
+    {% if status_filter %}
+      No {{ status_filter }} campaigns yet. Try a different filter or create a new campaign.
+    {% else %}
+      You haven't created any campaigns yet. Start your first campaign to reach your audience.
+    {% endif %}
+  </p>
+  <a href="{{ url_for('campaign_express.campaign_create') }}" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 2rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border-radius:12px;font-weight:700;text-decoration:none;">
+    <i class="bi bi-plus-circle-fill"></i> Create Campaign
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<style>
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.6} }
+</style>
+{% endblock %}

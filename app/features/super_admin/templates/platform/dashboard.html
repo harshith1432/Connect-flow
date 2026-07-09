@@ -1,9 +1,10 @@
 {% extends "base_platform_premium.html" %}
 
-{% block title %}ConnectFlow | Platform Overview{% endblock %}
+{% block title %}CalltoConvey | Platform Overview{% endblock %}
 {% block page_title %}Platform Overview{% endblock %}
 
 {% block content %}
+<h5 class="mb-3" style="color: var(--grey-500); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px;">Platform (Organizations)</h5>
 <div class="kpi-grid">
     <div class="kpi-card">
         <div class="kpi-header">
@@ -35,7 +36,7 @@
         <div class="kpi-header">
             <span class="kpi-label">Total Revenue</span>
             <div class="kpi-icon">
-                <i class="bi bi-currency-dollar"></i>
+                <i class="bi bi-currency-rupee"></i>
             </div>
         </div>
         <div class="kpi-value">₹{{ "%.2f"|format(total_revenue) }}</div>
@@ -44,7 +45,8 @@
             <span>Collected</span>
         </div>
     </div>
-    <div class="kpi-card" style="cursor: pointer;" onclick="window.location.href='{{ url_for('super_admin.notifications') }}'">
+    <div class="kpi-card" style="cursor: pointer; position: relative;">
+        <a href="{{ url_for('super_admin.notifications') }}" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;" aria-label="Open Notifications"></a>
         <div class="kpi-header">
             <span class="kpi-label">Unread Notifications</span>
             <div class="kpi-icon">

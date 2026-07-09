@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blog | ConnectFlow</title>
-    <meta name="description" content="ConnectFlow blog — insights on outbound communication automation, SaaS, and enterprise technology.">
+    <title>Blog | CalltoConvey</title>
+    <meta name="description" content="CalltoConvey blog — insights on outbound communication automation, SaaS, and enterprise technology.">
     <link rel="stylesheet" href="{{ url_for('main.static', filename='landing.css') }}">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
@@ -28,7 +28,7 @@
 <body>
     <nav class="navbar" id="mainNav">
         <div class="container nav-content">
-            <a href="/" class="logo">Connect<span>Flow</span></a>
+            <a href="/" class="logo"><img src="{{ url_for('main.static', filename='logo.jpg') }}" alt="CalltoConvey Logo" style="height: 38px; width: auto; object-fit: contain; border-radius: 6px; vertical-align: middle;"></a>
             <div class="nav-auth">
                 <a href="{{ url_for('org.login') }}" class="btn-outline">Login</a>
                 <a href="{{ url_for('org.register') }}" class="btn-black">Get Started</a>
@@ -39,8 +39,8 @@
     <div class="page-hero">
         <div class="container">
             <a href="/" style="color:#94a3b8; text-decoration:none; display:inline-flex; align-items:center; gap:0.5rem; margin-bottom:2rem;"><i class="bi bi-arrow-left"></i> Back to Home</a>
-            <h1>ConnectFlow Blog</h1>
-            <p>Insights, guides, and product updates from the ConnectFlow team.</p>
+            <h1>CalltoConvey Blog</h1>
+            <p>Insights, guides, and product updates from the CalltoConvey team.</p>
         </div>
     </div>
 
@@ -48,12 +48,12 @@
         <div class="container">
             <div class="blog-grid">
                 {% for post in [
-                    ('🤖', '#e0f2fe', 'Automation', 'How to Automate 10,000 Fee Reminders in Under 10 Minutes', 'Educational institutions waste thousands of hours manually calling parents. Here\'s how ConnectFlow changes that with automated voice campaigns.', 'ConnectFlow Team', 'May 20, 2026'),
-                    ('📊', '#f0fdf4', 'Analytics', 'Why Real-Time Delivery Tracking Is the Key to Better Campaigns', 'You can\'t improve what you can\'t measure. Discover how real-time campaign analytics from ConnectFlow help optimise every outreach effort.', 'ConnectFlow Team', 'May 12, 2026'),
-                    ('🔐', '#fefce8', 'Security', 'Multi-Tenant SaaS Security: How We Keep Your Data Isolated', 'A deep dive into how ConnectFlow\'s architecture ensures zero data crossover between tenant organisations — even at high load.', 'ConnectFlow Team', 'Apr 28, 2026'),
-                    ('📞', '#fdf4ff', 'Product', 'Voice vs WhatsApp: Which Channel Works Best for Your Campaign?', 'Both channels have their strengths. We break down the ideal use cases for automated voice calls vs. WhatsApp broadcasting in 2026.', 'ConnectFlow Team', 'Apr 15, 2026'),
-                    ('🏗️', '#fff7ed', 'Engineering', 'Building a No-Code Module Builder: Architecture Decisions', 'How we designed ConnectFlow\'s custom field module system to support any data structure without requiring a single line of code from users.', 'ConnectFlow Team', 'Apr 2, 2026'),
-                    ('🚀', '#f0f9ff', 'Product', 'ConnectFlow v2.0: Campaign Engine, Worker Roles & More', 'Announcing the biggest update to ConnectFlow yet — a full campaign management engine, worker role system, and real-time webhook delivery tracking.', 'ConnectFlow Team', 'Mar 18, 2026'),
+                    ('🤖', '#e0f2fe', 'Automation', 'How to Automate 10,000 Fee Reminders in Under 10 Minutes', 'Educational institutions waste thousands of hours manually calling parents. Here\'s how CalltoConvey changes that with automated voice campaigns.', 'CalltoConvey Team', 'May 20, 2026'),
+                    ('📊', '#f0fdf4', 'Analytics', 'Why Real-Time Delivery Tracking Is the Key to Better Campaigns', 'You can\'t improve what you can\'t measure. Discover how real-time campaign analytics from CalltoConvey help optimise every outreach effort.', 'CalltoConvey Team', 'May 12, 2026'),
+                    ('🔐', '#fefce8', 'Security', 'Multi-Tenant SaaS Security: How We Keep Your Data Isolated', 'A deep dive into how CalltoConvey\'s architecture ensures zero data crossover between tenant organisations — even at high load.', 'CalltoConvey Team', 'Apr 28, 2026'),
+                    ('📞', '#fdf4ff', 'Product', 'Voice vs WhatsApp: Which Channel Works Best for Your Campaign?', 'Both channels have their strengths. We break down the ideal use cases for automated voice calls vs. WhatsApp broadcasting in 2026.', 'CalltoConvey Team', 'Apr 15, 2026'),
+                    ('🏗️', '#fff7ed', 'Engineering', 'Building a No-Code Module Builder: Architecture Decisions', 'How we designed CalltoConvey\'s custom field module system to support any data structure without requiring a single line of code from users.', 'CalltoConvey Team', 'Apr 2, 2026'),
+                    ('🚀', '#f0f9ff', 'Product', 'CalltoConvey v2.0: Campaign Engine, Worker Roles & More', 'Announcing the biggest update to CalltoConvey yet — a full campaign management engine, worker role system, and real-time webhook delivery tracking.', 'CalltoConvey Team', 'Mar 18, 2026'),
                 ] %}
                 <div class="blog-card">
                     <div class="blog-card-img" style="background:{{ post[1] }};">{{ post[0] }}</div>
@@ -75,7 +75,7 @@
     </section>
 
     <footer style="background:#020617; color:#64748b; padding:2rem 0; text-align:center; font-size:0.875rem;">
-        <p>&copy; 2026 ConnectFlow. All rights reserved.</p>
+        <p>&copy; 2026 CalltoConvey. All rights reserved.</p>
     </footer>
 </body>
 </html>

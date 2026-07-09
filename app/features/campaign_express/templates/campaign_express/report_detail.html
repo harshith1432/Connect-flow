@@ -1,0 +1,177 @@
+{% extends "base_ce_premium.html" %}
+
+{% block title %}Report Detail | Campaign Express{% endblock %}
+{% block page_title %}Report Details{% endblock %}
+
+{% block content %}
+{# ── Breadcrumb ── #}
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb" style="background: transparent; padding: 0; margin: 0; font-size: 0.9rem;">
+    <li class="breadcrumb-item"><a href="{{ url_for('campaign_express.reports') }}" style="color: #6366f1; text-decoration: none; font-weight: 500;">Reports</a></li>
+    <li class="breadcrumb-item active" aria-current="page" style="color: var(--grey-500); font-weight: 500;">{{ campaign.name }}</li>
+  </ol>
+</nav>
+
+{# ── Header row with Export ── #}
+<div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+  <div>
+    <h2 style="font-weight: 800; color: var(--grey-900); margin: 0;">{{ campaign.name }}</h2>
+    <p style="color: var(--grey-400); font-size: 0.875rem; margin: 0.25rem 0 0 0;">Performance report and execution stats summary.</p>
+  </div>
+  <a href="{{ url_for('campaign_express.report_export_csv', cid=campaign.id) }}" class="btn-premium primary" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.65rem 1.5rem; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; border-radius: 10px; font-weight: 600; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);">
+    <i class="bi bi-download"></i> Export CSV
+  </a>
+</div>
+
+{# ── KPI Row ── #}
+<div class="row g-3 mb-4">
+  <!-- Total Calls -->
+  <div class="col-md-3">
+    <div class="premium-card" style="background: var(--white); border-radius: 14px; border: 1px solid var(--grey-100); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow-premium);">
+      <div style="width: 44px; height: 44px; border-radius: 8px; background: rgba(99, 102, 241, 0.08); display: flex; align-items: center; justify-content: center; color: #6366f1;">
+        <i class="bi bi-telephone-outbound" style="font-size: 1.2rem;"></i>
+      </div>
+      <div>
+        <span class="text-muted" style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">Total Runs</span>
+        <h4 style="margin: 0.1rem 0 0 0; font-weight: 800; color: var(--grey-800);">{{ total_calls }}</h4>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Connected -->
+  <div class="col-md-3">
+    <div class="premium-card" style="background: var(--white); border-radius: 14px; border: 1px solid var(--grey-100); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow-premium);">
+      <div style="width: 44px; height: 44px; border-radius: 8px; background: rgba(34, 197, 94, 0.08); display: flex; align-items: center; justify-content: center; color: #22c55e;">
+        <i class="bi bi-telephone-inbound" style="font-size: 1.2rem;"></i>
+      </div>
+      <div>
+        <span class="text-muted" style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">Connected</span>
+        <h4 style="margin: 0.1rem 0 0 0; font-weight: 800; color: #22c55e;">{{ connected }}</h4>
+      </div>
+    </div>
+  </div>
+
+  <!-- Failed -->
+  <div class="col-md-3">
+    <div class="premium-card" style="background: var(--white); border-radius: 14px; border: 1px solid var(--grey-100); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow-premium);">
+      <div style="width: 44px; height: 44px; border-radius: 8px; background: rgba(239, 68, 68, 0.08); display: flex; align-items: center; justify-content: center; color: #ef4444;">
+        <i class="bi bi-telephone-x" style="font-size: 1.2rem;"></i>
+      </div>
+      <div>
+        <span class="text-muted" style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">Failed</span>
+        <h4 style="margin: 0.1rem 0 0 0; font-weight: 800; color: #ef4444;">{{ failed }}</h4>
+      </div>
+    </div>
+  </div>
+
+  <!-- Avg Duration / Success Rate -->
+  <div class="col-md-3">
+    <div class="premium-card" style="background: var(--white); border-radius: 14px; border: 1px solid var(--grey-100); padding: 1.25rem; display: flex; align-items: center; gap: 1rem; box-shadow: var(--shadow-premium);">
+      <div style="width: 44px; height: 44px; border-radius: 8px; background: rgba(139, 92, 246, 0.08); display: flex; align-items: center; justify-content: center; color: #8b5cf6;">
+        <i class="bi bi-clock-history" style="font-size: 1.2rem;"></i>
+      </div>
+      <div>
+        <span class="text-muted" style="display: block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">Avg Duration</span>
+        <h4 style="margin: 0.1rem 0 0 0; font-weight: 800; color: var(--grey-800);">{{ avg_duration }}s</h4>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  {# ── LEFT: Delivery Log table ── #}
+  <div class="col-lg-8">
+    <div class="premium-card mb-4" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 2rem;">
+      <h4 style="font-weight: 700; color: var(--grey-800); margin-bottom: 1.25rem;">Delivery Log (Max 50 Rows)</h4>
+      
+      {% if logs %}
+      <div class="table-responsive">
+        <table class="table" style="vertical-align: middle; margin: 0;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--grey-100); color: var(--grey-500); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">
+              <th>Recipient</th>
+              <th>Channel</th>
+              <th>Status</th>
+              <th>Duration (s)</th>
+              <th>Timestamp</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for l in logs[:50] %}
+            <tr style="border-bottom: 1px solid var(--grey-100); font-size: 0.9rem;">
+              <td style="font-weight: 600; color: var(--grey-700);">{{ l.recipient }}</td>
+              <td style="text-transform: capitalize;">
+                {% if l.channel == 'hooman_voice' %}Voice Call{% else %}{{ l.channel.replace('_', ' ') }}{% endif %}
+              </td>
+              <td>
+                {% if l.status in ('completed', 'answered', 'sent', 'delivered', 'read') %}
+                  <span class="badge bg-success-subtle text-success" style="border-radius: 12px; font-weight: 600; font-size: 0.75rem;">Success</span>
+                {% elif l.status == 'failed' %}
+                  <span class="badge bg-danger-subtle text-danger" style="border-radius: 12px; font-weight: 600; font-size: 0.75rem;">Failed</span>
+                {% else %}
+                  <span class="badge bg-warning-subtle text-warning" style="border-radius: 12px; font-weight: 600; font-size: 0.75rem;">{{ l.status.title() }}</span>
+                {% endif %}
+              </td>
+              <td>{{ l.meta.get('duration_seconds', 0) if l.meta else 0 }}</td>
+              <td class="text-muted" style="font-size: 0.8rem;">
+                {{ l.created_at.strftime('%d %b %Y, %I:%M:%S %p') }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="text-align: center; padding: 2rem; color: var(--grey-400);">
+        <i class="bi bi-file-earmark-text" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+        No logs found for this campaign execution.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ── RIGHT: Cost & Payment Summary ── #}
+  <div class="col-lg-4">
+    <div class="premium-card mb-4" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 1.75rem;">
+      <h4 style="font-weight: 700; color: var(--grey-800); margin-bottom: 1.25rem;">Cost Summary</h4>
+      
+      {% if payment %}
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
+        <span class="text-muted">Paid Amount</span>
+        <span style="font-weight: 700; color: var(--grey-900);">₹{{ payment.amount }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
+        <span class="text-muted">Payment Method</span>
+        <span style="font-weight: 600; color: var(--grey-800);">{{ payment.gateway_name or 'Secure Gateway' }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
+        <span class="text-muted">Transaction ID</span>
+        <span style="font-family: monospace; font-size: 0.8rem; font-weight: 600; color: var(--grey-700);">{{ payment.transaction_id or payment.payment_ref or '-' }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
+        <span class="text-muted">Paid Date</span>
+        <span style="font-weight: 600; color: var(--grey-800);">{{ payment.completed_at.strftime('%d %b %Y') if payment.completed_at else '-' }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+        <span class="text-muted" style="font-size: 0.9rem;">Payment Status</span>
+        <span class="badge bg-success" style="border-radius: 20px; padding: 0.35rem 0.75rem; font-size: 0.75rem;">Completed</span>
+      </div>
+      {% else %}
+      <p style="color: var(--grey-400); font-size: 0.85rem; margin: 0;">No payment data found for this campaign execution.</p>
+      {% endif %}
+    </div>
+
+    <div class="premium-card" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 1.75rem;">
+      <h4 style="font-weight: 700; color: var(--grey-800); margin-bottom: 1rem;">Campaign Script</h4>
+      {% set script = campaign.script %}
+      {% if script %}
+      <div style="background: #fafafa; border-radius: 10px; padding: 1rem; border: 1px solid var(--grey-100); max-height: 180px; overflow-y: auto;">
+        <p style="margin: 0; font-family: monospace; font-size: 0.85rem; color: var(--grey-700); white-space: pre-wrap; line-height: 1.5;">{{ script.content }}</p>
+      </div>
+      {% else %}
+      <p style="color: var(--grey-400); font-size: 0.85rem; margin: 0;">No script content associated with this campaign.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

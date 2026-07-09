@@ -1,0 +1,113 @@
+{% extends "base_platform_premium.html" %}
+{% block title %}CalltoConvey | CE Number Pool{% endblock %}
+{% block page_title %}Number Pool{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-end">
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addNumberModal">
+            <i class="bi bi-plus-lg me-2"></i> Add Number
+        </button>
+    </div>
+</div>
+
+<div class="premium-card mb-4">
+    <div class="card-header-premium">
+        <div class="header-left">
+            <h2>Platform Numbers</h2>
+            <p>Manage numbers available for Campaign Express</p>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle table-hover" style="border-collapse: separate; border-spacing: 0 0.5rem; padding: 0 1.5rem;">
+            <thead>
+                <tr style="color: var(--grey-400); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <th class="border-0 pb-3">Label / Number</th>
+                    <th class="border-0 pb-3">Provider</th>
+                    <th class="border-0 pb-3">Status / Health</th>
+                    <th class="border-0 pb-3">Load</th>
+                    <th class="border-0 pb-3 text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for n in numbers %}
+                <tr style="background: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-radius: 8px;">
+                    <td class="border-0 rounded-start" style="padding: 1rem;">
+                        <div class="fw-bold" style="color: var(--text-dark);">{{ n.label }}</div>
+                        <div class="small" style="color: var(--grey-400);">{{ n.number }}</div>
+                    </td>
+                    <td class="border-0" style="padding: 1rem; text-transform: capitalize;">{{ n.provider }}</td>
+                    <td class="border-0" style="padding: 1rem;">
+                        <span class="badge {{ n.status_class }}">{{ n.status_label }}</span>
+                    </td>
+                    <td class="border-0" style="padding: 1rem;">
+                        <span class="badge bg-secondary">{{ n.active_campaigns_count }} active</span>
+                    </td>
+                    <td class="border-0 rounded-end text-end" style="padding: 1rem;">
+                        <form method="post" action="{{ url_for('super_admin.ce_number_pool_toggle', nid=n.id) }}" style="display:inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn-action-premium" title="{% if n.is_active %}Disable{% else %}Enable{% endif %}">
+                                <i class="bi {% if n.is_active %}bi-toggle-on text-success{% else %}bi-toggle-off text-muted{% endif %} fs-4"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="text-center py-4 border-0">
+                        <div class="empty-state">
+                            <i class="bi bi-hash"></i>
+                            <p>No numbers found in the pool.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Number Modal -->
+<div class="modal fade" id="addNumberModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('super_admin.ce_number_pool_add') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">Add Platform Number</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Label / Name</label>
+                        <input type="text" name="label" class="form-control" required placeholder="e.g. Primary Marketing Line">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Phone Number</label>
+                        <input type="text" name="number" class="form-control" required placeholder="+1234567890">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Provider</label>
+                        <select name="provider" class="form-select">
+                            <option value="twilio">Twilio</option>
+                            <option value="hooman">Hooman Labs</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">API Token / SID</label>
+                        <input type="text" name="api_token" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Auth Token</label>
+                        <input type="password" name="auth_token" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Number</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

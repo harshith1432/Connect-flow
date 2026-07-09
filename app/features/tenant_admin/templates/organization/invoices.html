@@ -1,6 +1,6 @@
 {% extends 'base_billing_premium.html' %}
 
-{% block title %}ConnectFlow | Invoices Ledger{% endblock %}
+{% block title %}CalltoConvey | Invoices Ledger{% endblock %}
 {% block page_title %}Invoices{% endblock %}
 
 {% block content %}
@@ -101,7 +101,7 @@
                             {{ current_user.organization.name }}
                         </td>
                         <td style="padding: 1.25rem 1rem; font-weight: 700; color: var(--black);">
-                            ConnectFlow - {{ inv.meta.get('plan_name', 'Enterprise Tier') if inv.meta else 'Enterprise Tier' }}
+                            CalltoConvey - {{ inv.meta.get('plan_name', 'Enterprise Tier') if inv.meta else 'Enterprise Tier' }}
                         </td>
                         <td style="padding: 1.25rem 1rem; font-family: var(--font-heading); font-weight: 800; color: var(--black); font-size: 0.95rem;">
                             ₹{{ inv.amount|int }}
@@ -168,9 +168,9 @@
             <!-- Invoice Header Block -->
             <div class="d-flex justify-content-between align-items-start mb-5" style="border-bottom: 2px solid #f3f4f6; padding-bottom: 2.5rem;">
                 <div>
-                    <!-- ConnectFlow Branding -->
+                    <!-- CalltoConvey Branding -->
                     <div style="font-family: 'Outfit', sans-serif; font-size: 2rem; font-weight: 800; letter-spacing: -0.5px; color: #000000; line-height: 1;">
-                        Connect<span style="color: #6b7280; font-weight: 600;">Flow</span>
+                        <img src="{{ url_for('main.static', filename='logo.jpg') }}" alt="CalltoConvey Logo" style="height: 38px; width: auto; object-fit: contain; border-radius: 6px; vertical-align: middle;">
                     </div>
                     <small class="d-block mt-2 text-muted fw-semibold" style="font-size: 0.75rem; letter-spacing: 0.5px;">COMMERCIAL BILLING & TAX INVOICE</small>
                 </div>
@@ -185,11 +185,11 @@
                 <!-- Company Details -->
                 <div class="col-sm-6 mb-4 mb-sm-0">
                     <span class="text-uppercase text-muted fw-bold d-block mb-2" style="font-size: 0.725rem; letter-spacing: 0.5px;">Issuer Details</span>
-                    <strong class="d-block text-dark mb-1" style="font-size: 0.95rem;">ConnectFlow Technologies Pvt. Ltd.</strong>
+                    <strong class="d-block text-dark mb-1" style="font-size: 0.95rem;">CalltoConvey Technologies Pvt. Ltd.</strong>
                     <div class="text-muted">
                         Suite 402, Delta Tower Tech Park<br>
                         Outer Ring Road, Bangalore, KA - 560103<br>
-                        Email: billing@connectflow.io<br>
+                        Email: {{ platform_branding.billing_email }}<br>
                         GSTIN: 29AAFCC1039K1ZM (Mock)
                     </div>
                 </div>
@@ -240,7 +240,7 @@
                 <tbody>
                     <tr style="border-bottom: 1px solid #f3f4f6;">
                         <td style="padding: 1.5rem 0; text-align: left; vertical-align: top;">
-                            <strong class="text-dark" id="invLineItemPlan">ConnectFlow Premium Subscription - Enterprise Plan</strong>
+                            <strong class="text-dark" id="invLineItemPlan">CalltoConvey Premium Subscription - Enterprise Plan</strong>
                             <p class="text-muted mb-0 small mt-1">Full automated marketing campaigns, reports, multi-worker logins, twilio configurations, voice calling pipeline, and live audit tracking.</p>
                         </td>
                         <td style="padding: 1.5rem; text-align: right; vertical-align: top; font-weight: 600; color: #111827;" id="invUnitCost">₹846</td>
@@ -314,7 +314,7 @@
         document.getElementById('invTxnId').innerText = data.txnId;
         document.getElementById('invGatewayName').innerText = data.gateway + ' (' + data.mode.toUpperCase() + ')';
         
-        document.getElementById('invLineItemPlan').innerText = 'ConnectFlow Subscription - ' + data.plan;
+        document.getElementById('invLineItemPlan').innerText = 'CalltoConvey Subscription - ' + data.plan;
         
         document.getElementById('invUnitCost').innerText = '₹' + Math.round(base);
         document.getElementById('invBaseCost').innerText = '₹' + Math.round(base);

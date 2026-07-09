@@ -1,0 +1,56 @@
+{% extends "base_platform_premium.html" %}
+{% block title %}CalltoConvey | CE Users{% endblock %}
+{% block page_title %}Campaign Express Users{% endblock %}
+
+{% block content %}
+<div class="premium-card mb-4">
+    <div class="card-header-premium">
+        <div class="header-left">
+            <h2>Users</h2>
+            <p>Manage Campaign Express individual users</p>
+        </div>
+    </div>
+    <div class="table-responsive">
+        <table class="table align-middle table-hover" style="border-collapse: separate; border-spacing: 0 0.5rem; padding: 0 1.5rem;">
+            <thead>
+                <tr style="color: var(--grey-400); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <th class="border-0 pb-3">User Info</th>
+                    <th class="border-0 pb-3">Verification</th>
+                    <th class="border-0 pb-3">Status</th>
+                    <th class="border-0 pb-3 text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr style="background: var(--white); box-shadow: 0 2px 4px rgba(0,0,0,0.02); border-radius: 8px;">
+                    <td class="border-0 rounded-start" style="padding: 1rem;">
+                        <div class="fw-bold" style="color: var(--text-dark);">{{ u.full_name }}</div>
+                        <div class="small" style="color: var(--grey-400);">{{ u.email }}</div>
+                    </td>
+                    <td class="border-0" style="padding: 1rem;">
+                        <span class="badge {{ u.verification_badge_class }}">{{ u.display_verification_label }}</span>
+                    </td>
+                    <td class="border-0" style="padding: 1rem;">
+                        <span class="badge {% if u.is_active %}bg-success{% else %}bg-danger{% endif %}">{% if u.is_active %}Active{% else %}Suspended{% endif %}</span>
+                    </td>
+                    <td class="border-0 rounded-end text-end" style="padding: 1rem;">
+                        <a href="{{ url_for('super_admin.ce_user_detail', uid=u.id) }}" class="btn-action-premium" title="View Details">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="text-center py-4 border-0">
+                        <div class="empty-state">
+                            <i class="bi bi-people"></i>
+                            <p>No users found.</p>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

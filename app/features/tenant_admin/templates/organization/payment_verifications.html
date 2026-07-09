@@ -1,0 +1,262 @@
+{% extends "base_org_premium.html" %}
+
+{% block title %}Payment Verification Dashboard | CalltoConvey{% endblock %}
+{% block page_title %}Payment Verifications{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        
+        <!-- Summary Stats Cards -->
+        <div class="row g-4 mb-5">
+            <div class="col-md-3 col-sm-6">
+                <div class="premium-card p-4 border-0 shadow-sm" style="background: white; border: 1px solid var(--grey-100) !important; border-radius: 16px;">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small fw-bold uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Pending Payments</span>
+                        <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1 fs-8 fw-bold">Reviewing</span>
+                    </div>
+                    <h3 class="fw-extrabold text-dark mb-1" style="font-family: 'Outfit', sans-serif; font-weight: 800;">{{ pending_count }}</h3>
+                    <small class="text-muted" style="font-size: 0.75rem;">Today's Pending: <strong>{{ today_pending }}</strong></small>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-sm-6">
+                <div class="premium-card p-4 border-0 shadow-sm" style="background: white; border: 1px solid var(--grey-100) !important; border-radius: 16px;">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small fw-bold uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Verified Payments</span>
+                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 fs-8 fw-bold">Active</span>
+                    </div>
+                    <h3 class="fw-extrabold text-dark mb-1" style="font-family: 'Outfit', sans-serif; font-weight: 800;">{{ approved_count }}</h3>
+                    <small class="text-muted" style="font-size: 0.75rem;">Rejected submissions: <strong>{{ rejected_count }}</strong></small>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-sm-6">
+                <div class="premium-card p-4 border-0 shadow-sm" style="background: white; border: 1px solid var(--grey-100) !important; border-radius: 16px;">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small fw-bold uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Total Amount Paid</span>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 fs-8 fw-bold">Revenue</span>
+                    </div>
+                    <h3 class="fw-extrabold text-success mb-1" style="font-family: 'Outfit', sans-serif; font-weight: 800;">₹{{ "{:,.2f}".format(total_amount) }}</h3>
+                    <small class="text-muted" style="font-size: 0.75rem;">All-time approved total</small>
+                </div>
+            </div>
+            
+            <div class="col-md-3 col-sm-6">
+                <div class="premium-card p-4 border-0 shadow-sm" style="background: white; border: 1px solid var(--grey-100) !important; border-radius: 16px;">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <span class="text-muted small fw-bold uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Avg. Verification Time</span>
+                        <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1 fs-8 fw-bold">SLA</span>
+                    </div>
+                    <h3 class="fw-extrabold text-dark mb-1" style="font-family: 'Outfit', sans-serif; font-weight: 800;">{{ avg_verification_time }}</h3>
+                    <small class="text-muted" style="font-size: 0.75rem;">Platform average turnaround</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Transactions Table -->
+        <div class="premium-panel-custom p-4">
+            <div class="card-header-premium mb-4">
+                <div class="header-left">
+                    <h4 class="fw-bold mb-1" style="font-family: 'Outfit', sans-serif;">Payment Verification Submissions</h4>
+                    <p class="small text-muted mb-0">List of manual UPI payments submitted to the platform for review</p>
+                </div>
+            </div>
+            
+            <div class="table-responsive">
+                <table class="table align-middle floating-table">
+                    <thead>
+                        <tr>
+                            <th>Transaction Details</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Submitted Date</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in recent_transactions %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <code class="text-primary fw-bold fs-7">{{ t.transaction_id }}</code>
+                                </div>
+                                <div class="small text-muted" style="font-size: 0.75rem; margin-top: 2px;">Ref: {{ t.order_id }}</div>
+                            </td>
+                            <td>
+                                <strong class="text-dark">₹{{ "{:,.2f}".format(t.amount|float) }}</strong>
+                            </td>
+                            <td>
+                                {% if t.status == 'pending' %}
+                                    <span class="badge bg-warning-subtle text-warning rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-clock-history me-1"></i> PENDING VERIFICATION
+                                    </span>
+                                {% elif t.status == 'approved' %}
+                                    <span class="badge bg-success-subtle text-success rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-patch-check-fill me-1"></i> APPROVED
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1">
+                                        <i class="bi bi-x-circle-fill me-1"></i> REJECTED
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="text-dark">{{ t.submitted_time.strftime('%d %b %Y') }}</div>
+                                <div class="small text-muted" style="font-size: 0.75rem;">{{ t.submitted_time.strftime('%I:%M %p') }}</div>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-secondary px-3 py-1.5 rounded-3 fs-7" onclick='viewReceiptDetails({{ t.to_dict()|tojson }})'>
+                                    <i class="bi bi-receipt-cutoff me-1"></i> View Receipt
+                                </button>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <div class="py-4">
+                                    <i class="bi bi-wallet-fill display-4 text-muted opacity-25 mb-3 d-block"></i>
+                                    <h5 class="fw-bold text-dark">No Verification Records Found</h5>
+                                    <p class="small text-muted mb-0">All manual payments submitted will appear here with verification timelines.</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal fade" id="modal-receipt-details" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: var(--shadow-premium);">
+            <div class="modal-header border-bottom border-light p-4">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-receipt-cutoff me-2 text-primary"></i>Receipt Submission Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light-subtle">
+                <div class="row g-4">
+                    <!-- Details -->
+                    <div class="col-md-6">
+                        <h6 class="fw-bold text-muted uppercase small mb-3">Verification Metadata</h6>
+                        <ul class="list-group list-group-flush rounded-3 border mb-4">
+                            <li class="list-group-item d-flex justify-content-between py-2.5">
+                                <span class="text-muted">Plan/Order:</span>
+                                <strong id="rec-order" class="text-dark">Order Name</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between py-2.5">
+                                <span class="text-muted">Amount Paid:</span>
+                                <strong id="rec-amount" class="text-dark">₹0.00</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between py-2.5">
+                                <span class="text-muted">Transaction ID:</span>
+                                <code id="rec-utr" class="fw-bold text-primary">UTR</code>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between py-2.5">
+                                <span class="text-muted">Paid From UPI:</span>
+                                <strong id="rec-cust-upi" class="text-dark">UPI ID</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between py-2.5">
+                                <span class="text-muted">Verification Status:</span>
+                                <span id="rec-status-badge">PENDING</span>
+                            </li>
+                        </ul>
+                        
+                        <!-- Admin remarks if processed -->
+                        <div id="rec-remarks-container" style="display: none;" class="p-3 bg-white border border-light rounded-3">
+                            <strong class="text-dark">Verification Remarks:</strong>
+                            <p id="rec-remarks" class="small text-muted mb-0 mt-1">Remarks...</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Screenshot preview -->
+                    <div class="col-md-6 text-center">
+                        <h6 class="fw-bold text-muted uppercase text-start small mb-3">Your Uploaded Receipt</h6>
+                        <div class="screenshot-preview-container bg-white border rounded-4 p-2 d-inline-block shadow-sm w-100" style="cursor: zoom-in;" onclick="zoomReceiptScreenshot()">
+                            <img id="rec-screenshot" src="" class="img-fluid rounded-3" style="max-height: 250px; object-fit: contain;" alt="Receipt Receipt">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Receipt Zoom Modal -->
+<div class="modal fade" id="modal-receipt-zoom" tabindex="-1" aria-hidden="true" style="background: rgba(0,0,0,0.85);">
+    <div class="modal-dialog modal-dialog-centered modal-xl">
+        <div class="modal-content bg-transparent border-0 text-end">
+            <button type="button" class="btn text-white fs-3 border-0 p-3 mb-2" data-bs-dismiss="modal"><i class="bi bi-x-lg"></i></button>
+            <div class="text-center">
+                <img id="zoomed-receipt-image" src="" class="img-fluid rounded-4 shadow-lg" style="max-height: 80vh; object-fit: contain;">
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.floating-table th {
+    font-weight: 700;
+    color: var(--grey-600);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--grey-100);
+    padding: 1rem 0.75rem;
+}
+.floating-table td {
+    padding: 1.25rem 0.75rem;
+    border-bottom: 1px solid var(--grey-100);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function viewReceiptDetails(req) {
+    document.getElementById('rec-order').innerText = req.order_id || 'N/A';
+    document.getElementById('rec-amount').innerText = `₹${parseFloat(req.amount).toFixed(2)}`;
+    document.getElementById('rec-utr').innerText = req.transaction_id;
+    document.getElementById('rec-cust-upi').innerText = req.customer_upi_id || 'N/A';
+    
+    // Status Badge
+    const badgeSpan = document.getElementById('rec-status-badge');
+    if (req.status === 'pending') {
+        badgeSpan.className = 'badge bg-warning-subtle text-warning rounded-pill px-2.5 py-1 fs-8';
+        badgeSpan.innerText = 'PENDING VERIFICATION';
+    } else if (req.status === 'approved') {
+        badgeSpan.className = 'badge bg-success-subtle text-success rounded-pill px-2.5 py-1 fs-8';
+        badgeSpan.innerText = 'APPROVED';
+    } else {
+        badgeSpan.className = 'badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 fs-8';
+        badgeSpan.innerText = 'REJECTED';
+    }
+    
+    // Remarks
+    const remarksContainer = document.getElementById('rec-remarks-container');
+    if (req.remarks) {
+        remarksContainer.style.display = 'block';
+        document.getElementById('rec-remarks').innerText = req.remarks;
+    } else {
+        remarksContainer.style.display = 'none';
+    }
+    
+    // Screenshots
+    const screenshotUrl = `/static/${req.screenshot_path}`;
+    document.getElementById('rec-screenshot').src = screenshotUrl;
+    document.getElementById('zoomed-receipt-image').src = screenshotUrl;
+    
+    // Open Modal
+    const myModal = new bootstrap.Modal(document.getElementById('modal-receipt-details'));
+    myModal.show();
+}
+
+function zoomReceiptScreenshot() {
+    const zoomModal = new bootstrap.Modal(document.getElementById('modal-receipt-zoom'));
+    zoomModal.show();
+}
+</script>
+{% endblock %}

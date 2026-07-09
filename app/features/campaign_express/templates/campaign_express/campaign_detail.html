@@ -1,0 +1,1799 @@
+{% extends "base_ce_premium.html" %}
+
+{% block title %}Campaign Detail | Campaign Express{% endblock %}
+{% block page_title %}Campaign Details{% endblock %}
+
+{% block content %}
+{# ── Breadcrumb ── #}
+<nav aria-label="breadcrumb" class="mb-4">
+  <ol class="breadcrumb" style="background: transparent; padding: 0; margin: 0; font-size: 0.9rem;">
+    <li class="breadcrumb-item"><a href="{{ url_for('campaign_express.campaigns') }}" style="color: #6366f1; text-decoration: none; font-weight: 500;">Campaigns</a></li>
+    <li class="breadcrumb-item active" aria-current="page" style="color: var(--grey-500); font-weight: 500;">{{ campaign.name }}</li>
+  </ol>
+</nav>
+
+{# ── Verification Locked Banner (If user not verified) ── #}
+{% if not current_user.is_verified and campaign.status in ('draft', 'ready', 'waiting_payment') %}
+<div class="execution-locked-banner" style="display: flex; align-items: center; gap: 1rem; background: linear-gradient(135deg, #fff7ed, #fef3c7); border: 1.5px solid #fcd34d; border-radius: 14px; padding: 1rem 1.5rem; margin-bottom: 2rem;">
+  <i class="bi bi-shield-exclamation" style="font-size: 1.75rem; color: #f59e0b; flex-shrink: 0;"></i>
+  <div style="flex: 1;">
+    <strong style="color: #92400e;">Campaign Execution is Locked.</strong>
+    <span style="color: #78350f;"> Complete <a href="{{ url_for('campaign_express.verification') }}" style="color: #6366f1; font-weight: 600; text-decoration: underline;">identity verification</a> before you can launch campaigns. Campaign creation and setup is free.</span>
+  </div>
+  <a href="{{ url_for('campaign_express.verification') }}" style="flex-shrink: 0; padding: 0.5rem 1.25rem; background: #6366f1; color: white; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-decoration: none;">
+    Verify Now
+  </a>
+</div>
+{% endif %}
+
+<div class="row">
+  {# ── LEFT COLUMN ── #}
+  <div class="col-lg-8">
+    {# ── Campaign Info Card ── #}
+    <div class="premium-card mb-4" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 1.75rem;">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+        <div>
+          <h3 style="font-weight: 800; color: var(--grey-900); margin: 0; font-size: 1.5rem;">{{ campaign.name }}</h3>
+          <p style="color: var(--grey-400); font-size: 0.85rem; margin: 0.25rem 0 0 0;">Created on {{ campaign.created_at.strftime('%d %b %Y, %I:%M %p') }}</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+          {# Status Badge #}
+          {% if campaign.status == 'draft' %}
+            <span class="badge bg-secondary" style="border-radius: 20px; padding: 0.4rem 0.85rem; font-weight: 600; font-size: 0.8rem;">Draft</span>
+          {% elif campaign.status == 'ready' %}
+            <span class="badge bg-info" style="border-radius: 20px; padding: 0.4rem 0.85rem; font-weight: 600; font-size: 0.8rem;">Ready</span>
+          {% elif campaign.status == 'waiting_payment' %}
+            <span class="badge bg-warning text-dark" style="border-radius: 20px; padding: 0.4rem 0.85rem; font-weight: 600; font-size: 0.8rem;">Waiting Payment</span>
+          {% elif campaign.status == 'running' %}
+            <span class="badge bg-success" style="border-radius: 20px; padding: 0.4rem 0.85rem; font-weight: 600; font-size: 0.8rem; animation: pulse 2s infinite;">Running</span>
+          {% elif campaign.status == 'completed' %}
+            <span class="badge bg-primary" style="border-radius: 20px; padding: 0.4rem 0.85rem; font-weight: 600; font-size: 0.8rem;">Completed</span>
+          {% elif campaign.status == 'archived' %}
+            <span class="badge bg-secondary" style="border-radius: 20px; padding: 0.4rem 0.85rem; font-weight: 600; font-size: 0.8rem;">Archived</span>
+          {% endif %}
+
+          {# Type Badge #}
+          {% if campaign.type == 'call' %}
+            <span class="badge" style="background: rgba(99, 102, 241, 0.1); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 20px; padding: 0.4rem 0.85rem; font-weight: 600; font-size: 0.8rem;"><i class="bi bi-telephone-fill me-1"></i> Voice Call</span>
+          {% elif campaign.type == 'whatsapp_text' %}
+            <span class="badge" style="background: rgba(34, 197, 94, 0.1); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 20px; padding: 0.4rem 0.85rem; font-weight: 600; font-size: 0.8rem;"><i class="bi bi-whatsapp me-1"></i> WhatsApp Text</span>
+          {% elif campaign.type == 'whatsapp_voice' %}
+            <span class="badge" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b; border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 20px; padding: 0.4rem 0.85rem; font-weight: 600; font-size: 0.8rem;"><i class="bi bi-chat-square-quote me-1"></i> WhatsApp Voice</span>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if campaign.description %}
+      <div class="mb-4" style="background: #f8fafc; border-radius: 12px; padding: 1rem; border: 1px solid #e2e8f0;">
+        <span style="font-size: 0.75rem; font-weight: 700; color: var(--grey-400); text-transform: uppercase; letter-spacing: 0.5px;">Campaign Notes</span>
+        <p style="margin: 0.25rem 0 0 0; color: var(--grey-700); font-size: 0.925rem; line-height: 1.6;">{{ campaign.description }}</p>
+      </div>
+      {% endif %}
+
+      {# ── Stats Row ── #}
+      <div class="kpi-grid mb-3" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 0;">
+        <div class="kpi-card" style="margin-bottom: 0; padding: 1.25rem; border: 1.5px solid var(--grey-100);">
+          <div class="kpi-header" style="margin-bottom: 0.5rem;">
+            <span class="kpi-label" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Total Runs</span>
+            <div class="kpi-icon" style="width: 36px; height: 36px; border-radius: 8px;">
+              <i class="bi bi-telephone-fill" style="font-size: 1rem;"></i>
+            </div>
+          </div>
+          <div class="kpi-value" style="font-size: 1.5rem; font-weight: 800; color: var(--grey-800);">{{ total_calls }}</div>
+        </div>
+        <div class="kpi-card" style="margin-bottom: 0; padding: 1.25rem; border: 1.5px solid var(--grey-100);">
+          <div class="kpi-header" style="margin-bottom: 0.5rem;">
+            <span class="kpi-label" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Connected</span>
+            <div class="kpi-icon" style="width: 36px; height: 36px; border-radius: 8px;">
+              <i class="bi bi-telephone-inbound-fill" style="font-size: 1rem;"></i>
+            </div>
+          </div>
+          <div class="kpi-value" style="font-size: 1.5rem; font-weight: 800; color: var(--grey-800);">{{ connected }}</div>
+        </div>
+        <div class="kpi-card" style="margin-bottom: 0; padding: 1.25rem; border: 1.5px solid var(--grey-100);">
+          <div class="kpi-header" style="margin-bottom: 0.5rem;">
+            <span class="kpi-label" style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase;">Success Rate</span>
+            <div class="kpi-icon" style="width: 36px; height: 36px; border-radius: 8px;">
+              <i class="bi bi-graph-up" style="font-size: 1rem;"></i>
+            </div>
+          </div>
+          <div class="kpi-value" style="font-size: 1.5rem; font-weight: 800; color: var(--grey-800);">{{ rate }}%</div>
+        </div>
+      </div>
+    </div>
+
+    {# ── CRM Table Card (Monochrome CRM Grid) ── #}
+    <div class="premium-card mb-4" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 1.75rem;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--grey-100); padding-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.1); color: #6366f1; display: flex; align-items: center; justify-content: center;">
+            <i class="bi bi-database-fill-gear" style="font-size: 1.2rem;"></i>
+          </div>
+          <div>
+            <h4 style="font-weight: 700; color: var(--grey-800); margin: 0;">Campaign Contacts Database</h4>
+            <p style="color: var(--grey-400); font-size: 0.8rem; margin: 0;">Manage recipient details, dynamic variables, and custom logic.</p>
+          </div>
+        </div>
+        
+        {# Action Buttons (hidden if campaign is running/completed) #}
+        {% if campaign.status in ('draft', 'ready', 'waiting_payment') %}
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="button" class="btn" data-bs-toggle="modal" data-bs-target="#addRecordModal" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 1rem;background:var(--black);color:var(--white);border-radius:10px;font-size:0.8rem;font-weight:600;border:none;">
+            <i class="bi bi-plus-lg"></i> Add Entry
+          </button>
+          <button type="button" class="btn" data-bs-toggle="modal" data-bs-target="#addFieldModal" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 1rem;background:var(--white);color:var(--black);border-radius:10px;font-size:0.8rem;font-weight:600;border:1px solid var(--grey-200);">
+            <i class="bi bi-layout-text-sidebar"></i> Configure Fields
+          </button>
+          <div class="dropdown">
+            <button class="btn dropdown-toggle" data-bs-toggle="dropdown" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 1rem;background:var(--white);color:var(--black);border-radius:10px;font-size:0.8rem;font-weight:600;border:1px solid var(--grey-200);">
+              Operations
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end border-0 shadow-lg" style="border-radius:12px;">
+              <li><a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#importModal" style="font-size:0.85rem;"><i class="bi bi-cloud-arrow-up me-2"></i>Import CSV</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('campaign_express.export_records', cid=campaign.id, format='csv') }}" style="font-size:0.85rem;"><i class="bi bi-filetype-csv me-2"></i>Export CSV</a></li>
+            </ul>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      {# Search & Filters #}
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem;">
+        <div style="flex: 1; max-width: 320px; position: relative;">
+          <input type="text" id="recordSearch" placeholder="Search entries..." onkeyup="filterRecords()" style="width: 100%; border-radius: 10px; border: 1.5px solid var(--grey-200); padding: 0.45rem 1rem 0.45rem 2.25rem; font-size: 0.875rem;">
+          <i class="bi bi-search text-muted" style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 0.875rem;"></i>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+          <div id="uniqueFilterGroup" style="display: flex; align-items: center; gap: 0.5rem; border: 1.5px solid var(--grey-200); padding: 0.45rem 1rem; border-radius: 10px; background: var(--white); transition: all 0.2s;">
+            <div class="form-check mb-0">
+              <input class="form-check-input" type="checkbox" id="uniqueFilter" onchange="toggleUniqueFilter()">
+              <label class="form-check-label small fw-bold text-dark" for="uniqueFilter" style="cursor: pointer;">Unique</label>
+            </div>
+            <div class="vr" style="height: 18px; margin: 0 0.25rem; background: var(--grey-200);"></div>
+            <select id="uniqueField" class="form-select form-select-sm border-0 bg-transparent fw-semibold text-muted" style="width: auto; box-shadow: none; padding: 0 1.5rem 0 0.5rem; font-size: 0.8rem; cursor: pointer;" onchange="filterRecords()">
+              <option value="all">Check: All Attributes</option>
+              {% for f in fields %}
+              <option value="{{ f.id }}">By: {{ f.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div id="bulkActions" class="d-none">
+            <span class="small fw-bold text-muted me-2"><span id="selectedCount">0</span> selected</span>
+            <button class="btn btn-sm btn-danger px-3" onclick="bulkDelete()" style="border-radius: 8px; font-size: 0.75rem; font-weight: 600;">Delete Selected</button>
+          </div>
+        </div>
+      </div>
+
+      {# Table Container #}
+      <div class="table-responsive" style="border: 1px solid var(--grey-200); border-radius: 12px; overflow: hidden; background: var(--white);">
+        <table class="table align-middle mb-0" id="mainRecordsTable">
+          <thead>
+            <tr style="background: var(--grey-50); border-bottom: 2px solid var(--grey-100); font-size: 0.72rem; font-weight: 700; text-transform: uppercase; color: var(--grey-600);">
+              <th class="ps-4" style="width: 40px;">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="selectAll">
+                </div>
+              </th>
+              {% for f in fields %}
+              <th style="min-width: 130px; font-weight: 700; letter-spacing: 0.5px; padding: 1rem 0.75rem;" data-field-id="{{ f.id }}">{{ f.name }}</th>
+              {% endfor %}
+              <th class="text-end pe-4" style="width: 100px; font-weight: 700; letter-spacing: 0.5px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recordTableBody">
+            {% for r in records %}
+            <tr class="crm-row" data-id="{{ r.id }}" style="border-bottom: 1px solid var(--grey-100); transition: background 0.15s;">
+              <td class="ps-4">
+                <div class="form-check">
+                  <input class="form-check-input record-checkbox" type="checkbox" value="{{ r.id }}" onchange="updateBulkActions()">
+                </div>
+              </td>
+              {% for f in fields %}
+              <td data-field-id="{{ f.id }}" style="padding: 0.85rem 0.75rem;">
+                {% set val = r.computed_values.get(f.id, '-') %}
+                <div class="field-cell" style="font-size: 0.85rem;">
+                  {% if f.field_type == 'phone' and val != '-' %}
+                    <div class="d-flex align-items-center gap-2">
+                      <span class="text-dark fw-medium">{{ val }}</span>
+                      {% if f.meta and f.meta.communication %}
+                      <a href="https://wa.me/{{ val|replace(' ', '')|replace('+', '')|replace('-', '') }}" target="_blank" style="color:#25D366; font-size:1.1rem; display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:#f0fff4; border:1px solid #c6f6d5;" title="WhatsApp this contact">
+                        <i class="bi bi-whatsapp"></i>
+                      </a>
+                      {% endif %}
+                    </div>
+                  {% elif f.field_type == 'email' and val != '-' %}
+                    <a href="mailto:{{ val }}" style="color:var(--black); text-decoration:none; border-bottom:1px solid var(--black);">{{ val }}</a>
+                  {% elif f.field_type == 'boolean' %}
+                    <span class="status-pill {% if val == 'True' %}status-active{% else %}status-inactive{% endif %}">
+                      {{ val }}
+                    </span>
+                  {% elif f.field_type == 'calculated' %}
+                    <span class="fw-bold text-dark px-2 py-1 bg-light rounded border" style="font-size:0.75rem;">{{ val }}</span>
+                  {% elif f.field_type == 'file' and val != '-' %}
+                    <a href="/instance/uploads/{{ val }}" target="_blank" class="btn btn-sm btn-light py-1 px-2 rounded-pill" style="font-size:0.72rem;">View File</a>
+                  {% else %}
+                    <span class="text-dark text-truncate d-inline-block" style="max-width: 180px;">{{ val }}</span>
+                  {% endif %}
+                </div>
+              </td>
+              {% endfor %}
+              <td class="text-end pe-4" style="padding: 0.85rem 0.75rem;">
+                <div class="d-flex justify-content-end gap-1">
+                  {% if campaign.status in ('draft', 'ready', 'waiting_payment') %}
+                  <button type="button" class="btn btn-sm" onclick="editRecord('{{ r.id }}')" title="Edit Entry" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: var(--white); color: var(--black); border: 1.5px solid var(--grey-200);">
+                    <i class="bi bi-pencil-square"></i>
+                  </button>
+                  <button type="button" class="btn btn-sm" onclick="deleteRecord('{{ r.id }}')" title="Delete Entry" style="width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: #fff5f5; color: #e03131; border: 1.5px solid #ffa8a8;">
+                    <i class="bi bi-trash3"></i>
+                  </button>
+                  {% else %}
+                  <span class="text-muted small">Locked</span>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="{{ fields|length + 2 }}" class="text-center py-5">
+                <div style="text-align:center; padding: 2rem 0; color: var(--grey-400);">
+                  <i class="bi bi-database-exclamation" style="font-size: 2.5rem; display: block; margin-bottom: 0.75rem; color: var(--grey-300);"></i>
+                  <h5 style="color: var(--grey-700); font-weight: 600;">No contacts database records yet</h5>
+                  <p style="font-size: 0.85rem; max-width: 320px; margin: 0.25rem auto 1.25rem;">Add contacts manually or import from a CSV file to launch this campaign.</p>
+                  {% if campaign.status in ('draft', 'ready', 'waiting_payment') %}
+                  <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                    <button type="button" class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#addRecordModal" style="background:var(--black); color:var(--white); font-weight: 600; padding: 0.45rem 1rem; border-radius: 8px; border:none;">Add Record</button>
+                    <button type="button" class="btn btn-sm btn-light" data-bs-toggle="modal" data-bs-target="#importModal" style="font-weight: 600; padding: 0.45rem 1rem; border-radius: 8px; border:1px solid var(--grey-200);">Import CSV</button>
+                  </div>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# ── If Draft: Setup & Upload ── #}
+    {% if campaign.status == 'draft' or campaign.status == 'ready' or campaign.status == 'waiting_payment' %}
+
+    {# ── Script Configuration Card ── #}
+    {% set script = campaign.script %}
+    <div class="premium-card mb-4" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 2rem;">
+      <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
+        <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.1); color: #6366f1; display: flex; align-items: center; justify-content: center;">
+          <i class="bi bi-file-earmark-code" style="font-size: 1.2rem;"></i>
+        </div>
+        <h4 style="font-weight: 700; color: var(--grey-800); margin: 0;">Configure Script</h4>
+      </div>
+
+      <form method="POST" action="{{ url_for('campaign_express.campaign_script', cid=campaign.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Script Text -->
+        <div class="mb-3">
+          <!-- Insert Variables -->
+          <div class="mb-3 d-flex align-items-center gap-3">
+              <div class="d-flex align-items-center gap-2">
+                  <span style="font-weight: 700; font-size: 0.8rem; letter-spacing: 1px; color: var(--grey-800); text-transform: uppercase;">Insert Variables</span>
+                  <span class="badge" style="background: rgba(99, 102, 241, 0.1); color: #6366f1; border-radius: 50%; padding: 0.35em 0.6em; font-size: 0.7rem;">{{ fields|length }}</span>
+              </div>
+              <div class="d-flex flex-wrap gap-2">
+                  {% if fields %}
+                      {% for f in fields %}
+                      <button type="button" class="var-pill placeholder-btn" data-field="{{ f.name }}" style="display: inline-flex; align-items: center; padding: 4px 10px; background: #ffffff; border: 1px solid var(--grey-200); border-radius: 12px; font-size: 0.75rem; font-weight: 600; color: var(--grey-800); cursor: pointer; transition: all 0.2s ease;">
+                          {% if f.field_type == 'phone' %}
+                          <i class="bi bi-telephone me-2 text-muted"></i>
+                          {% elif f.field_type == 'email' %}
+                          <i class="bi bi-envelope me-2 text-muted"></i>
+                          {% elif f.field_type == 'date' %}
+                          <i class="bi bi-calendar me-2 text-muted"></i>
+                          {% elif f.field_type == 'number' %}
+                          <i class="bi bi-123 me-2 text-muted"></i>
+                          {% else %}
+                          <span class="text-muted me-2" style="font-family: monospace; font-size: 0.8rem;">Aa</span>
+                          {% endif %}
+                          {{ f.name }}
+                      </button>
+                      {% endfor %}
+                  {% else %}
+                      <span class="text-muted small"><i class="bi bi-info-circle"></i> No attributes defined.</span>
+                  {% endif %}
+              </div>
+          </div>
+
+          <label for="content" class="form-label" style="font-weight: 600; color: var(--grey-700); font-size: 0.85rem; margin-bottom: 0.4rem;">
+            Dynamic Script Content <span class="text-danger">*</span>
+          </label>
+          <textarea id="content" name="content" class="form-control" rows="6" placeholder="Hi {{'{{'}}name{{'}}'}}, your subscription expires on {{'{{'}}date{{'}}'}}. Reply YES to renew." required
+            style="border-radius: 10px; border: 1.5px solid var(--grey-200); padding: 0.75rem 1rem; font-size: 0.95rem; font-family: monospace;">{{ script.content if script else '' }}</textarea>
+          <div class="form-text" style="font-size: 0.75rem; color: var(--grey-400); margin-top: 0.35rem;">
+            Use curly braces for placeholders, e.g., <code>{{"{{"}}name{{"}}"}}</code>. Placeholders are case-insensitive and substitute with column values from your CSV.
+          </div>
+        </div>
+
+        <div class="row">
+          <!-- Language -->
+          <div class="col-md-6 mb-3">
+            <label for="language" class="form-label" style="font-weight: 600; color: var(--grey-700); font-size: 0.85rem; margin-bottom: 0.4rem;">Language</label>
+            <select id="language" name="language" class="form-select" style="border-radius: 10px; border: 1.5px solid var(--grey-200); padding: 0.65rem 0.85rem;">
+              <option value="English" {% if script and script.language == 'English' %}selected{% endif %}>English</option>
+              <option value="Hindi" {% if script and script.language == 'Hindi' %}selected{% endif %}>Hindi</option>
+              <option value="Kannada" {% if script and script.language == 'Kannada' %}selected{% endif %}>Kannada</option>
+              <option value="Tamil" {% if script and script.language == 'Tamil' %}selected{% endif %}>Tamil</option>
+              <option value="Telugu" {% if script and script.language == 'Telugu' %}selected{% endif %}>Telugu</option>
+            </select>
+          </div>
+
+          <!-- Voice Gender -->
+          <div class="col-md-6 mb-3">
+            <label for="voice_gender" class="form-label" style="font-weight: 600; color: var(--grey-700); font-size: 0.85rem; margin-bottom: 0.4rem;">Voice Gender</label>
+            <select id="voice_gender" name="voice_gender" class="form-select" style="border-radius: 10px; border: 1.5px solid var(--grey-200); padding: 0.65rem 0.85rem;">
+              <option value="female" {% if script and script.voice_gender == 'female' %}selected{% endif %}>Female</option>
+              <option value="male" {% if script and script.voice_gender == 'male' %}selected{% endif %}>Male</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- WhatsApp Backup Fallsback -->
+        <div class="mb-4">
+          <div class="form-check form-switch mb-2">
+            <input class="form-check-input" type="checkbox" role="switch" id="backup_enabled" name="backup_enabled" value="y" 
+                   {% if script and script.backup_enabled %}checked{% endif %} onchange="toggleBackupPanel(this)">
+            <label class="form-check-label" for="backup_enabled" style="font-weight: 600; color: var(--grey-700); font-size: 0.85rem; cursor: pointer;">
+              Enable WhatsApp Backup Fallback
+            </label>
+          </div>
+          <div id="backup-panel" style="display: {% if script and script.backup_enabled %}block{% else %}none{% endif %}; background: #fafafa; border: 1.5px solid var(--grey-100); border-radius: 12px; padding: 1.25rem; margin-top: 0.75rem;">
+            <label for="backup_template" class="form-label" style="font-weight: 600; color: var(--grey-700); font-size: 0.85rem; margin-bottom: 0.4rem;">
+              WhatsApp Backup Template / Message
+            </label>
+            <textarea id="backup_template" name="backup_template" class="form-control" rows="3" placeholder="Enter fallback WhatsApp message body. Can also use placeholder variables."
+              style="border-radius: 8px; border: 1.5px solid var(--grey-200); font-size: 0.9rem;">{{ script.backup_template if script else '' }}</textarea>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+          <button type="submit" class="btn-premium primary" style="border: none; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; padding: 0.65rem 1.75rem; border-radius: 10px; font-weight: 600;">
+            Save Script
+          </button>
+        </div>
+      </form>
+    </div>
+
+    {% endif %}
+
+    {# ── If Campaign is Running/Completed: Delivery Logs ── #}
+    {% if campaign.status in ('running', 'completed') %}
+    <div class="premium-card mb-4" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 2rem;">
+      <h4 style="font-weight: 700; color: var(--grey-800); margin-bottom: 1.25rem;">Execution Logs (Recent 50)</h4>
+      
+      {% if campaign.targets %}
+      <div class="table-responsive">
+        <table class="table" style="vertical-align: middle; margin: 0;">
+          <thead>
+            <tr style="border-bottom: 2px solid var(--grey-100); color: var(--grey-500); font-size: 0.8rem; font-weight: 700; text-transform: uppercase;">
+              <th>Recipient</th>
+              <th>Status</th>
+              <th>Attempts</th>
+              <th>Connected</th>
+              <th>Duration (s)</th>
+              <th>Last Event</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for t in campaign.targets[:50] %}
+            <tr style="border-bottom: 1px solid var(--grey-100); font-size: 0.9rem;">
+              <td style="font-weight: 600; color: var(--grey-700);">{{ t.record.named_values.get('phone') or t.record.named_values.get('number') or 'Unknown' }}</td>
+              <td>
+                {% if t.status == 'answered' %}
+                  <span class="badge bg-success-subtle text-success" style="border-radius: 12px; font-weight: 600; font-size: 0.75rem;">Answered</span>
+                {% elif t.status == 'failed' %}
+                  <span class="badge bg-danger-subtle text-danger" style="border-radius: 12px; font-weight: 600; font-size: 0.75rem;">Failed</span>
+                {% elif t.status == 'queued' %}
+                  <span class="badge bg-secondary-subtle text-secondary" style="border-radius: 12px; font-weight: 600; font-size: 0.75rem;">Queued</span>
+                {% elif t.status == 'retry_pending' %}
+                  <span class="badge bg-warning-subtle text-warning" style="border-radius: 12px; font-weight: 600; font-size: 0.75rem;">Retrying</span>
+                {% else %}
+                  <span class="badge bg-info-subtle text-info" style="border-radius: 12px; font-weight: 600; font-size: 0.75rem;">{{ t.status.title() }}</span>
+                {% endif %}
+              </td>
+              <td>{{ t.call_attempts }}</td>
+              <td>
+                {% if t.connected %}
+                  <span class="text-success" style="font-weight: 600;"><i class="bi bi-check2"></i> Yes</span>
+                {% else %}
+                  <span class="text-muted"><i class="bi bi-dash"></i></span>
+                {% endif %}
+              </td>
+              <td>{{ t.duration or 0 }}</td>
+              <td class="text-muted" style="font-size: 0.8rem;">
+                {{ t.last_webhook_at.strftime('%H:%M:%S') if t.last_webhook_at else '-' }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div style="text-align: center; padding: 2rem; color: var(--grey-400);">
+        <i class="bi bi-telephone-inbound" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i>
+        No delivery records yet.
+      </div>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  {# ── RIGHT COLUMN ── #}
+  <div class="col-lg-4">
+    {# ── Cost Estimate Card ── #}
+    <div class="premium-card mb-4" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 1.75rem;">
+      <h4 style="font-weight: 700; color: var(--grey-800); margin-bottom: 1.25rem;">Cost Estimate</h4>
+      
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
+        <span class="text-muted">Target Contacts</span>
+        <span style="font-weight: 600; color: var(--grey-800);">{{ target_count }}</span>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem; font-size: 0.9rem;">
+        <span class="text-muted">Cost per Contact</span>
+        <span style="font-weight: 600; color: var(--grey-800);">₹1.50</span>
+      </div>
+      
+      <hr style="border-top: 1px dashed var(--grey-200); margin: 1rem 0;">
+      
+      <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem;">
+        <span style="font-weight: 700; color: var(--grey-800);">Estimated Total</span>
+        <h4 style="font-weight: 800; color: #10b981; margin: 0;">₹{{ estimated_cost }}</h4>
+      </div>
+
+      {# ── Launch Actions panel ── #}
+      {% if campaign.status == 'draft' %}
+        {% if target_count == 0 %}
+          <button class="btn-premium primary w-100 disabled" style="border: none; padding: 0.75rem; border-radius: 10px; font-weight: 600;">
+            Upload Contacts to Launch
+          </button>
+        {% elif not campaign.script_id %}
+          <button class="btn-premium primary w-100 disabled" style="border: none; padding: 0.75rem; border-radius: 10px; font-weight: 600;">
+            Save Script to Launch
+          </button>
+        {% elif current_user.is_verified %}
+          <form method="POST" action="{{ url_for('campaign_express.campaign_launch', cid=campaign.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn-premium primary w-100" style="border: none; padding: 0.75rem; border-radius: 10px; font-weight: 600; background: linear-gradient(135deg, #10b981, #059669); color: white;">
+              Launch Campaign
+            </button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('campaign_express.verification') }}" class="btn-premium primary w-100" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; padding: 0.75rem; border-radius: 10px; font-weight: 600; background: #6366f1; color: white;">
+            <i class="bi bi-shield-lock-fill me-2"></i> Verify to Launch
+          </a>
+        {% endif %}
+      
+      {% elif campaign.status == 'waiting_payment' %}
+        <a href="{{ url_for('campaign_express.campaign_pay', cid=campaign.id) }}" class="btn-premium primary w-100" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; padding: 0.75rem; border-radius: 10px; font-weight: 600; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);">
+          <i class="bi bi-credit-card me-2"></i> Confirm Payment
+        </a>
+      
+      {% elif campaign.status == 'ready' %}
+        <form method="POST" action="{{ url_for('campaign_express.campaign_launch', cid=campaign.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-premium primary w-100" style="border: none; padding: 0.75rem; border-radius: 10px; font-weight: 600; background: linear-gradient(135deg, #10b981, #059669); color: white;">
+            Launch Campaign
+          </button>
+        </form>
+
+      {% elif campaign.status == 'running' %}
+        <div style="background: rgba(34, 197, 94, 0.05); border: 1.5px solid rgba(34, 197, 94, 0.2); border-radius: 12px; padding: 1rem; text-align: center; color: #22c55e;">
+          <i class="bi bi-broadcast me-2" style="animation: pulse 1.5s infinite;"></i>
+          <span style="font-weight: 700;">Campaign Running</span>
+        </div>
+      
+      {% elif campaign.status == 'completed' %}
+        <a href="{{ url_for('campaign_express.report_detail', cid=campaign.id) }}" class="btn-premium primary w-100" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; padding: 0.75rem; border-radius: 10px; font-weight: 600; background: #6366f1; color: white;">
+          <i class="bi bi-file-earmark-bar-graph me-2"></i> View Report
+        </a>
+      {% endif %}
+    </div>
+
+    {# ── Control Actions Panel ── #}
+    <div class="premium-card" style="background: var(--white); border-radius: 16px; border: 1px solid var(--grey-100); box-shadow: var(--shadow-premium); padding: 1.75rem;">
+      <h4 style="font-weight: 700; color: var(--grey-800); margin-bottom: 1.25rem;">Actions</h4>
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        
+        {% if campaign.status in ('draft', 'ready') %}
+        <a href="{{ url_for('campaign_express.campaign_edit', cid=campaign.id) }}" class="btn-premium secondary w-100" style="display: inline-flex; align-items: center; justify-content: center; text-decoration: none; padding: 0.6rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem;">
+          <i class="bi bi-pencil-square me-2"></i> Edit Details
+        </a>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('campaign_express.campaign_duplicate', cid=campaign.id) }}" class="w-100">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-premium secondary w-100" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.6rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem; border: 1.5px solid var(--grey-200); background: transparent;">
+            <i class="bi bi-files me-2"></i> Duplicate Campaign
+          </button>
+        </form>
+
+        {% if campaign.status != 'archived' %}
+        <form method="POST" action="{{ url_for('campaign_express.campaign_archive', cid=campaign.id) }}" class="w-100">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn-premium secondary w-100" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.6rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem; border: 1.5px solid var(--grey-200); background: transparent;">
+            <i class="bi bi-archive me-2"></i> Archive Campaign
+          </button>
+        </form>
+        {% endif %}
+
+        {% if campaign.status != 'running' %}
+        <form method="POST" action="{{ url_for('campaign_express.campaign_delete', cid=campaign.id) }}" class="w-100" onsubmit="return confirm('Are you sure you want to permanently delete this campaign? This action cannot be undone.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn-outline-danger w-100" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.6rem; border-radius: 10px; font-weight: 600; font-size: 0.9rem;">
+            <i class="bi bi-trash me-2"></i> Delete Campaign
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Configure Fields Modal -->
+<div class="modal fade" id="addFieldModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow-2xl">
+            <div class="modal-header border-bottom pb-3">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark mb-1">Configure Module Fields</h5>
+                    <p class="text-muted small mb-0">Design and manage custom attributes for this data module.</p>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <button type="button" class="btn btn-link text-primary text-decoration-none p-0 d-flex align-items-center gap-1" data-bs-toggle="modal" data-bs-target="#fieldGuideModal">
+                        <i class="bi bi-journal-text"></i> Guide
+                    </button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="resetFieldForm()"></button>
+                </div>
+            </div>
+            <div class="modal-body px-4 pb-4">
+                <div class="row g-4">
+                    <!-- Left Panel: Field Builder (40% width) -->
+                    <div class="col-lg-5 col-md-5 border-end pe-lg-4">
+                        <div class="field-builder-card p-3 bg-light rounded-xl border">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0 text-dark" id="fieldFormTitle">
+                                    <i class="bi bi-plus-circle me-2"></i>Deploy Attribute
+                                </h6>
+                                <button type="button" class="btn btn-sm btn-link text-decoration-none text-muted"
+                                    id="cancelFieldEditBtn" style="display: none;" onclick="resetFieldForm()">
+                                    Cancel Edit
+                                </button>
+                            </div>
+                            
+                            <!-- Field form fields -->
+                            <input type="hidden" id="editFieldId" value="">
+                            
+                            <div class="premium-form-group mb-3">
+                                <label class="small fw-bold text-muted mb-1">Attribute Name</label>
+                                <input type="text" id="newFieldName" class="form-control" placeholder="e.g. Current Status">
+                            </div>
+
+                            <div class="premium-form-group mb-3">
+                                <label class="small fw-bold text-muted mb-1">Data Logic Type</label>
+                                <select id="newFieldType" class="form-select" onchange="toggleFieldLogic()">
+                                    <optgroup label="Static Inputs">
+                                        <option value="text">Standard Text</option>
+                                        <option value="number">Numeric Value</option>
+                                        <option value="phone">Phone / Mobile</option>
+                                        <option value="email">Email Address</option>
+                                        <option value="date">Date Entry</option>
+                                    </optgroup>
+                                    <optgroup label="Selection">
+                                        <option value="select">Custom Dropdown</option>
+                                        <option value="language">Language Set</option>
+                                        <option value="file">File Upload</option>
+                                    </optgroup>
+                                    <optgroup label="Automation Logic">
+                                        <option value="calculated">Calculated Formula</option>
+                                        <option value="boolean">Conditional Logic</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="newFieldUnique">
+                                <label class="form-check-label small fw-bold text-dark" for="newFieldUnique">
+                                    Enforce Unique Constraint
+                                </label>
+                            </div>
+
+                            <!-- Communication Toggle (shown only for phone fields) -->
+                            <div class="form-check form-switch mb-3 d-none" id="communicationToggleSection">
+                                <input class="form-check-input" type="checkbox" id="newFieldCommunication">
+                                <label class="form-check-label small fw-bold text-dark" for="newFieldCommunication">
+                                    Use for Communication (WhatsApp/Calls)
+                                </label>
+                            </div>
+
+                            <!-- Options for Select -->
+                            <div id="dropdownOptionsSection" class="premium-form-group mb-3 d-none">
+                                <label class="small fw-bold text-muted mb-1">Selectable Options (Comma separated)</label>
+                                <input type="text" id="fieldOptions" class="form-control" placeholder="Active, Pending, Completed, Error">
+                            </div>
+
+                            <!-- Formula for Calculated -->
+                            <div id="calculatedFormulaSection" class="premium-form-group mb-3 d-none">
+                                <label class="small fw-bold text-muted mb-1">Mathematical Formula Matrix</label>
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text bg-light border-end-0">f(x)</span>
+                                    <textarea id="fieldFormula" class="form-control border-start-0" rows="2" placeholder="({rate} * {hours}) + {bonus}"></textarea>
+                                </div>
+                                <div class="small text-muted mb-2">Available Fields:</div>
+                                <div class="d-flex flex-wrap gap-1" id="availableFieldsFormula">
+                                    <!-- Populated dynamically via JS -->
+                                </div>
+                                <p class="smaller text-muted mt-2"><i class="bi bi-info-circle me-1"></i> Reference other fields using <b>{field_name}</b> syntax.</p>
+                            </div>
+
+                            <!-- Conditions for Boolean -->
+                            <div id="booleanConditionSection" class="premium-form-group mb-3 d-none">
+                                <label class="small fw-bold text-muted mb-2 d-block">Conditional Logical Rule</label>
+                                <div class="mb-2">
+                                    <select id="logicOperator" class="form-select form-select-sm mb-2" style="width: auto;">
+                                        <option value="AND">Match ALL (AND)</option>
+                                        <option value="OR">Match ANY (OR)</option>
+                                    </select>
+                                </div>
+                                <div id="conditionBuilder" class="d-flex flex-column gap-2 mb-2">
+                                    <!-- Condition rows loaded here -->
+                                </div>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addConditionRow()">
+                                    <i class="bi bi-plus-lg me-1"></i>Add Condition
+                                </button>
+                            </div>
+
+                            <div class="mt-4">
+                                <button class="btn btn-premium-dark w-100" id="fieldSubmitBtn" onclick="submitField()">Deploy Attribute</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Panel: Existing Fields (60% width) -->
+                    <div class="col-lg-7 col-md-7">
+                        <h6 class="fw-bold mb-3 text-dark text-uppercase small tracking-wider">Active Schema Structure</h6>
+                        <div id="fieldsListContainer" class="pe-2" style="max-height: 400px; overflow-y: auto;">
+                            <!-- List of fields with drag handles, badges, edit/delete actions -->
+                            <div id="fieldsList" class="d-flex flex-column gap-2">
+                                <!-- Loaded via JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-2xl">
+            <div class="modal-header border-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold">Bulk Ingest Data</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('campaign_express.import_records', cid=campaign.id) }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body px-4">
+                    <div class="import-zone p-5 text-center bg-light border-2 border-dashed rounded-xl mb-3 position-relative">
+                        <i class="bi bi-file-earmark-arrow-up display-6 text-muted"></i>
+                        <p class="mt-3 mb-0 text-muted small">Drop your CSV file here or <br><span class="text-dark fw-bold">Click to Browse</span></p>
+                        <input type="file" name="file" class="position-absolute top-0 start-0 w-100 h-100 opacity-0 cursor-pointer" required>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 p-3 bg-light rounded-lg border">
+                        <i class="bi bi-lightbulb text-warning"></i>
+                        <p class="smaller mb-0 text-muted">Tip: Ensure column names in your file exactly match your active attributes for auto-mapping.</p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-premium-white px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-premium-dark px-4">Execute Import</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Add Record Modal -->
+<div class="modal fade" id="addRecordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-2xl">
+            <div class="modal-header border-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold">Capture New Intel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('campaign_express.add_record', cid=campaign.id) }}" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body px-4 pb-4">
+                    <div class="row g-4">
+                        {% for f in fields %}
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold text-muted">{{ f.name }}</label>
+                                {% if f.field_type in ['calculated', 'boolean'] %}
+                                    <input type="text" class="form-control bg-light" placeholder="Calculated Automatically" disabled>
+                                  {% elif f.field_type == 'text' %}
+                                    <input type="text" name="field_{{ f.id }}" class="form-control" placeholder="Enter {{ f.name }}">
+                                {% elif f.field_type == 'number' %}
+                                    <input type="number" name="field_{{ f.id }}" class="form-control">
+                                {% elif f.field_type == 'phone' %}
+                                    <input type="tel" name="field_{{ f.id }}" class="form-control" placeholder="+91 XXXXX XXXXX">
+                                {% elif f.field_type == 'email' %}
+                                    <input type="email" name="field_{{ f.id }}" class="form-control" placeholder="name@company.com">
+                                {% elif f.field_type == 'date' %}
+                                    <input type="date" name="field_{{ f.id }}" class="form-control">
+                                {% elif f.field_type == 'select' %}
+                                    <select name="field_{{ f.id }}" class="form-select">
+                                        <option value="">Select Option...</option>
+                                        {% for opt in f.options %}
+                                            <option value="{{ opt }}">{{ opt }}</option>
+                                        {% endfor %}
+                                    </select>
+                                {% elif f.field_type == 'language' %}
+                                    <select name="field_{{ f.id }}" class="form-select">
+                                        <option value="English">English</option>
+                                        <option value="Hindi">Hindi</option>
+                                        <option value="Kannada">Kannada</option>
+                                        <option value="Tamil">Tamil</option>
+                                        <option value="Marathi">Marathi</option>
+                                        <option value="Malayalam">Malayalam</option>
+                                        <option value="Telugu">Telugu</option>
+                                    </select>
+                                {% elif f.field_type == 'file' %}
+                                    <input type="file" name="field_{{ f.id }}" class="form-control">
+                                {% else %}
+                                    <input type="text" name="field_{{ f.id }}" class="form-control">
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-premium-white px-4" data-bs-dismiss="modal">Discard</button>
+                    <button type="submit" class="btn btn-premium-dark px-5">Submit Intel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Record Modal -->
+<div class="modal fade" id="editRecordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-2xl">
+            <div class="modal-header border-0 px-4 pt-4">
+                <h5 class="modal-title fw-bold">Update Record Intel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editRecordForm" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body px-4 pb-4" id="editRecordFields">
+                    <!-- Dynamic Injected -->
+                </div>
+                <div class="modal-footer border-0 px-4 pb-4">
+                    <button type="button" class="btn btn-premium-white px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-premium-dark px-5">Apply Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Guide Modal -->
+<div class="modal fade" id="fieldGuideModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-2xl">
+            <div class="modal-header border-bottom pb-3">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-journal-text text-primary"></i> Module Fields Guide</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4 bg-light">
+                
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3"><i class="bi bi-layout-text-sidebar-reverse"></i> 1. How to create Field Sections</h6>
+                        <p class="small text-muted mb-3">Field sections allow you to map out exactly what data you want to collect. You define the <strong>Attribute Name</strong> (e.g. "Customer Name") and the <strong>Data Logic Type</strong>.</p>
+                        
+                        <div class="p-3 bg-light rounded border mb-3">
+                            <span class="badge bg-secondary mb-2">Available Types</span>
+                            <ul class="small mb-0 text-dark">
+                                <li><strong>Standard Text</strong>: Regular text input</li>
+                                <li><strong>Number Value</strong>: Strictly numerical data</li>
+                                <li><strong>Phone / Mobile</strong>: Connects with WhatsApp automatically if <em>"Use for Communication"</em> is toggled</li>
+                                <li><strong>Email Address</strong>: Validates standard email formats</li>
+                                <li><strong>Date Picker</strong>: Calendar selection</li>
+                                <li><strong>Dropdown Selection</strong>: Enter comma-separated options (e.g. <em>Paid, Pending, Completed, Error</em>)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body">
+                        <h6 class="fw-bold text-dark border-bottom pb-2 mb-3"><i class="bi bi-calculator"></i> 2. How to use Calculated Formulas</h6>
+                        <p class="small text-muted mb-3">Calculated formulas allow you to perform automatic mathematical operations on other fields in the same record.</p>
+                        
+                        <div class="alert alert-warning border-warning small mb-3">
+                            <strong>Note:</strong> You must reference other fields exactly by their name, enclosed in curly brackets <code>{}</code>.
+                        </div>
+
+                        <div class="p-3 bg-dark rounded text-light mb-0">
+                            <p class="mb-1 small text-muted"><strong>Example Scenario:</strong> You want to calculate a final invoice total based on "Hours Worked" and "Hourly Rate", plus a $50 fee.</p>
+                            <code class="text-warning fs-6">({Hours Worked} * {Hourly Rate}) + 50</code>
+                            <hr class="border-secondary my-2">
+                            <span class="small text-muted">Supported operators: <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>( )</code></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-white border-top">
+                <button type="button" class="btn btn-dark w-100" data-bs-dismiss="modal">I Understand</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .var-pill:hover {
+        background: #000000 !important;
+        color: #ffffff !important;
+        border-color: #000000 !important;
+    }
+    .var-pill:hover .text-muted {
+        color: #ffffff !important;
+    }
+    /* Executive Monochrome CRM Theme - Refined */
+    :root {
+        --crm-black: #000000;
+        --crm-white: #ffffff;
+        --crm-grey-50: #f9fafb;
+        --crm-grey-100: #f3f4f6;
+        --crm-grey-200: #e5e7eb;
+        --crm-grey-600: #4b5563;
+        --crm-grey-800: #1f2937;
+        --crm-border: #eeeeee;
+        --crm-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        --crm-radius: 16px;
+    }
+
+    .crm-dashboard-wrapper {
+        animation: fadeIn 0.4s ease-out;
+    }
+
+    .glass-morphism {
+        background: rgba(255, 255, 255, 0.7) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    }
+
+    /* Action Bar Styling */
+    .crm-action-bar {
+        padding: 1rem 1.5rem;
+        border-radius: var(--crm-radius);
+    }
+
+    .search-group .form-control {
+        border-radius: 12px;
+        font-size: 0.9rem;
+        box-shadow: none;
+    }
+
+    /* Buttons */
+    .btn-premium-dark {
+        background: var(--crm-black);
+        color: var(--crm-white);
+        border-radius: 12px;
+        padding: 0.6rem 1.8rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-premium-dark:hover {
+        background: #222;
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .btn-premium-white {
+        background: var(--crm-white);
+        color: var(--crm-black);
+        border: 1px solid var(--crm-grey-200);
+        border-radius: 12px;
+        padding: 0.6rem 1.8rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .btn-premium-white:hover {
+        background: var(--crm-grey-50);
+        border-color: var(--crm-black);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+
+    /* Table Enhancements */
+    .premium-table-container {
+        background: var(--crm-white);
+        border-radius: var(--crm-radius);
+        border: 1px solid var(--crm-border);
+        box-shadow: var(--crm-shadow);
+        overflow: hidden;
+    }
+
+    .crm-table thead {
+        background: var(--crm-grey-50);
+        border-bottom: 2px solid var(--crm-grey-100);
+    }
+    .crm-table thead th {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: var(--crm-grey-600);
+        padding: 1.5rem 1rem;
+        border: none;
+    }
+
+    .crm-row {
+        border-bottom: 1px solid var(--crm-grey-100);
+        transition: all 0.2s;
+    }
+    .crm-row:hover {
+        background: var(--crm-grey-50);
+    }
+
+    .whatsapp-btn {
+        color: #25D366;
+        font-size: 1.1rem;
+        transition: transform 0.2s;
+    }
+    .whatsapp-btn:hover {
+        transform: scale(1.2);
+        color: #128C7E;
+    }
+
+    .status-pill {
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .status-active { background: #000; color: #fff; }
+    .status-inactive { background: #f3f4f6; color: #4b5563; }
+
+    /* Action Buttons */
+    .btn-premium-action {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: var(--crm-white);
+        color: var(--crm-black);
+        border: 1.5px solid var(--crm-black);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .btn-premium-action:hover {
+        background: var(--crm-black);
+        color: var(--crm-white);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .btn-premium-action-danger {
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: #fff5f5;
+        color: #e03131;
+        border: 1.5px solid #e03131;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .btn-premium-action-danger:hover {
+        background: #e03131;
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(224, 49, 49, 0.2);
+    }
+
+    .whatsapp-icon-link {
+        color: #25D366;
+        font-size: 1.1rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #f0fff4;
+        border: 1px solid #c6f6d5;
+    }
+    .whatsapp-icon-link:hover {
+        background: #25D366;
+        color: #fff;
+        transform: scale(1.1);
+    }
+
+    .unique-active {
+        border-color: var(--crm-black) !important;
+        background: #f8f9fa !important;
+        box-shadow: 0 0 0 3px rgba(0,0,0,0.05) !important;
+    }
+
+    .hover-dark:hover {
+        color: #000 !important;
+        border-color: #000 !important;
+    }
+
+    /* Field Tags in Modal */
+    .field-tag {
+        background: #fff;
+        border: 1px solid var(--crm-grey-200);
+        padding: 10px 16px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        display: inline-block;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .field-tag:hover {
+        border-color: var(--crm-black);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    }
+    .type-indicator {
+        font-size: 0.6rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--crm-grey-600);
+        background: var(--crm-grey-50);
+        padding: 3px 8px;
+        border-radius: 6px;
+        border: 1px solid var(--crm-grey-100);
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .rounded-xl { border-radius: 1.25rem; }
+    .shadow-2xl { box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.15); }
+
+    /* Field Configuration Split-Layout Style */
+    #addFieldModal .modal-dialog {
+        max-width: min(1000px, 95vw);
+    }
+    .badge-comm {
+        background-color: #d1e7dd;
+        color: #0f5132;
+        border: 1px solid #a3cfbb;
+    }
+    .drag-handle {
+        cursor: grab;
+        color: #6c757d;
+        padding-right: 5px;
+    }
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+    .fields-list-item {
+        border-radius: 12px;
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s ease;
+    }
+    .fields-list-item:hover {
+        background-color: #f9fafb !important;
+        border-color: #d1d5db;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Table column loading opacity */
+    #mainRecordsTable {
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+    }
+    #mainRecordsTable.loaded {
+        opacity: 1 !important;
+    }
+
+    /* Dragging item visual feedback */
+    .fields-list-item.dragging {
+        opacity: 0.4;
+        border: 2px dashed #000;
+        background-color: #f3f4f6 !important;
+    }
+</style>
+
+<script>
+  function toggleBackupPanel(switchInput) {
+    const panel = document.getElementById('backup-panel');
+    if (switchInput.checked) {
+      panel.style.display = 'block';
+    } else {
+      panel.style.display = 'none';
+    }
+  }
+
+  function toggleUniqueFilter() {
+      const checkbox = document.getElementById('uniqueFilter');
+      const group = document.getElementById('uniqueFilterGroup');
+      if (checkbox.checked) {
+          group.classList.add('unique-active');
+      } else {
+          group.classList.remove('unique-active');
+      }
+      filterRecords();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+      loadFields();
+      
+      // Select All Logic
+      const selectAll = document.getElementById('selectAll');
+      if (selectAll) {
+          selectAll.addEventListener('change', function() {
+              document.querySelectorAll('.record-checkbox').forEach(cb => {
+                  cb.checked = this.checked;
+              });
+              updateBulkActions();
+          });
+      }
+  });
+
+  function updateBulkActions() {
+      const selected = document.querySelectorAll('.record-checkbox:checked');
+      const bulkBar = document.getElementById('bulkActions');
+      const countSpan = document.getElementById('selectedCount');
+      
+      if (selected.length > 0) {
+          bulkBar.classList.remove('d-none');
+          countSpan.innerText = selected.length;
+      } else {
+          bulkBar.classList.add('d-none');
+      }
+  }
+
+  async function bulkDelete() {
+      const selected = Array.from(document.querySelectorAll('.record-checkbox:checked')).map(cb => cb.value);
+      if (!selected.length) return;
+      
+      if (!confirm(`Are you sure you want to delete ${selected.length} selected records? This action cannot be undone.`)) return;
+      
+      const res = await fetch(`/campaign-express/api/campaigns/{{ campaign.id }}/records/bulk-delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
+          body: JSON.stringify({ record_ids: selected })
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+          location.reload();
+      } else {
+          alert('Error deleting records: ' + (data.error || 'Unknown error'));
+      }
+  }
+
+  // Field metadata for JS
+  const fields = [
+      {% for f in fields %}
+      { id: "{{ f.id }}", name: "{{ f.name }}", type: "{{ f.field_type }}" },
+      {% endfor %}
+  ];
+
+  let activeFieldsMap = {};
+  let draggedItem = null;
+
+  function filterRecords() {
+      const query = document.getElementById('recordSearch').value.toLowerCase();
+      const uniqueOnly = document.getElementById('uniqueFilter').checked;
+      const uniqueFieldId = document.getElementById('uniqueField').value;
+      const rows = Array.from(document.querySelectorAll('#recordTableBody .crm-row'));
+      
+      const seen = new Set();
+      
+      rows.forEach(row => {
+          let isVisible = true;
+          
+          // 1. Search filter
+          const rowText = Array.from(row.querySelectorAll('td')).map(td => td.innerText.trim()).join(' ').toLowerCase();
+          if (query && !rowText.includes(query)) {
+              isVisible = false;
+          }
+          
+          // 2. Unique filter logic
+          if (isVisible && uniqueOnly) {
+              let valToCompare = "";
+              if (uniqueFieldId === 'all') {
+                  // All fields except first 1 (CB) and last (Actions)
+                  valToCompare = Array.from(row.querySelectorAll('td')).slice(1, -1).map(td => td.innerText.trim()).join('::');
+              } else {
+                  const cell = row.querySelector(`td[data-field-id="${uniqueFieldId}"]`);
+                  valToCompare = cell ? cell.innerText.trim() : "";
+              }
+              
+              if (seen.has(valToCompare)) {
+                  isVisible = false;
+              } else {
+                  seen.add(valToCompare);
+              }
+          }
+          
+          row.style.display = isVisible ? '' : 'none';
+      });
+      
+      // Update stats if needed
+      const visibleCount = rows.filter(r => r.style.display !== 'none').length;
+      console.log(`Filtering complete: ${visibleCount} records visible`);
+  }
+
+  async function loadFields() {
+      const res = await fetch(`/campaign-express/api/campaigns/{{ campaign.id }}/fields`);
+      const data = await res.json();
+      if (data.success) {
+          activeFieldsMap = {};
+          data.fields.forEach(f => {
+              activeFieldsMap[f.id] = f;
+          });
+          
+          // 1. Determine order
+          const moduleKey = `module_{{ campaign.module_id }}_field_order`;
+          let orderedFieldIds = [];
+          try {
+              const stored = localStorage.getItem(moduleKey);
+              if (stored) {
+                  orderedFieldIds = JSON.parse(stored);
+              }
+          } catch (e) {
+              console.error("Failed to parse field order from localStorage", e);
+          }
+          
+          // Filter out IDs that no longer exist
+          orderedFieldIds = orderedFieldIds.filter(id => activeFieldsMap[id] !== undefined);
+          
+          // Find any fields that are not in the ordered list (e.g. newly added) and append them
+          const remainingIds = Object.keys(activeFieldsMap).filter(id => !orderedFieldIds.includes(id.toString()));
+          orderedFieldIds = [...orderedFieldIds, ...remainingIds];
+          
+          // 2. Render Left Panel Formula helpers (badges)
+          updateFormulaHelper(Object.values(activeFieldsMap));
+          
+          // 3. Render Right Panel fields list
+          const list = document.getElementById('fieldsList');
+          if (list) {
+              list.innerHTML = '';
+              
+              orderedFieldIds.forEach(fid => {
+                  const f = activeFieldsMap[fid];
+                  if (!f) return;
+                  const item = document.createElement('div');
+                  item.className = 'fields-list-item d-flex align-items-center justify-content-between p-3 mb-2 bg-white';
+                  item.setAttribute('draggable', 'true');
+                  item.setAttribute('data-id', f.id);
+                  
+                  const isUniqueBadge = f.is_unique ? '<span class="badge bg-secondary smaller">Unique</span>' : '';
+                  const isCommBadge = (f.meta && f.meta.communication) ? '<span class="badge badge-comm smaller">Comm</span>' : '';
+                  const isCalcBadge = (f.type === 'calculated') ? '<span class="badge bg-warning text-dark smaller">Calculated</span>' : '';
+                  const isBoolBadge = (f.type === 'boolean') ? '<span class="badge bg-info text-dark smaller">Logic</span>' : '';
+                  
+                  item.innerHTML = `
+                      <div class="d-flex align-items-center gap-2">
+                          <span class="drag-handle"><i class="bi bi-grip-vertical fs-5"></i></span>
+                          <span class="fw-bold text-dark">${f.name}</span>
+                          <span class="type-indicator">${f.type}</span>
+                          ${isUniqueBadge}
+                          ${isCommBadge}
+                          ${isCalcBadge}
+                          ${isBoolBadge}
+                      </div>
+                      <div class="d-flex gap-2">
+                          <button type="button" class="btn btn-sm btn-premium-action" onclick="editField('${f.id}')" title="Edit Field">
+                              <i class="bi bi-pencil-square"></i>
+                          </button>
+                          <button type="button" class="btn btn-sm btn-premium-action-danger" onclick="deleteField('${f.id}')" title="Delete Field">
+                              <i class="bi bi-trash3"></i>
+                          </button>
+                      </div>
+                  `;
+                  
+                  // Add drag and drop listeners
+                  item.addEventListener('dragstart', handleDragStart);
+                  item.addEventListener('dragend', handleDragEnd);
+                  
+                  list.appendChild(item);
+              });
+              
+              // Set up the container dragover listener
+              list.addEventListener('dragover', handleDragOver);
+          }
+          
+          // 4. Rearrange the table columns according to this order
+          applyTableColumnOrder(orderedFieldIds);
+          
+          // 5. Fade in table
+          const table = document.getElementById('mainRecordsTable');
+          if (table) {
+              table.style.opacity = '1';
+              table.classList.add('loaded');
+          }
+      }
+  }
+
+  function handleDragStart(e) {
+      draggedItem = this;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+  }
+
+  function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      
+      const container = document.getElementById('fieldsList');
+      const afterElement = getDragAfterElement(container, e.clientY);
+      if (afterElement == null) {
+          container.appendChild(draggedItem);
+      } else {
+          container.insertBefore(draggedItem, afterElement);
+      }
+  }
+
+  function handleDragEnd() {
+      this.classList.remove('dragging');
+      draggedItem = null;
+      saveAndApplyNewFieldOrder();
+  }
+
+  function getDragAfterElement(container, y) {
+      const draggableElements = [...container.querySelectorAll('.fields-list-item:not(.dragging)')];
+      
+      return draggableElements.reduce((closest, child) => {
+          const box = child.getBoundingClientRect();
+          const offset = y - box.top - box.height / 2;
+          if (offset < 0 && offset > closest.offset) {
+              return { offset: offset, member: child };
+          } else {
+              return closest;
+          }
+      }, { offset: Number.NEGATIVE_INFINITY }).member;
+  }
+
+  function saveAndApplyNewFieldOrder() {
+      const listItems = [...document.querySelectorAll('#fieldsList .fields-list-item')];
+      const orderedFieldIds = listItems.map(item => item.getAttribute('data-id'));
+      
+      // Save to localStorage
+      const moduleKey = `module_{{ campaign.module_id }}_field_order`;
+      localStorage.setItem(moduleKey, JSON.stringify(orderedFieldIds));
+      
+      // Apply order to table columns
+      applyTableColumnOrder(orderedFieldIds);
+  }
+
+  function applyTableColumnOrder(orderedFieldIds) {
+      const table = document.getElementById('mainRecordsTable');
+      if (!table) return;
+      
+      // Sort table headers
+      const theadRow = table.querySelector('thead tr');
+      if (theadRow) {
+          const staticHeadersStart = []; // first 1 columns: select all
+          const staticHeadersEnd = []; // last column: actions
+          const fieldHeadersMap = {};
+          
+          Array.from(theadRow.children).forEach(th => {
+              const fid = th.getAttribute('data-field-id');
+              if (fid) {
+                  fieldHeadersMap[fid.toString()] = th;
+              } else {
+                  if (staticHeadersStart.length < 1) {
+                      staticHeadersStart.push(th);
+                  } else {
+                      staticHeadersEnd.push(th);
+                  }
+              }
+          });
+          
+          theadRow.innerHTML = '';
+          staticHeadersStart.forEach(th => theadRow.appendChild(th));
+          orderedFieldIds.forEach(fid => {
+              const th = fieldHeadersMap[fid.toString()];
+              if (th) {
+                  theadRow.appendChild(th);
+              }
+          });
+          staticHeadersEnd.forEach(th => theadRow.appendChild(th));
+      }
+      
+      // Sort cells for each row in tbody
+      const tbodyRows = table.querySelectorAll('tbody tr');
+      tbodyRows.forEach(row => {
+          if (row.querySelector('td[colspan]')) {
+              return;
+          }
+          
+          const staticCellsStart = [];
+          const staticCellsEnd = [];
+          const fieldCellsMap = {};
+          
+          Array.from(row.children).forEach(td => {
+              const fid = td.getAttribute('data-field-id');
+              if (fid) {
+                  fieldCellsMap[fid.toString()] = td;
+              } else {
+                  if (staticCellsStart.length < 1) {
+                      staticCellsStart.push(td);
+                  } else {
+                      staticCellsEnd.push(td);
+                  }
+              }
+          });
+          
+          row.innerHTML = '';
+          staticCellsStart.forEach(td => row.appendChild(td));
+          orderedFieldIds.forEach(fid => {
+              const td = fieldCellsMap[fid.toString()];
+              if (td) {
+                  row.appendChild(td);
+              }
+          });
+          staticCellsEnd.forEach(td => row.appendChild(td));
+      });
+  }
+
+  function updateFormulaHelper(fieldsList) {
+      const container = document.getElementById('availableFieldsFormula');
+      if (!container) return;
+      container.innerHTML = '';
+      
+      const currentEditingId = document.getElementById('editFieldId').value;
+      
+      fieldsList.forEach(f => {
+          if (currentEditingId && f.id.toString() === currentEditingId.toString()) {
+              return; // Skip self
+          }
+          const badge = document.createElement('span');
+          badge.className = 'badge bg-white text-dark border p-2 cursor-pointer me-1 mb-1 hover-dark transition-all';
+          badge.style.cursor = 'pointer';
+          badge.style.display = 'inline-block';
+          badge.innerHTML = `<i class="bi bi-tag-fill text-muted me-1"></i>${f.name}`;
+          
+          badge.onclick = () => {
+              const textarea = document.getElementById('fieldFormula');
+              if (!textarea) return;
+              const start = textarea.selectionStart;
+              const end = textarea.selectionEnd;
+              const text = textarea.value;
+              const insertText = `{${f.name}}`;
+              
+              textarea.value = text.substring(0, start) + insertText + text.substring(end);
+              textarea.focus();
+              textarea.selectionStart = textarea.selectionEnd = start + insertText.length;
+          };
+          
+          container.appendChild(badge);
+      });
+  }
+
+  function addConditionRow(initialData = null) {
+      const container = document.getElementById('conditionBuilder');
+      if (!container) return;
+      
+      const rowId = 'cond-row-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      const rowDiv = document.createElement('div');
+      rowDiv.className = 'condition-row d-flex gap-2 align-items-center mb-2';
+      rowDiv.id = rowId;
+      
+      let fieldOpts = '';
+      const currentEditingId = document.getElementById('editFieldId').value;
+      Object.values(activeFieldsMap).forEach(f => {
+          if (currentEditingId && f.id.toString() === currentEditingId.toString()) return;
+          const isSelected = initialData && initialData.field === f.name ? 'selected' : '';
+          fieldOpts += `<option value="${f.name}" ${isSelected}>${f.name}</option>`;
+      });
+      
+      const operators = [
+          { value: '==', label: 'Equals (==)' },
+          { value: '!=', label: 'Not Equals (!=)' },
+          { value: '>', label: 'Greater Than (>)' },
+          { value: '<', label: 'Less Than (<)' },
+          { value: 'contains', label: 'Contains' }
+      ];
+      
+      let opOpts = '';
+      operators.forEach(op => {
+          const isSelected = initialData && initialData.operator === op.value ? 'selected' : '';
+          opOpts += `<option value="${op.value}" ${isSelected}>${op.label}</option>`;
+      });
+      
+      const targetVal = initialData ? initialData.value : '';
+      
+      rowDiv.innerHTML = `
+          <select class="form-select form-select-sm cond-field" style="flex: 1;">
+              ${fieldOpts}
+          </select>
+          <select class="form-select form-select-sm cond-op" style="width: auto;">
+              ${opOpts}
+          </select>
+          <input type="text" class="form-control form-control-sm cond-val" placeholder="Value" value="${targetVal}" style="flex: 1;">
+          <button type="button" class="btn btn-sm btn-outline-danger" onclick="document.getElementById('${rowDiv.id}').remove()">
+              <i class="bi bi-trash"></i>
+          </button>
+      `;
+      
+      container.appendChild(rowDiv);
+  }
+
+  function editField(fid) {
+      const f = activeFieldsMap[fid];
+      if (!f) return;
+      
+      document.getElementById('fieldFormTitle').innerHTML = `<i class="bi bi-pencil-square me-2"></i>Edit Attribute`;
+      document.getElementById('cancelFieldEditBtn').style.display = 'inline-block';
+      document.getElementById('fieldSubmitBtn').innerText = 'Save Changes';
+      
+      document.getElementById('editFieldId').value = f.id;
+      document.getElementById('newFieldName').value = f.name;
+      document.getElementById('newFieldType').value = f.type;
+      document.getElementById('newFieldUnique').checked = f.is_unique || false;
+      
+      document.getElementById('newFieldCommunication').checked = false;
+      document.getElementById('fieldOptions').value = '';
+      document.getElementById('fieldFormula').value = '';
+      document.getElementById('conditionBuilder').innerHTML = '';
+      
+      toggleFieldLogic();
+      
+      const meta = f.meta || {};
+      
+      if (f.type === 'phone') {
+          document.getElementById('newFieldCommunication').checked = meta.communication || false;
+      } else if (f.type === 'select') {
+          if (Array.isArray(meta.options)) {
+              document.getElementById('fieldOptions').value = meta.options.join(', ');
+          }
+      } else if (f.type === 'calculated') {
+          document.getElementById('fieldFormula').value = meta.formula || '';
+      } else if (f.type === 'boolean') {
+          const conditions = meta.conditions || [];
+          if (conditions.length > 0) {
+              const firstJoiner = conditions[0].joiner || 'AND';
+              document.getElementById('logicOperator').value = firstJoiner;
+              conditions.forEach(cond => {
+                  addConditionRow(cond);
+              });
+          } else {
+              addConditionRow();
+          }
+      }
+      
+      updateFormulaHelper(Object.values(activeFieldsMap));
+  }
+
+  function resetFieldForm() {
+      document.getElementById('fieldFormTitle').innerHTML = `<i class="bi bi-plus-circle me-2"></i>Deploy Attribute`;
+      document.getElementById('cancelFieldEditBtn').style.display = 'none';
+      document.getElementById('fieldSubmitBtn').innerText = 'Deploy Attribute';
+      
+      document.getElementById('editFieldId').value = '';
+      document.getElementById('newFieldName').value = '';
+      document.getElementById('newFieldType').value = 'text';
+      document.getElementById('newFieldUnique').checked = false;
+      
+      document.getElementById('newFieldCommunication').checked = false;
+      document.getElementById('fieldOptions').value = '';
+      document.getElementById('fieldFormula').value = '';
+      document.getElementById('conditionBuilder').innerHTML = '';
+      
+      toggleFieldLogic();
+      
+      updateFormulaHelper(Object.values(activeFieldsMap));
+  }
+
+  function toggleFieldLogic() {
+      const type = document.getElementById('newFieldType').value;
+      const commToggle = document.getElementById('communicationToggleSection');
+      const optsSection = document.getElementById('dropdownOptionsSection');
+      const formulaSection = document.getElementById('calculatedFormulaSection');
+      const boolSection = document.getElementById('booleanConditionSection');
+      
+      commToggle.classList.add('d-none');
+      optsSection.classList.add('d-none');
+      formulaSection.classList.add('d-none');
+      boolSection.classList.add('d-none');
+      
+      if (type === 'phone') commToggle.classList.remove('d-none');
+      else if (type === 'select') optsSection.classList.remove('d-none');
+      else if (type === 'calculated') formulaSection.classList.remove('d-none');
+      else if (type === 'boolean') boolSection.classList.remove('d-none');
+  }
+
+  async function submitField() {
+      const editId = document.getElementById('editFieldId').value;
+      const nameInput = document.getElementById('newFieldName');
+      const typeInput = document.getElementById('newFieldType');
+      const name = nameInput.value.trim();
+      const type = typeInput.value;
+      const isUnique = document.getElementById('newFieldUnique').checked;
+      
+      if (!name) return alert('Attribute name is required');
+      
+      const meta = {};
+      if (type === 'phone') {
+          meta.communication = document.getElementById('newFieldCommunication').checked;
+      } else if (type === 'select') {
+          meta.options = document.getElementById('fieldOptions').value.split(',').map(o => o.trim()).filter(o => o.length > 0);
+      } else if (type === 'calculated') {
+          meta.formula = document.getElementById('fieldFormula').value.trim();
+      } else if (type === 'boolean') {
+          const conditionRows = document.querySelectorAll('#conditionBuilder .condition-row');
+          const conditions = [];
+          const logicOp = document.getElementById('logicOperator').value;
+          
+          conditionRows.forEach(row => {
+              const fName = row.querySelector('.cond-field').value;
+              const op = row.querySelector('.cond-op').value;
+              const val = row.querySelector('.cond-val').value.trim();
+              
+              conditions.push({
+                  field: fName,
+                  operator: op,
+                  value: val,
+                  joiner: logicOp
+              });
+          });
+          
+          meta.conditions = conditions;
+      }
+      
+      const action = editId ? 'update' : 'add';
+      const payload = {
+          action: action,
+          name: name,
+          field_type: type,
+          is_unique: isUnique,
+          meta: meta
+      };
+      if (editId) {
+          payload.field_id = parseInt(editId);
+      }
+      
+      const res = await fetch(`/campaign-express/api/campaigns/{{ campaign.id }}/fields`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
+          body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+          resetFieldForm();
+          location.reload();
+      } else {
+          alert('Failed to save attribute: ' + (data.error || 'Unknown error'));
+      }
+  }
+
+  async function deleteField(fid) {
+      if (!confirm('This will purge all data associated with this attribute. Proceed?')) return;
+      const res = await fetch(`/campaign-express/api/campaigns/{{ campaign.id }}/fields`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': '{{ csrf_token() }}' },
+          body: JSON.stringify({ action: 'delete', field_id: fid })
+      });
+      if ((await res.json()).success) location.reload();
+  }
+
+  async function editRecord(rid) {
+      const res = await fetch(`/campaign-express/api/campaigns/{{ campaign.id }}/records/${rid}`);
+      const data = await res.json();
+      if (data.success) {
+          const container = document.getElementById('editRecordFields');
+          container.innerHTML = '<div class="row g-4"></div>';
+          const row = container.firstChild;
+          
+          data.fields.forEach(f => {
+              const val = data.values[f.id] || '';
+              const col = document.createElement('div');
+              col.className = 'col-md-6';
+              col.innerHTML = `<label class="form-label small fw-bold text-muted">${f.name}</label>`;
+              
+              if (['calculated', 'boolean'].includes(f.type)) {
+                  col.innerHTML += `<input type="text" class="form-control bg-light" value="${val}" disabled>`;
+                  row.appendChild(col);
+                  return;
+              }
+              
+              if (f.type === 'select') {
+                  let opts = `<option value="">Select Option...</option>`;
+                  (f.options || []).forEach(opt => opts += `<option value="${opt}" ${val === opt ? 'selected' : ''}>${opt}</option>`);
+                  col.innerHTML += `<select name="field_${f.id}" class="form-select">${opts}</select>`;
+              } else if (f.type === 'language') {
+                  const languages = ['English', 'Hindi', 'Kannada', 'Tamil', 'Marathi', 'Malayalam', 'Telugu'];
+                  let opts = '';
+                  languages.forEach(lang => {
+                      opts += `<option value="${lang}" ${val === lang ? 'selected' : ''}>${lang}</option>`;
+                  });
+                  col.innerHTML += `<select name="field_${f.id}" class="form-select">${opts}</select>`;
+              } else if (f.type === 'file') {
+                  col.innerHTML += `
+                      <div class="smaller text-muted mb-2"><i class="bi bi-paperclip me-1"></i>Current: ${val || 'None'}</div>
+                      <input type="file" name="field_${f.id}" class="form-control">`;
+              } else if (f.type === 'date') {
+                  col.innerHTML += `<input type="date" name="field_${f.id}" class="form-control" value="${val}">`;
+              } else if (f.type === 'number') {
+                  col.innerHTML += `<input type="number" name="field_${f.id}" class="form-control" value="${val}">`;
+              } else {
+                  col.innerHTML += `<input type="text" name="field_${f.id}" class="form-control" value="${val}">`;
+              }
+              row.appendChild(col);
+          });
+          
+          document.getElementById('editRecordForm').action = `/campaign-express/api/campaigns/{{ campaign.id }}/records/${rid}/update`;
+          new bootstrap.Modal(document.getElementById('editRecordModal')).show();
+      }
+  }
+
+  async function deleteRecord(rid) {
+      if (!confirm('This record will be permanently removed. Continue?')) return;
+      const res = await (await fetch(`/campaign-express/api/campaigns/{{ campaign.id }}/records/${rid}/delete`, {
+          method: 'POST',
+          headers: { 'X-CSRF-Token': '{{ csrf_token() }}' }
+      })).json();
+      if (res.success) location.reload();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+      let activeTextarea = document.getElementById('content');
+      function setupTextarea(ta) {
+          if (!ta) return;
+          ['focus', 'mouseup', 'input'].forEach(evt => {
+              ta.addEventListener(evt, function () { activeTextarea = this; });
+          });
+      }
+      document.querySelectorAll('textarea').forEach(setupTextarea);
+
+      document.querySelectorAll('.placeholder-btn').forEach(btn => {
+          btn.addEventListener('click', function (e) {
+              e.preventDefault();
+              if (!activeTextarea) activeTextarea = document.getElementById('content');
+              if (!activeTextarea) return;
+
+              const fieldName = this.getAttribute('data-field');
+              const text = '{' + '{' + fieldName + '}}';
+
+              activeTextarea.focus();
+
+              if (typeof activeTextarea.setRangeText === 'function') {
+                  activeTextarea.setRangeText(text, activeTextarea.selectionStart, activeTextarea.selectionEnd, 'end');
+              } else {
+                  const start = activeTextarea.selectionStart;
+                  const end = activeTextarea.selectionEnd;
+                  const before = activeTextarea.value.substring(0, start);
+                  const after = activeTextarea.value.substring(end, activeTextarea.value.length);
+                  activeTextarea.value = before + text + after;
+                  activeTextarea.selectionStart = activeTextarea.selectionEnd = start + text.length;
+              }
+
+              activeTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+          });
+      });
+  });
+</script>
+{% endblock %}

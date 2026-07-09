@@ -1,6 +1,6 @@
 {% extends 'base_org_premium.html' %}
 
-{% block title %}Team Management - ConnectFlow{% endblock %}
+{% block title %}Team Management - CalltoConvey{% endblock %}
 {% block page_title %}Team Management{% endblock %}
 
 {% block content %}
@@ -110,7 +110,11 @@
                     </td>
                     <td>
                         <div style="display: flex; gap: 0.5rem;">
-                            <button class="btn-icon" style="width: 32px; height: 32px; font-size: 1rem;" title="Edit Permissions">
+                            <button class="btn-icon btn-edit-worker" 
+                                    style="width: 32px; height: 32px; font-size: 1rem;" 
+                                    title="Edit Worker"
+                                    data-id="{{ w.id }}"
+                                    data-email="{{ w.email }}">
                                 <i class="bi bi-pencil-square"></i>
                             </button>
                             <form method="post" action="{{ url_for('org.delete_worker', wid=w.id) }}" 
@@ -152,4 +156,58 @@
         vertical-align: middle;
     }
 </style>
+
+<!-- Edit Worker Modal -->
+<div class="modal fade" id="editWorkerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
+            <div class="modal-header border-0 pb-0" style="padding: 1.5rem 1.5rem 0.5rem 1.5rem;">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2 text-primary"></i>Edit Worker</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editWorkerForm" method="POST" action="">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body" style="padding: 1.5rem;">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">Email Address</label>
+                        <input type="email" name="email" id="editWorkerEmail" class="form-control bg-light border-0 py-2 px-3 rounded-3" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small text-muted">New Password (leave blank to keep current)</label>
+                        <input type="password" name="password" class="form-control bg-light border-0 py-2 px-3 rounded-3" placeholder="••••••••">
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0" style="padding: 0 1.5rem 1.5rem 1.5rem;">
+                    <button type="button" class="btn-premium secondary px-4" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-premium primary px-4">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editButtons = document.querySelectorAll('.btn-edit-worker');
+    const editModal = new bootstrap.Modal(document.getElementById('editWorkerModal'));
+    const editForm = document.getElementById('editWorkerForm');
+    const emailInput = document.getElementById('editWorkerEmail');
+
+    editButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const wid = this.getAttribute('data-id');
+            const email = this.getAttribute('data-email');
+            
+            // Set form action dynamically preserving tid
+            const tid = new URLSearchParams(window.location.search).get('tid');
+            editForm.action = `/org/workers/${wid}/edit` + (tid ? `?tid=${tid}` : '');
+            emailInput.value = email;
+            
+            editModal.show();
+        });
+    });
+});
+</script>
 {% endblock %}

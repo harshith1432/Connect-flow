@@ -1,6 +1,6 @@
 {% extends "base_platform_premium.html" %}
 
-{% block title %}ConnectFlow | {{ org.name }}{% endblock %}
+{% block title %}CalltoConvey | {{ org.name }}{% endblock %}
 {% block page_title %}Organization Details{% endblock %}
 
 {% block content %}
@@ -165,11 +165,14 @@
 
             <!-- Profile Info Card -->
             <div class="premium-panel mb-4">
-                <div class="panel-header border-bottom pb-3 mb-4">
+                <div class="panel-header border-bottom pb-3 mb-4 d-flex justify-content-between align-items-center">
                     <div class="panel-title">
                         <h3><i class="bi bi-info-circle me-2 text-primary"></i> Organization Profile</h3>
                         <p>Registration and business details</p>
                     </div>
+                    <button type="button" class="btn-premium secondary" data-bs-toggle="modal" data-bs-target="#editProfileModal" style="padding: 0.5rem 1rem; font-size: 0.875rem;">
+                        <i class="bi bi-pencil me-1"></i> Edit Details
+                    </button>
                 </div>
                 <div class="row g-4">
                     <div class="col-md-6">
@@ -282,6 +285,11 @@
                 </div>
                 <div class="small text-muted">
                     <i class="bi bi-calendar-event me-2"></i> Joined {{ admin.created_at.strftime('%d %b %Y') }}
+                </div>
+                <div class="mt-3 pt-3 border-top">
+                    <button class="btn btn-outline-secondary w-100 py-2 d-flex align-items-center justify-content-center gap-2" data-bs-toggle="modal" data-bs-target="#resetPasswordModal" style="border-radius: 10px; font-size: 0.85rem; font-weight: 600;">
+                        <i class="bi bi-key-fill text-muted"></i> Reset Account Password
+                    </button>
                 </div>
                 {% else %}
                 <div class="text-muted small">No admin details found.</div>
@@ -530,6 +538,56 @@
                     </form>
                 </div>
 
+                <!-- Update Subscription Details Form -->
+                <div class="border rounded-4 p-4 mb-4 bg-white" style="border-color: var(--grey-200) !important;">
+                    <h6 class="fw-bold mb-3"><i class="bi bi-pencil-square me-2 text-primary"></i>Update Subscription Details</h6>
+                    <form action="{{ url_for('super_admin.update_subscription', org_id=org.id) }}" method="POST" class="row g-3 m-0">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Subscription Plan</label>
+                            <select name="plan" class="form-select bg-light border-0 py-2 px-3 rounded-3" required>
+                                <option value="Free Tier" {% if not subscription or subscription.plan == 'Free Tier' %}selected{% endif %}>Free Tier (Free)</option>
+                                {% for p in plans %}
+                                <option value="{{ p.name }}" {% if subscription and subscription.plan == p.name %}selected{% endif %}>{{ p.name }} (₹{{ '%.2f'|format(p.price) }} / {{ p.billing_interval }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Billing Interval</label>
+                            <select name="billing_interval" class="form-select bg-light border-0 py-2 px-3 rounded-3" required>
+                                <option value="monthly" {% if not subscription or subscription.billing_interval == 'monthly' %}selected{% endif %}>Monthly</option>
+                                <option value="yearly" {% if subscription and subscription.billing_interval == 'yearly' %}selected{% endif %}>Yearly</option>
+                                <option value="one-time" {% if subscription and subscription.billing_interval == 'one-time' %}selected{% endif %}>One-time</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Expiry Date</label>
+                            <input type="date" name="expires_at" class="form-control bg-light border-0 py-2 px-3 rounded-3" 
+                                   value="{{ subscription.expires_at.strftime('%Y-%m-%d') if subscription and subscription.expires_at else '' }}">
+                            <div class="form-text" style="font-size: 0.7rem;">Leave blank for lifetime/no expiry.</div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Status</label>
+                            <select name="status" class="form-select bg-light border-0 py-2 px-3 rounded-3" required>
+                                <option value="active" {% if not subscription or subscription.status == 'active' %}selected{% endif %}>Active</option>
+                                <option value="inactive" {% if subscription and subscription.status == 'inactive' %}selected{% endif %}>Inactive / Suspended</option>
+                                <option value="past_due" {% if subscription and subscription.status == 'past_due' %}selected{% endif %}>Past Due</option>
+                                <option value="canceled" {% if subscription and subscription.status == 'canceled' %}selected{% endif %}>Canceled</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 mt-4 text-end">
+                            <button type="submit" class="btn-premium primary px-4 py-2">
+                                <i class="bi bi-check2-circle me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
                 <div class="card border-0 rounded-4" style="background: var(--grey-50); border: 1px solid var(--grey-200) !important;">
                     <div class="card-body p-4">
                         <h6 class="fw-bold mb-2"><i class="bi bi-shield-lock me-2 text-danger"></i>Administrative Control Note</h6>
@@ -542,6 +600,102 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1" aria-labelledby="editProfileModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold" id="editProfileModalLabel">
+                    <i class="bi bi-pencil-square text-primary me-2"></i>Edit Organization Profile
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('super_admin.edit_org_profile', org_id=org.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Organization Name</label>
+                        <input type="text" name="name" class="form-control bg-light border-0 py-2 px-3 rounded-3" value="{{ org.name }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Organization Type</label>
+                        <input type="text" name="org_type" class="form-control bg-light border-0 py-2 px-3 rounded-3" value="{{ org.org_type or '' }}" placeholder="Company, Startup, etc.">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Industry / Domain</label>
+                        <input type="text" name="industry" class="form-control bg-light border-0 py-2 px-3 rounded-3" value="{{ org.industry or '' }}" placeholder="Education, IT, etc.">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Support Email</label>
+                        <input type="email" name="support_email" class="form-control bg-light border-0 py-2 px-3 rounded-3" value="{{ org.support_email or '' }}" placeholder="support@domain.com">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Support Phone</label>
+                        <input type="text" name="support_phone" class="form-control bg-light border-0 py-2 px-3 rounded-3" value="{{ org.support_phone or '' }}" placeholder="+1234567890">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Country</label>
+                        <input type="text" name="country" class="form-control bg-light border-0 py-2 px-3 rounded-3" value="{{ org.country or '' }}" placeholder="India, USA, etc.">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">System Language</label>
+                        <input type="text" name="language_preference" class="form-control bg-light border-0 py-2 px-3 rounded-3" value="{{ org.language_preference or 'English' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold small">Admin Account Email</label>
+                        <input type="email" name="admin_email" class="form-control bg-light border-0 py-2 px-3 rounded-3" value="{{ admin.email if admin else '' }}" required>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-semibold small">Office Address</label>
+                        <textarea name="office_address" class="form-control bg-light border-0 py-2 px-3 rounded-3" rows="3" placeholder="Address...">{{ org.office_address or '' }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 py-2 rounded-3">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Reset Admin Password Modal -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content animate-in">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="resetPasswordModalLabel">
+                    <i class="bi bi-key-fill text-primary me-2"></i> Reset Admin Password
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('super_admin.reset_org_password', org_id=org.id) }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="modal-body pb-2">
+                    {% if admin %}
+                    <p class="text-muted small mb-4">
+                        Resetting credentials for administrator account: <strong class="text-dark">{{ admin.email }}</strong>.
+                    </p>
+                    {% endif %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">New Password</label>
+                        <input type="password" name="password" class="form-control" placeholder="Enter new password (min 6 chars)" required style="border-radius: 10px; padding: 0.75rem 1rem;">
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold" style="font-size: 0.85rem;">Confirm New Password</label>
+                        <input type="password" name="confirm_password" class="form-control" placeholder="Confirm new password" required style="border-radius: 10px; padding: 0.75rem 1rem;">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary px-4 py-2 rounded-3" data-bs-dismiss="modal" style="border-radius: 10px;">Cancel</button>
+                    <button type="submit" class="btn btn-primary px-4 py-2 rounded-3" style="border-radius: 10px;">Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 
 <style>
     .modal-content {

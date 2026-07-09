@@ -1,0 +1,210 @@
+{% extends 'base_worker_premium.html' %}
+
+{% block title %}Edit Campaign - CalltoConvey{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-bar mb-4">
+        <a href="{{ url_for('worker.dashboard') }}"><i class="bi bi-grid"></i> Workspace</a>
+        <i class="bi bi-chevron-right"></i>
+        <a href="{{ url_for('worker.manage_groups', mid=module.id) }}">{{ module.name }}</a>
+        <i class="bi bi-chevron-right"></i>
+        <a href="{{ url_for('worker.campaigns', gid=group.id) }}">{{ group.name }} — Campaigns</a>
+        <i class="bi bi-chevron-right"></i>
+        <span style="color:#111;font-weight:700;">Edit Campaign</span>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="premium-card animate__animated animate__fadeIn">
+                <div class="card-body p-5">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="icon-box bg-dark text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                            <i class="bi bi-pencil-square fs-4"></i>
+                        </div>
+                        <div>
+                            <h2 class="h4 fw-bold mb-0">Edit Campaign</h2>
+                            <p class="text-muted small mb-0">Modify configuration details for <strong>{{ campaign.name }}</strong></p>
+                        </div>
+                    </div>
+
+                    <hr class="my-4 opacity-50">
+
+                    <form method="post" action="{{ url_for('worker.edit_campaign', cid=campaign.id) }}" class="premium-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                        
+                        <div class="form-group mb-4">
+                            <label class="form-label fw-bold text-dark mb-2">Campaign Name</label>
+                            <input name="name" class="form-control premium-input" 
+                                   value="{{ campaign.name }}" placeholder="e.g., Sales Leads Q3" required
+                                   style="font-size: 1.1rem; padding: 0.75rem 1rem;">
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label class="form-label fw-bold text-dark mb-2">Communication Type</label>
+                                <select name="type" class="form-select premium-input" id="campaignTypeSelect" style="padding: 0.75rem 1rem;">
+                                    <option value="whatsapp_text" {% if campaign.type == 'whatsapp_text' %}selected{% endif %}>WhatsApp Message</option>
+                                    <option value="call" {% if campaign.type == 'call' %}selected{% endif %}>Call</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold text-dark mb-2">Sender Number (Optional)</label>
+                                <select name="sender_number_id" class="form-select premium-input" id="senderNumberSelect" style="padding: 0.75rem 1rem;">
+                                    <option value="">— Use Platform Default —</option>
+                                    {% for n in numbers %}
+                                    <option value="{{ n.id }}" data-channel="{{ n.channel_type }}" {% if campaign.sender_number_id == n.id %}selected{% endif %}>
+                                        {{ n.number }} ({{ n.channel_type|title }})
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group mb-4">
+                            <label class="form-label fw-bold text-dark mb-2">Select Script</label>
+                            <div class="d-flex gap-2">
+                                <select name="script_id" class="form-select premium-input" id="scriptSelect" required style="flex:1; padding: 0.75rem 1rem;">
+                                    <option value="">— Choose Script —</option>
+                                    {% for s in scripts %}
+                                    <option value="{{ s.id }}" data-type="{{ s.type }}" data-content="{{ s.content }}" data-lang="{{ s.language }}" {% if campaign.script_id == s.id %}selected{% endif %}>
+                                        [{{ s.language }}] {{ s.content[:50] }}...
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <button type="button" class="btn btn-outline-secondary d-flex align-items-center justify-content-center" id="btnPreviewCampaignScript" style="border-radius:12px; padding: 0.75rem 1rem;" title="Preview Voice">
+                                    <i class="bi bi-play-fill fs-5"></i>
+                                </button>
+                            </div>
+                            <div class="form-text text-muted small mt-2">Ensure the script type matches your communication type.</div>
+                        </div>
+
+                        <div class="d-flex align-items-center justify-content-between pt-3">
+                            <a href="{{ url_for('worker.campaigns', gid=group.id) }}" class="btn btn-link text-decoration-none text-muted fw-bold">
+                                <i class="bi bi-arrow-left me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-premium-dark px-4 py-2">
+                                Save Changes <i class="bi bi-check-lg ms-2"></i>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .premium-card {
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.08);
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        overflow: hidden;
+    }
+    .premium-input {
+        border-radius: 12px;
+        border: 1.5px solid #eee;
+        transition: all 0.2s;
+        background: #fafafa;
+    }
+    .premium-input:focus {
+        border-color: #000;
+        background: #fff;
+        box-shadow: 0 0 0 4px rgba(0,0,0,0.05);
+    }
+    .btn-premium-dark {
+        background: #000;
+        color: #fff;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.2s;
+        border: none;
+    }
+    .btn-premium-dark:hover {
+        background: #333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.CSRF_TOKEN = "{{ csrf_token() }}";
+    
+    document.addEventListener('DOMContentLoaded', function () {
+        const typeSelect   = document.getElementById('campaignTypeSelect');
+        const scriptSelect = document.getElementById('scriptSelect');
+        const senderSelect = document.getElementById('senderNumberSelect');
+
+        if (typeSelect && scriptSelect) {
+            const allScriptOptions = Array.from(scriptSelect.options).slice(1);
+            const allSenderOptions = senderSelect ? Array.from(senderSelect.options).slice(1) : [];
+
+            // Store initially selected script/sender values
+            const initialScriptVal = "{{ campaign.script_id or '' }}";
+            const initialSenderVal = "{{ campaign.sender_number_id or '' }}";
+
+            typeSelect.addEventListener('change', function () {
+                const selectedType = this.value;
+                scriptSelect.innerHTML = '<option value="">— Choose Script —</option>';
+                
+                allScriptOptions.forEach(opt => {
+                    if (opt.dataset.type === selectedType) {
+                        const clone = opt.cloneNode(true);
+                        if (clone.value === initialScriptVal) {
+                            clone.selected = true;
+                        }
+                        scriptSelect.appendChild(clone);
+                    }
+                });
+                
+                if (senderSelect) {
+                    senderSelect.innerHTML = '<option value="">— Use Platform Default —</option>';
+                    allSenderOptions.forEach(opt => {
+                        const ch = opt.dataset.channel;
+                        if (selectedType === 'call' && ['voice','hooman_voice'].includes(ch)) {
+                            const clone = opt.cloneNode(true);
+                            if (clone.value === initialSenderVal) clone.selected = true;
+                            senderSelect.appendChild(clone);
+                        } else if (selectedType.startsWith('whatsapp') && ch === 'whatsapp') {
+                            const clone = opt.cloneNode(true);
+                            if (clone.value === initialSenderVal) clone.selected = true;
+                            senderSelect.appendChild(clone);
+                        }
+                    });
+                }
+            });
+            
+            // Trigger change event to filter initially
+            typeSelect.dispatchEvent(new Event('change'));
+        }
+
+        // Voice preview
+        const previewBtn = document.getElementById('btnPreviewCampaignScript');
+        const audioPlayer = new Audio();
+        if (previewBtn) {
+            previewBtn.addEventListener('click', async function () {
+                const sel = scriptSelect.options[scriptSelect.selectedIndex];
+                if (!sel || !sel.value) { alert('Please select a script first.'); return; }
+                const orig = this.innerHTML;
+                this.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                try {
+                    const res = await fetch('/worker/preview-voice', {
+                        method: 'POST',
+                        headers: {'Content-Type':'application/json','X-CSRFToken': window.CSRF_TOKEN},
+                        body: JSON.stringify({ text: sel.dataset.content, language: sel.dataset.lang })
+                    });
+                    const data = await res.json();
+                    if (data.success) { audioPlayer.src = data.audio_url; audioPlayer.play(); }
+                    else alert('Error: ' + data.error);
+                } catch(e) { alert('Preview failed.'); }
+                finally { this.disabled = false; this.innerHTML = orig; }
+            });
+        }
+    });
+</script>
+{% endblock %}

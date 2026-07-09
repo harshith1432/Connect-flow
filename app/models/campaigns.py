@@ -31,10 +31,28 @@ class Campaign(db.Model):
         db.ForeignKey("organization_users.id", ondelete="SET NULL"),
         nullable=True,
     )
+    # Campaign Express standalone user (no organization required)
+    campaign_express_user_id = db.Column(
+        db.Integer,
+        db.ForeignKey("campaign_express_users.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+    campaign_express_user = relationship(
+        "CampaignExpressUser", backref="campaigns"
+    )
 
     targets = relationship(
         "CampaignTarget", backref="campaign", cascade="all, delete-orphan"
     )
+
+    @property
+    def total_calls(self):
+        return len(self.targets)
+
+    @property
+    def successful_calls(self):
+        return sum(1 for t in self.targets if t.status == 'completed')
 
 
 class CampaignTarget(db.Model):

@@ -1,0 +1,322 @@
+{% extends "base_auth.html" %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/onboarding_premium.css') }}">
+<style>
+  .verification-layout { display: flex; min-height: 100vh; }
+  .verification-sidebar {
+    width: 320px; min-width: 280px;
+    background: linear-gradient(160deg, #1e293b 0%, #312e81 100%);
+    color: white; padding: 3rem 2rem; display: flex; flex-direction: column;
+  }
+  .verification-main { flex: 1; padding: 3rem 2.5rem; overflow-y: auto; background: #f8fafc; }
+  .step-indicator { display: flex; flex-direction: column; gap: 0; margin-top: 2rem; }
+  .step-item { display: flex; align-items: flex-start; gap: 1rem; padding: 0.75rem 0; position: relative; }
+  .step-item:not(:last-child)::after {
+    content:''; position:absolute; left:19px; top:48px; width:2px; height:calc(100% - 16px);
+    background: rgba(255,255,255,0.2);
+  }
+  .step-num {
+    width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-weight:700; font-size:0.95rem; flex-shrink:0;
+    border: 2px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color:white;
+    transition: all 0.3s;
+  }
+  .step-item.active .step-num { background:#6366f1; border-color:#6366f1; box-shadow:0 4px 16px rgba(99,102,241,0.5); }
+  .step-item.done .step-num { background:#10b981; border-color:#10b981; }
+  .step-label { font-size:0.9rem; color:rgba(255,255,255,0.7); padding-top:0.5rem; }
+  .step-item.active .step-label { color:white; font-weight:600; }
+  .step-item.done .step-label { color:#6ee7b7; }
+  .form-section { display:none; }
+  .form-section.active { display:block; }
+  .premium-card { background:#fff; border-radius:16px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:2rem; margin-bottom:1.5rem; }
+  .form-label { font-weight:600; color:#374151; font-size:0.875rem; margin-bottom:0.35rem; }
+  .form-control { border-radius:10px; border:1.5px solid #e2e8f0; padding:0.7rem 1rem; transition:all 0.2s; }
+  .form-control:focus { border-color:#6366f1; box-shadow:0 0 0 3px rgba(99,102,241,0.12); }
+  .btn-premium { border:none; cursor:pointer; font-weight:600; transition:all 0.2s; }
+  .btn-premium.primary { background:linear-gradient(135deg,#6366f1,#8b5cf6); color:white; border-radius:10px; padding:0.75rem 1.75rem; }
+  .btn-premium.primary:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(99,102,241,0.4); }
+  .btn-premium.secondary { background:#f1f5f9; color:#475569; border-radius:10px; padding:0.75rem 1.75rem; }
+  .drop-zone {
+    border: 2px dashed #c7d2fe; border-radius:12px; padding:2rem; text-align:center;
+    background:#f5f3ff; cursor:pointer; transition:all 0.2s;
+  }
+  .drop-zone:hover, .drop-zone.dragover { border-color:#6366f1; background:#ede9fe; }
+  .drop-zone i { font-size:2rem; color:#6366f1; display:block; margin-bottom:0.5rem; }
+  .nav-btns { display:flex; gap:1rem; margin-top:1.5rem; }
+  .review-table { width:100%; font-size:0.9rem; }
+  .review-table td { padding:0.5rem 0.75rem; border-bottom:1px solid #f1f5f9; }
+  .review-table td:first-child { color:#64748b; font-weight:500; width:40%; }
+  .review-table td:last-child { color:#0f172a; font-weight:600; }
+</style>
+{% endblock %}
+
+{% block body_content %}
+<div class="verification-layout">
+  <!-- Sidebar -->
+  <div class="verification-sidebar">
+    <div>
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;">
+        <div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;">
+          <i class="bi bi-shield-check" style="color:white;font-size:1.2rem;"></i>
+        </div>
+        <span style="font-weight:700;font-size:1.1rem;">Campaign Express</span>
+      </div>
+      <h2 style="font-size:1.4rem;font-weight:700;line-height:1.3;margin-bottom:0.75rem;">
+        Complete Verification Before Launch
+      </h2>
+      <p style="color:rgba(255,255,255,0.65);font-size:0.875rem;line-height:1.6;">
+        To protect platform communication quality and campaign trust, complete profile verification before executing campaigns.
+      </p>
+    </div>
+
+    <div class="step-indicator">
+      <div class="step-item active" id="sidebar-step-1">
+        <div class="step-num" id="step-num-1">1</div>
+        <div>
+          <div class="step-label">Profile</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);">Address information</div>
+        </div>
+      </div>
+      <div class="step-item" id="sidebar-step-2">
+        <div class="step-num" id="step-num-2">2</div>
+        <div>
+          <div class="step-label">Identity</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);">Document upload</div>
+        </div>
+      </div>
+      <div class="step-item" id="sidebar-step-3">
+        <div class="step-num" id="step-num-3">3</div>
+        <div>
+          <div class="step-label">Review</div>
+          <div style="font-size:0.78rem;color:rgba(255,255,255,0.5);">Confirm & submit</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;padding-top:2rem;border-top:1px solid rgba(255,255,255,0.1);">
+      <p style="font-size:0.8rem;color:rgba(255,255,255,0.4);">
+        <i class="bi bi-lock-fill me-1"></i> Your data is encrypted and secure
+      </p>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="verification-main">
+    <div style="max-width:640px;margin:0 auto;">
+
+      <form method="POST" action="{{ url_for('campaign_express.verification') }}" enctype="multipart/form-data" id="verification-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Step 1: Profile -->
+        <div class="form-section active" id="section-1">
+          <h3 style="font-weight:700;color:#0f172a;margin-bottom:0.25rem;">Profile Information</h3>
+          <p style="color:#64748b;margin-bottom:1.5rem;font-size:0.9rem;">Enter your address details for verification.</p>
+          <div class="premium-card">
+            <div class="mb-3">
+              <label class="form-label">Address Line 1 <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="address_line1" required
+                value="{{ user.address_line1 if user and user.address_line1 else '' }}"
+                placeholder="Street address, P.O. box">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Address Line 2 <span class="text-muted">(optional)</span></label>
+              <input type="text" class="form-control" name="address_line2"
+                value="{{ user.address_line2 if user and user.address_line2 else '' }}"
+                placeholder="Apartment, suite, unit, building, floor">
+            </div>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">City <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="city" required
+                  value="{{ user.city if user and user.city else '' }}" placeholder="City">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">State</label>
+                <input type="text" class="form-control" name="state"
+                  value="{{ user.state if user and user.state else '' }}" placeholder="State / Province">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Country <span class="text-danger">*</span></label>
+                <input type="text" class="form-control" name="country" required
+                  value="{{ user.country if user and user.country else '' }}" placeholder="Country">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Postal Code</label>
+                <input type="text" class="form-control" name="postal_code"
+                  value="{{ user.postal_code if user and user.postal_code else '' }}" placeholder="PIN / ZIP">
+              </div>
+            </div>
+          </div>
+          <div class="nav-btns justify-content-end">
+            <button type="button" class="btn-premium primary" onclick="goToStep(2)">
+              Next: Identity <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 2: Identity -->
+        <div class="form-section" id="section-2">
+          <h3 style="font-weight:700;color:#0f172a;margin-bottom:0.25rem;">Identity Verification</h3>
+          <p style="color:#64748b;margin-bottom:1.5rem;font-size:0.9rem;">Upload a government-issued ID document.</p>
+          <div class="premium-card">
+            <div class="mb-3">
+              <label class="form-label">Identity Type <span class="text-danger">*</span></label>
+              <select class="form-control" name="identity_type" id="identity_type" required>
+                <option value="">-- Select document type --</option>
+                {% if identity_types %}
+                  {% for itype in identity_types %}
+                    <option value="{{ itype }}">{{ itype }}</option>
+                  {% endfor %}
+                {% else %}
+                  <option value="Aadhaar Card">Aadhaar Card</option>
+                  <option value="Passport">Passport</option>
+                  <option value="Driving License">Driving License</option>
+                  <option value="PAN Card">PAN Card</option>
+                  <option value="Voter ID">Voter ID</option>
+                  <option value="Other Government ID">Other Government ID</option>
+                {% endif %}
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Identity Number <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" name="identity_number" required
+                placeholder="Enter the document ID number" id="identity_number">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Upload Document <span class="text-danger">*</span></label>
+              <div class="drop-zone" id="drop-zone" onclick="document.getElementById('doc-upload').click()">
+                <i class="bi bi-cloud-upload"></i>
+                <div style="font-weight:600;color:#4338ca;margin-bottom:0.25rem;">Click or drag & drop to upload</div>
+                <div style="font-size:0.8rem;color:#94a3b8;">PDF, JPG, JPEG, PNG — max 5MB</div>
+              </div>
+              <input type="file" id="doc-upload" name="identity_document" accept=".pdf,.jpg,.jpeg,.png"
+                style="display:none" onchange="handleFileSelect(this)">
+              <div id="file-preview" style="display:none;margin-top:0.75rem;padding:0.75rem 1rem;background:#f0fdf4;border-radius:8px;border:1px solid #bbf7d0;">
+                <i class="bi bi-file-earmark-check text-success me-2"></i>
+                <span id="file-name" style="font-weight:600;color:#15803d;font-size:0.875rem;"></span>
+              </div>
+            </div>
+            <div class="form-check mt-2">
+              <input type="checkbox" class="form-check-input" name="verification_consent" id="verification_consent" required>
+              <label class="form-check-label" for="verification_consent" style="font-size:0.875rem;color:#374151;">
+                I confirm the above information is accurate and consent to verification
+              </label>
+            </div>
+          </div>
+          <div class="nav-btns justify-content-between">
+            <button type="button" class="btn-premium secondary" onclick="goToStep(1)">
+              <i class="bi bi-arrow-left me-1"></i> Back
+            </button>
+            <button type="button" class="btn-premium primary" onclick="goToStep(3)">
+              Next: Review <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 3: Review -->
+        <div class="form-section" id="section-3">
+          <h3 style="font-weight:700;color:#0f172a;margin-bottom:0.25rem;">Review & Submit</h3>
+          <p style="color:#64748b;margin-bottom:1.5rem;font-size:0.9rem;">Please verify your information before submitting.</p>
+          <div class="premium-card">
+            <h6 style="font-weight:700;color:#374151;margin-bottom:1rem;"><i class="bi bi-geo-alt me-2 text-indigo"></i>Address</h6>
+            <table class="review-table" id="review-address">
+              <tr><td>Address Line 1</td><td id="rv-addr1">—</td></tr>
+              <tr><td>Address Line 2</td><td id="rv-addr2">—</td></tr>
+              <tr><td>City</td><td id="rv-city">—</td></tr>
+              <tr><td>State</td><td id="rv-state">—</td></tr>
+              <tr><td>Country</td><td id="rv-country">—</td></tr>
+              <tr><td>Postal Code</td><td id="rv-postal">—</td></tr>
+            </table>
+            <hr style="margin:1.25rem 0;">
+            <h6 style="font-weight:700;color:#374151;margin-bottom:1rem;"><i class="bi bi-card-text me-2"></i>Identity</h6>
+            <table class="review-table">
+              <tr><td>Document Type</td><td id="rv-idtype">—</td></tr>
+              <tr><td>Document Number</td><td id="rv-idnum">—</td></tr>
+              <tr><td>Document File</td><td id="rv-docfile">—</td></tr>
+            </table>
+          </div>
+
+          <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:12px;padding:1rem;margin-bottom:1.5rem;">
+            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+            <span style="font-size:0.875rem;color:#92400e;">By submitting, you confirm all provided information is accurate. False information may result in account suspension.</span>
+          </div>
+
+          <div class="nav-btns justify-content-between">
+            <button type="button" class="btn-premium secondary" onclick="goToStep(2)">
+              <i class="bi bi-arrow-left me-1"></i> Back
+            </button>
+            <button type="submit" class="btn-premium primary">
+              <i class="bi bi-send-check me-2"></i>Submit for Verification
+            </button>
+          </div>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentStep = 1;
+
+function goToStep(step) {
+  if (step === 3) populateReview();
+  document.querySelectorAll('.form-section').forEach((s, i) => {
+    s.classList.toggle('active', i + 1 === step);
+  });
+  document.querySelectorAll('.step-item').forEach((item, i) => {
+    item.classList.remove('active', 'done');
+    if (i + 1 === step) item.classList.add('active');
+    if (i + 1 < step) item.classList.add('done');
+    if (i + 1 < step) {
+      item.querySelector('.step-num').innerHTML = '<i class="bi bi-check2" style="color:white;"></i>';
+    } else {
+      item.querySelector('.step-num').textContent = i + 1;
+    }
+  });
+  currentStep = step;
+}
+
+function populateReview() {
+  const get = (name) => {
+    const el = document.querySelector(`[name="${name}"]`);
+    return el ? el.value || '—' : '—';
+  };
+  document.getElementById('rv-addr1').textContent = get('address_line1');
+  document.getElementById('rv-addr2').textContent = get('address_line2') || '—';
+  document.getElementById('rv-city').textContent = get('city');
+  document.getElementById('rv-state').textContent = get('state') || '—';
+  document.getElementById('rv-country').textContent = get('country');
+  document.getElementById('rv-postal').textContent = get('postal_code') || '—';
+  document.getElementById('rv-idtype').textContent = get('identity_type');
+  document.getElementById('rv-idnum').textContent = get('identity_number');
+  const fileInput = document.getElementById('doc-upload');
+  document.getElementById('rv-docfile').textContent = fileInput.files[0] ? fileInput.files[0].name : '—';
+}
+
+function handleFileSelect(input) {
+  if (input.files && input.files[0]) {
+    document.getElementById('file-name').textContent = input.files[0].name;
+    document.getElementById('file-preview').style.display = 'block';
+    document.getElementById('drop-zone').style.borderColor = '#10b981';
+    document.getElementById('drop-zone').style.background = '#f0fdf4';
+  }
+}
+
+// Drag & drop
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    const input = document.getElementById('doc-upload');
+    const dt = new DataTransfer(); dt.items.add(file);
+    input.files = dt.files;
+    handleFileSelect(input);
+  }
+});
+</script>
+{% endblock %}
